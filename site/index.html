@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KundliSaar · कुंडलीसार</title>
+<meta name="description" content="A free Vedic kundli app that computes your birth chart on your own device, in Hindi and English, and explains what it computed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --haldi: #e3a008;
+    --sindoor: #c1272d;
+    --maroon: #6b1d1d;
+    --indigo: #1f2a5e;
+    --ink: #221a14;
+    --parchment: #fdf6e8;
+    --parchment-deep: #f4e6c9;
+    --gold: #b8860b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Mukta, system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--parchment);
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 56px 0 28px; text-align: center; }
+  h1 {
+    font-family: 'Yatra One', Mukta, serif;
+    font-size: clamp(38px, 8vw, 62px);
+    margin: 0 0 6px;
+    color: var(--maroon);
+    letter-spacing: 0.5px;
+  }
+  .sub { font-size: clamp(17px, 3.4vw, 21px); color: #5a4a3a; margin: 0 auto 10px; max-width: 34ch; }
+  .devanagari { font-size: 20px; color: var(--indigo); }
+  .arch { display: block; margin: 22px auto 0; max-width: 320px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 28px 0 8px; }
+  .btn {
+    display: inline-block; padding: 14px 26px; border-radius: 14px;
+    text-decoration: none; font-weight: 600; font-size: 17px;
+    border: 1.5px solid var(--maroon);
+  }
+  .btn.primary { background: var(--maroon); color: var(--parchment); }
+  .btn.ghost { color: var(--maroon); }
+  .note { text-align: center; color: #6b5c4a; font-size: 15px; margin-top: 4px; }
+  section { padding: 30px 0; border-top: 1px solid rgba(34,26,20,0.12); }
+  h2 { font-size: 26px; margin: 0 0 14px; color: var(--maroon); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(34,26,20,0.14);
+    border-radius: 16px; padding: 18px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 19px; }
+  .card p { margin: 0; font-size: 16.5px; color: #4a3d30; }
+  table { width: 100%; border-collapse: collapse; font-size: 16.5px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(34,26,20,0.1); }
+  code { background: rgba(31,42,94,0.08); padding: 2px 6px; border-radius: 6px; font-size: 15px; }
+  footer { padding: 30px 0 60px; color: #6b5c4a; font-size: 15px; text-align: center; }
+  a { color: var(--indigo); }
+  @media (prefers-color-scheme: dark) {
+    body { background: #14183a; color: #f1e4c3; }
+    h1, h2 { color: var(--haldi); }
+    .sub, .card p, .note, footer { color: #cdbf9f; }
+    .card { background: rgba(255,255,255,0.05); border-color: rgba(241,228,195,0.18); }
+    .btn { border-color: var(--haldi); }
+    .btn.primary { background: var(--haldi); color: #14183a; }
+    .btn.ghost { color: var(--haldi); }
+    a { color: var(--haldi); }
+    th, td { border-color: rgba(241,228,195,0.16); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>KundliSaar</h1>
+    <p class="devanagari">कुंडलीसार</p>
+    <p class="sub">Your kundli, computed on your own device, explained in your language.</p>
+    <p class="sub devanagari">आपकी कुंडली, आपके फ़ोन पर बनी, आपकी भाषा में समझाई गई।</p>
+    <svg class="arch" viewBox="0 0 320 34" aria-hidden="true">
+      <path d="M0 32 A17.8 17.8 0 0 1 35.6 32 A17.8 17.8 0 0 1 71.1 32 A17.8 17.8 0 0 1 106.7 32 A17.8 17.8 0 0 1 142.2 32 A17.8 17.8 0 0 1 177.8 32 A17.8 17.8 0 0 1 213.3 32 A17.8 17.8 0 0 1 248.9 32 A17.8 17.8 0 0 1 284.4 32 A17.8 17.8 0 0 1 320 32"
+            fill="none" stroke="#b8860b" stroke-width="1.6"/>
+    </svg>
+    <div class="cta">
+      <a class="btn primary" href="app/">Open the app · ऐप खोलें</a>
+      <a class="btn ghost" href="https://github.com/pallavsharmaofficial/KundliSaar">Source on GitHub</a>
+    </div>
+    <p class="note">Free. No account, no server, nothing uploaded.</p>
+  </header>
+
+  <section>
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="card"><h3>The chart</h3><p>Lagna chart in North Indian, South Indian and chakra styles, with every graha's sign, degree, house, nakshatra, pada, dignity, retrogression and combustion.</p></div>
+      <div class="card"><h3>Sixteen vargas</h3><p>D1 to D60 by the Parashari rules, including navamsa for marriage and dasamsa for work.</p></div>
+      <div class="card"><h3>Dashas</h3><p>Vimshottari to three levels with the balance at birth, and the Yogini cycle alongside it.</p></div>
+      <div class="card"><h3>Yogas and doshas</h3><p>Mangal, Kaal Sarpa, Kemadruma, Gaja Kesari, the five Mahapurusha yogas, Raja yogas and Sade Sati — each naming the rule in your chart that produced it, and what the texts say weakens it.</p></div>
+      <div class="card"><h3>Panchang</h3><p>Tithi, nakshatra, yoga, karana and vara with end times, sunrise and sunset, Rahu Kaal, Abhijit, choghadiya and horas, for any date and any town.</p></div>
+      <div class="card"><h3>Milan</h3><p>Ashtakoota to 36 gunas with every koota explained, and Mangal dosha on both sides. A score, not a verdict.</p></div>
+      <div class="card"><h3>Ask</h3><p>Ask about your chart in Hindi or English and get an answer that shows the chart factors it was read from.</p></div>
+      <div class="card"><h3>Learn</h3><p>The nine grahas, twelve rashis and 27 nakshatras with deity, symbol, lord, gana, yoni and nadi.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Computed here, not fetched</h2>
+    <p>The astrology runs inside the app in plain Dart. Planetary positions come from our own series, fitted to NASA JPL's public-domain <code>DE440s</code> kernel, and held to this in continuous integration:</p>
+    <table>
+      <tr><th>Body</th><th>Worst longitude error, 1900–2070</th></tr>
+      <tr><td>Sun</td><td>under 2″</td></tr>
+      <tr><td>Moon</td><td>under 8″</td></tr>
+      <tr><td>Mercury, Venus, Jupiter, Saturn</td><td>under 3″</td></tr>
+      <tr><td>Mars</td><td>under 4″</td></tr>
+    </table>
+    <p>Independently, the Sun lands within 0.4″ of 0° at six March equinoxes between 1905 and 2051.</p>
+  </section>
+
+  <section>
+    <h2>Your details stay yours</h2>
+    <p>Birth details are the most identifying data a person has. They are stored in this device's own storage and nowhere else. There is no account, no sign-in, no analytics on anything you type, and the app works with the network off.</p>
+  </section>
+
+  <section>
+    <h2>What it will not do</h2>
+    <p>No predictions about death, illness, pregnancy, exams, court cases or investments. No fear-based framing of doshas. No verdict on whether a marriage should happen. Readings are presented as what the tradition says, with the classical source named.</p>
+  </section>
+
+  <footer>
+    <p>Built by <a href="https://github.com/pallavsharmaofficial">pallavsharmaofficial</a> · MIT licensed · Ephemeris from JPL DE440s · Places from GeoNames (CC BY 4.0)</p>
+    <p>Traditional Vedic guidance and cultural material, not medical, legal or financial advice.</p>
+  </footer>
+</div>
+</body>
+</html>
