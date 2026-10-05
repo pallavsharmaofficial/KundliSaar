@@ -12,17 +12,19 @@ import 'package:kundlisaar/engine/jyotish/rashi.dart';
 /// Ashlesha, the Sun in Virgo, Mars, Venus and Mercury in Libra, Jupiter in
 /// Capricorn and Saturn retrograde in Cancer.
 void main() {
-  final Kundli kundli = computeKundli(BirthData(
-    name: 'Gandhi',
-    localDateTime: DateTime(1869, 10, 2, 7, 11, 58),
-    utcOffset: const Duration(hours: 4, minutes: 38, seconds: 24),
-    place: const GeoPlace(
-      name: 'Porbandar',
-      latitude: 21.6417,
-      longitude: 69.6293,
-      timeZoneId: 'Asia/Kolkata',
+  final Kundli kundli = computeKundli(
+    BirthData(
+      name: 'Gandhi',
+      localDateTime: DateTime(1869, 10, 2, 7, 11, 58),
+      utcOffset: const Duration(hours: 4, minutes: 38, seconds: 24),
+      place: const GeoPlace(
+        name: 'Porbandar',
+        latitude: 21.6417,
+        longitude: 69.6293,
+        timeZoneId: 'Asia/Kolkata',
+      ),
     ),
-  ));
+  );
 
   test('the lagna matches the published chart', () {
     expect(kundli.lagnaRashi, Rashi.tula);

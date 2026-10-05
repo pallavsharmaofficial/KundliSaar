@@ -97,3 +97,35 @@ double _bisect(
   }
   return (a + b) / 2;
 }
+
+/// Sunrise and sunset by the closed-form hour angle, for callers that need a
+/// year of days rather than one. It uses our own solar position for the
+/// declination and the equation of time, so it agrees with [findRiseSet] to
+/// about a minute, at a fraction of the cost.
+RiseSet fastSunRiseSet(double jdLocalMidnightUt, GeoPlace place) {
+  final double jdNoon = jdLocalMidnightUt + 0.5;
+  final Instant noon = Instant.fromJulianDayUt(jdNoon);
+  final double t = noon.centuriesTt;
+  final BodyPosition sun = positionOf(Graha.sun, noon);
+  final List<double> equatorial = eclipticToEquatorial(
+    sun.tropicalLongitude,
+    sun.latitude,
+    trueObliquity(t),
+  );
+  final double declination = equatorial[1] * degToRad;
+  final double latitude = place.latitude * degToRad;
+  final double cosH =
+      (math.sin(sunHorizon * degToRad) -
+          math.sin(latitude) * math.sin(declination)) /
+      (math.cos(latitude) * math.cos(declination));
+  if (cosH.abs() > 1) return const RiseSet(null, null);
+  final double hourAngle = math.acos(cosH) * radToDeg;
+
+  // Solar transit: the moment the Sun's right ascension meets the local
+  // meridian, solved from the sidereal time at noon.
+  final double lst = norm360(
+    greenwichApparentSiderealTime(jdNoon, t) + place.longitude,
+  );
+  final double transit = jdNoon - norm180(lst - equatorial[0]) / 360.985647;
+  return RiseSet(transit - hourAngle / 360.0, transit + hourAngle / 360.0);
+}

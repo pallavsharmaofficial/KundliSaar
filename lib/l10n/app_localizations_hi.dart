@@ -359,4 +359,244 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get stopReading => 'रोकें';
+
+  @override
+  String get featureStrengths => 'बल';
+
+  @override
+  String get featureTransits => 'गोचर';
+
+  @override
+  String get featureMuhurta => 'मुहूर्त';
+
+  @override
+  String get featureVarshphal => 'वर्षफल';
+
+  @override
+  String get featureNumerology => 'अंक';
+
+  @override
+  String get featurePrashna => 'प्रश्न';
+
+  @override
+  String get featureRashifal => 'आज';
+
+  @override
+  String get featureFestivals => 'त्योहार';
+
+  @override
+  String get featureNamkaran => 'नामकरण';
+
+  @override
+  String get featureRemedies => 'उपाय';
+
+  @override
+  String get featureHastrekha => 'हस्तरेखा';
+
+  @override
+  String get shadbala => 'षड्बल';
+
+  @override
+  String get ashtakavarga => 'अष्टकवर्ग';
+
+  @override
+  String get sarvashtakavarga => 'सर्वाष्टकवर्ग';
+
+  @override
+  String get bindus => 'बिंदु';
+
+  @override
+  String get rupas => 'रूप';
+
+  @override
+  String get needs => 'चाहिए';
+
+  @override
+  String get strong => 'बलवान';
+
+  @override
+  String get weak => 'बल से कम';
+
+  @override
+  String get sadeSati => 'साढ़ेसाती';
+
+  @override
+  String runningPhase(String phase) {
+    return 'तीन में से $phaseरा चरण';
+  }
+
+  @override
+  String get aspectsOnNatal => 'आपकी कुंडली पर गोचर';
+
+  @override
+  String get nextReturn => 'अपनी जन्म राशि में वापसी';
+
+  @override
+  String get chooseActivity => 'कौन सा कार्य?';
+
+  @override
+  String get searchDays => 'कितने दिन देखें';
+
+  @override
+  String get bestWindows => 'सबसे शुभ समय';
+
+  @override
+  String get whyThisWindow => 'क्यों';
+
+  @override
+  String get solarReturn => 'सूर्य वापसी';
+
+  @override
+  String get muntha => 'मुन्था';
+
+  @override
+  String get yearLord => 'वर्षेश';
+
+  @override
+  String get chooseYear => 'वर्ष';
+
+  @override
+  String get mulank => 'मूलांक';
+
+  @override
+  String get bhagyank => 'भाग्यांक';
+
+  @override
+  String get namank => 'नामांक';
+
+  @override
+  String get loshuGrid => 'लो शू ग्रिड';
+
+  @override
+  String get missingNumbers => 'अनुपस्थित';
+
+  @override
+  String get repeatedNumbers => 'बार-बार';
+
+  @override
+  String get luckyColour => 'रंग';
+
+  @override
+  String get luckyNumber => 'अंक';
+
+  @override
+  String get luckyDays => 'दिन';
+
+  @override
+  String get askPrashna => 'प्रश्न पूछें';
+
+  @override
+  String get prashnaHint => 'जो प्रश्न मन में है, वह लिखें';
+
+  @override
+  String get castNow => 'अभी की कुंडली बनाएँ';
+
+  @override
+  String get theLeaning => 'कुंडली का संकेत';
+
+  @override
+  String get whatItReads => 'किससे पढ़ा';
+
+  @override
+  String get dailyReading => 'आज आपके लिए';
+
+  @override
+  String get tara => 'तारा';
+
+  @override
+  String get upcoming => 'आगे आने वाले';
+
+  @override
+  String get wholeYear => 'पूरा वर्ष';
+
+  @override
+  String get syllable => 'अक्षर';
+
+  @override
+  String get suggestedNames => 'उपयुक्त नाम';
+
+  @override
+  String get otherPadas => 'अन्य पाद';
+
+  @override
+  String get japaCount => 'जप संख्या';
+
+  @override
+  String get daan => 'दान';
+
+  @override
+  String get yantra => 'यंत्र';
+
+  @override
+  String get simpleAct => 'आज यह करें';
+
+  @override
+  String get gemstoneWarning =>
+      'रत्न धारण करने से पहले किसी जानकार से पूछें। मंत्र और दान सबके लिए सुरक्षित हैं।';
+
+  @override
+  String get tracePalm => 'अपनी हथेली अंकित करें';
+
+  @override
+  String get handType => 'हस्त प्रकार';
+
+  @override
+  String get palmLines => 'रेखाएँ';
+
+  @override
+  String get palmMounts => 'पर्वत';
+
+  @override
+  String get markBreak => 'टूट';
+
+  @override
+  String get markChain => 'श्रृंखला';
+
+  @override
+  String get markFork => 'द्विशाखा';
+
+  @override
+  String get notPresent => 'नहीं है';
+
+  @override
+  String get takePhoto => 'हथेली की तस्वीर लें';
+
+  @override
+  String get clearPhoto => 'तस्वीर हटाएँ';
+
+  @override
+  String get readMyPalm => 'मेरी हथेली पढ़ें';
+
+  @override
+  String get dragToTrace => 'बिंदुओं को अपनी रेखाओं पर खींचें';
+
+  @override
+  String get prominence => 'कितना उभरा';
+
+  @override
+  String get listening => 'सुन रहे हैं';
+
+  @override
+  String get tapToSpeak => 'बोलने के लिए दबाएँ';
+
+  @override
+  String get speakAnswer => 'सुनाएँ';
+
+  @override
+  String get stopSpeaking => 'रोकें';
+
+  @override
+  String get voiceUnavailable => 'इस डिवाइस पर आवाज़ उपलब्ध नहीं है';
+
+  @override
+  String get swamijiIdle => 'अपनी कुंडली के बारे में पूछिए।';
+
+  @override
+  String get swamijiThinking => 'कुंडली देख रहा हूँ।';
+
+  @override
+  String get moreFeatures => 'और';
+
+  @override
+  String get computing => 'कुंडली बन रही है';
 }

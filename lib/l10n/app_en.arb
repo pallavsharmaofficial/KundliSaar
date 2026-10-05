@@ -73,7 +73,13 @@
   "choghadiyaNight": "Night Choghadiya",
   "hora": "Hora",
   "untilTime": "until {time}",
-  "@untilTime": { "placeholders": { "time": { "type": "String" } } },
+  "@untilTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "yogasAndDoshas": "Yogas and doshas",
   "whyThis": "Why the chart says this",
   "whatItMeans": "What the tradition says",
@@ -90,7 +96,13 @@
   "bride": "Bride",
   "groom": "Groom",
   "gunaScore": "{score} of 36 gunas",
-  "@gunaScore": { "placeholders": { "score": { "type": "String" } } },
+  "@gunaScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
   "mangalDosha": "Mangal dosha",
   "present": "Present",
   "absent": "Not present",
@@ -112,8 +124,100 @@
   "disclaimer": "This is traditional Vedic guidance and cultural material, not medical, legal or financial advice.",
   "accuracyNote": "Positions are computed with our own ephemeris, accurate to about an arc-second against JPL DE440s.",
   "ayanamsaValue": "Ayanamsa {value}",
-  "@ayanamsaValue": { "placeholders": { "value": { "type": "String" } } },
+  "@ayanamsaValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "profileEmpty": "No kundli saved yet.",
   "readAloud": "Read aloud",
-  "stopReading": "Stop"
+  "stopReading": "Stop",
+  "featureStrengths": "Strengths",
+  "featureTransits": "Transits",
+  "featureMuhurta": "Muhurta",
+  "featureVarshphal": "Year chart",
+  "featureNumerology": "Numbers",
+  "featurePrashna": "Prashna",
+  "featureRashifal": "Today",
+  "featureFestivals": "Festivals",
+  "featureNamkaran": "Baby name",
+  "featureRemedies": "Remedies",
+  "featureHastrekha": "Palm",
+  "shadbala": "Shadbala",
+  "ashtakavarga": "Ashtakavarga",
+  "sarvashtakavarga": "Sarvashtakavarga",
+  "bindus": "bindus",
+  "rupas": "rupas",
+  "needs": "needs",
+  "strong": "Strong",
+  "weak": "Below strength",
+  "sadeSati": "Sade Sati",
+  "runningPhase": "Phase {phase} of three",
+  "@runningPhase": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "aspectsOnNatal": "Transits touching your chart",
+  "nextReturn": "Returns to its natal sign",
+  "chooseActivity": "What is the work?",
+  "searchDays": "Days to search",
+  "bestWindows": "Best windows found",
+  "whyThisWindow": "Why",
+  "solarReturn": "Solar return",
+  "muntha": "Muntha",
+  "yearLord": "Lord of the year",
+  "chooseYear": "Year",
+  "mulank": "Mulank, the birth number",
+  "bhagyank": "Bhagyank, the destiny number",
+  "namank": "Namank, the name number",
+  "loshuGrid": "Lo Shu grid",
+  "missingNumbers": "Missing",
+  "repeatedNumbers": "Repeated",
+  "luckyColour": "Colours",
+  "luckyNumber": "Number",
+  "luckyDays": "Days",
+  "askPrashna": "Ask the moment",
+  "prashnaHint": "Type the question you are holding",
+  "castNow": "Cast the chart for now",
+  "theLeaning": "What the chart leans to",
+  "whatItReads": "What it read",
+  "dailyReading": "Today for you",
+  "tara": "Tara",
+  "upcoming": "Coming up",
+  "wholeYear": "Whole year",
+  "syllable": "Syllable",
+  "suggestedNames": "Names that fit",
+  "otherPadas": "The other padas",
+  "japaCount": "Japa count",
+  "daan": "What to give",
+  "yantra": "Yantra",
+  "simpleAct": "Do this today",
+  "gemstoneWarning": "Ask someone knowledgeable before wearing a stone. Mantra and giving are safe for anyone.",
+  "tracePalm": "Trace your palm",
+  "handType": "Hand type",
+  "palmLines": "The lines",
+  "palmMounts": "The mounts",
+  "markBreak": "Break",
+  "markChain": "Chained",
+  "markFork": "Forked",
+  "notPresent": "Not present",
+  "takePhoto": "Use a photo of my palm",
+  "clearPhoto": "Remove the photo",
+  "readMyPalm": "Read my palm",
+  "dragToTrace": "Drag the dots onto your own lines",
+  "prominence": "How raised",
+  "listening": "Listening",
+  "tapToSpeak": "Tap to speak",
+  "speakAnswer": "Read it aloud",
+  "stopSpeaking": "Stop",
+  "voiceUnavailable": "Voice is not available on this device",
+  "swamijiIdle": "Ask me about your kundli.",
+  "swamijiThinking": "Let me look at the chart.",
+  "moreFeatures": "More",
+  "computing": "Casting the chart"
 }

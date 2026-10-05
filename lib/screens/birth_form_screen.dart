@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../data/places_repository.dart';
 import '../data/time_zones.dart';
 import '../l10n/app_localizations.dart';
+import '../engine/jyotish/chart.dart';
 import '../models/saved_profile.dart';
 import '../state/profiles_cubit.dart';
 import '../widgets/common.dart';
+import '../widgets/nakshatra_loader.dart';
 
 /// Three things are asked for and nothing else: a name, a moment, a place.
 class BirthFormScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class _BirthFormScreenState extends State<BirthFormScreen> {
   TimeOfDay _time = const TimeOfDay(hour: 9, minute: 0);
   Place? _place;
   bool _approximate = false;
+  bool _casting = false;
 
   @override
   void initState() {
@@ -76,6 +79,10 @@ class _BirthFormScreenState extends State<BirthFormScreen> {
       _time.minute,
     );
     final Duration offset = TimeZones.offsetFor(place.timeZoneId, local);
+    setState(() => _casting = true);
+    // The chart is cast here rather than on the next screen, so the loader is
+    // covering real work and not a timer.
+    await Future<void>.delayed(const Duration(milliseconds: 16));
     final SavedProfile profile = SavedProfile(
       id:
           widget.initial?.id ??
@@ -86,8 +93,11 @@ class _BirthFormScreenState extends State<BirthFormScreen> {
       place: place,
       timeIsApproximate: _approximate,
     );
+    computeKundli(profile.toBirthData());
+    if (!mounted) return;
     await context.read<ProfilesCubit>().save(profile);
     if (!mounted) return;
+    setState(() => _casting = false);
     context.pushReplacement('/chart/${profile.id}');
   }
 
@@ -110,6 +120,13 @@ class _BirthFormScreenState extends State<BirthFormScreen> {
               ),
             ),
           );
+
+    if (_casting) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l.newChart)),
+        body: NakshatraLoadingView(message: l.computing),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l.newChart)),

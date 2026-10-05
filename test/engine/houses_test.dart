@@ -8,17 +8,23 @@ import 'package:kundlisaar/engine/astro/time.dart';
 
 /// Altitude of an ecliptic point of date, for the brute-force check.
 double _altitudeOfEclipticPoint(
-    double longitude, Instant instant, double latitude, double placeLongitude) {
+  double longitude,
+  Instant instant,
+  double latitude,
+  double placeLongitude,
+) {
   final double t = instant.centuriesTt;
-  final List<double> eq =
-      eclipticToEquatorial(longitude, 0, trueObliquity(t));
+  final List<double> eq = eclipticToEquatorial(longitude, 0, trueObliquity(t));
   final double lst = norm360(
-      greenwichApparentSiderealTime(instant.julianDayUt, t) + placeLongitude);
+    greenwichApparentSiderealTime(instant.julianDayUt, t) + placeLongitude,
+  );
   final double h = norm180(lst - eq[0]) * degToRad;
   final double dec = eq[1] * degToRad;
   final double phi = latitude * degToRad;
-  return math.asin(math.sin(phi) * math.sin(dec) +
-          math.cos(phi) * math.cos(dec) * math.cos(h)) *
+  return math.asin(
+        math.sin(phi) * math.sin(dec) +
+            math.cos(phi) * math.cos(dec) * math.cos(h),
+      ) *
       radToDeg;
 }
 
@@ -32,24 +38,46 @@ void main() {
     ];
     for (final List<double> place in places) {
       for (int hour = 0; hour < 24; hour += 3) {
-        final Instant instant =
-            Instant.fromUtc(DateTime.utc(1994, 7, 21, hour, 17));
+        final Instant instant = Instant.fromUtc(
+          DateTime.utc(1994, 7, 21, hour, 17),
+        );
         final Angles angles = computeAngles(instant, place[0], place[1]);
         final double altitude = _altitudeOfEclipticPoint(
-            angles.ascendant, instant, place[0], place[1]);
-        expect(altitude.abs(), lessThan(0.02),
-            reason: 'ascendant should sit on the horizon at ${place[0]}');
+          angles.ascendant,
+          instant,
+          place[0],
+          place[1],
+        );
+        expect(
+          altitude.abs(),
+          lessThan(0.02),
+          reason: 'ascendant should sit on the horizon at ${place[0]}',
+        );
         // Degrees that follow the ascendant have not risen yet; degrees
         // behind it are already up. That is what tells the rising point from
         // the setting one.
         final double ahead = _altitudeOfEclipticPoint(
-            norm360(angles.ascendant + 1), instant, place[0], place[1]);
+          norm360(angles.ascendant + 1),
+          instant,
+          place[0],
+          place[1],
+        );
         final double behind = _altitudeOfEclipticPoint(
-            norm360(angles.ascendant - 1), instant, place[0], place[1]);
-        expect(ahead, lessThan(0),
-            reason: 'the degree after the lagna is still below the horizon');
-        expect(behind, greaterThan(0),
-            reason: 'the degree before the lagna has already risen');
+          norm360(angles.ascendant - 1),
+          instant,
+          place[0],
+          place[1],
+        );
+        expect(
+          ahead,
+          lessThan(0),
+          reason: 'the degree after the lagna is still below the horizon',
+        );
+        expect(
+          behind,
+          greaterThan(0),
+          reason: 'the degree before the lagna has already risen',
+        );
       }
     }
   });
@@ -58,7 +86,10 @@ void main() {
     final Instant instant = Instant.fromUtc(DateTime.utc(2001, 3, 14, 6, 30));
     final Angles angles = computeAngles(instant, 19.0760, 72.8777);
     final List<double> eq = eclipticToEquatorial(
-        angles.midheaven, 0, trueObliquity(instant.centuriesTt));
+      angles.midheaven,
+      0,
+      trueObliquity(instant.centuriesTt),
+    );
     expect(angleDiff(eq[0], angles.localSiderealTime).abs(), lessThan(0.001));
   });
 

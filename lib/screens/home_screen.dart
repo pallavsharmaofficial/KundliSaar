@@ -41,48 +41,10 @@ class HomeScreen extends StatelessWidget {
                   icon: const Icon(Icons.auto_awesome_outlined),
                   label: Text(l.newChart),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: _Tile(
-                        icon: Icons.calendar_month_outlined,
-                        label: l.tabPanchang,
-                        onTap: () => context.push('/panchang'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _Tile(
-                        icon: Icons.favorite_outline,
-                        label: l.tabMatch,
-                        onTap: () => context.push('/match'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _Tile(
-                        icon: Icons.menu_book_outlined,
-                        label: l.tabLearn,
-                        onTap: () => context.push('/learn'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(l.savedCharts, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                if (profiles.isEmpty)
-                  Panel(
-                    child: Row(
-                      children: <Widget>[
-                        const MandalaMark(size: 56),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(l.profileEmpty)),
-                      ],
-                    ),
-                  )
-                else
+                if (profiles.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 18),
+                  Text(l.savedCharts, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
                   ...profiles.map(
                     (SavedProfile profile) => Card(
                       child: ListTile(
@@ -105,6 +67,94 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                ] else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Panel(
+                      child: Row(
+                        children: <Widget>[
+                          const MandalaMark(size: 56),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(l.profileEmpty)),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 22),
+                _Section(
+                  title: l.tabChart,
+                  tiles: <_Tile>[
+                    _Tile(Icons.today_outlined, l.featureRashifal, '/today'),
+                    _Tile(
+                      Icons.speed_outlined,
+                      l.featureStrengths,
+                      '/strengths',
+                    ),
+                    _Tile(
+                      Icons.sync_alt_outlined,
+                      l.featureTransits,
+                      '/transits',
+                    ),
+                    _Tile(
+                      Icons.cake_outlined,
+                      l.featureVarshphal,
+                      '/varshphal',
+                    ),
+                    _Tile(
+                      Icons.healing_outlined,
+                      l.featureRemedies,
+                      '/remedies',
+                    ),
+                  ],
+                ),
+                _Section(
+                  title: l.tabPanchang,
+                  tiles: <_Tile>[
+                    _Tile(
+                      Icons.calendar_month_outlined,
+                      l.tabPanchang,
+                      '/panchang',
+                    ),
+                    _Tile(
+                      Icons.schedule_outlined,
+                      l.featureMuhurta,
+                      '/muhurta',
+                    ),
+                    _Tile(
+                      Icons.celebration_outlined,
+                      l.featureFestivals,
+                      '/festivals',
+                    ),
+                  ],
+                ),
+                _Section(
+                  title: l.matchTitle,
+                  tiles: <_Tile>[
+                    _Tile(Icons.favorite_outline, l.tabMatch, '/match'),
+                    _Tile(
+                      Icons.child_care_outlined,
+                      l.featureNamkaran,
+                      '/namkaran',
+                    ),
+                  ],
+                ),
+                _Section(
+                  title: l.moreFeatures,
+                  tiles: <_Tile>[
+                    _Tile(
+                      Icons.back_hand_outlined,
+                      l.featureHastrekha,
+                      '/hastrekha',
+                    ),
+                    _Tile(
+                      Icons.pin_outlined,
+                      l.featureNumerology,
+                      '/numerology',
+                    ),
+                    _Tile(Icons.help_outline, l.featurePrashna, '/prashna'),
+                    _Tile(Icons.menu_book_outlined, l.tabLearn, '/learn'),
+                  ],
+                ),
               ],
             ),
           ),
@@ -115,21 +165,65 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.icon, required this.label, required this.onTap});
+class _Tile {
+  const _Tile(this.icon, this.label, this.route);
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final String route;
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.tiles});
+
+  final String title;
+  final List<_Tile> tiles;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            title,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              letterSpacing: 0.4,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: <Widget>[
+            for (final _Tile tile in tiles) _FeatureTile(tile: tile),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class _FeatureTile extends StatelessWidget {
+  const _FeatureTile({required this.tile});
+
+  final _Tile tile;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final double width = (MediaQuery.of(context).size.width - 32 - 20) / 3;
     return InkWell(
-      onTap: onTap,
+      onTap: () => context.push(tile.route),
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+        width: width.clamp(96.0, 150.0),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -138,11 +232,13 @@ class _Tile extends StatelessWidget {
         ),
         child: Column(
           children: <Widget>[
-            Icon(icon, color: theme.colorScheme.primary),
+            Icon(tile.icon, color: theme.colorScheme.primary),
             const SizedBox(height: 8),
             Text(
-              label,
+              tile.label,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium,
             ),
           ],

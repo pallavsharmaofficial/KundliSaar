@@ -73,7 +73,13 @@
   "choghadiyaNight": "रात का चौघड़िया",
   "hora": "होरा",
   "untilTime": "{time} तक",
-  "@untilTime": { "placeholders": { "time": { "type": "String" } } },
+  "@untilTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "yogasAndDoshas": "योग और दोष",
   "whyThis": "कुंडली में आधार",
   "whatItMeans": "परंपरा क्या कहती है",
@@ -90,7 +96,13 @@
   "bride": "वधू",
   "groom": "वर",
   "gunaScore": "36 में से {score} गुण",
-  "@gunaScore": { "placeholders": { "score": { "type": "String" } } },
+  "@gunaScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
   "mangalDosha": "मंगल दोष",
   "present": "है",
   "absent": "नहीं है",
@@ -112,8 +124,100 @@
   "disclaimer": "यह पारंपरिक वैदिक मार्गदर्शन और सांस्कृतिक सामग्री है, चिकित्सा, क़ानूनी या वित्तीय सलाह नहीं।",
   "accuracyNote": "ग्रह स्थितियाँ हमारे अपने गणित से बनती हैं, JPL DE440s की तुलना में लगभग एक विकला तक सटीक।",
   "ayanamsaValue": "अयनांश {value}",
-  "@ayanamsaValue": { "placeholders": { "value": { "type": "String" } } },
+  "@ayanamsaValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "profileEmpty": "अभी कोई कुंडली सहेजी नहीं गई।",
   "readAloud": "सुनाएँ",
-  "stopReading": "रोकें"
+  "stopReading": "रोकें",
+  "featureStrengths": "बल",
+  "featureTransits": "गोचर",
+  "featureMuhurta": "मुहूर्त",
+  "featureVarshphal": "वर्षफल",
+  "featureNumerology": "अंक",
+  "featurePrashna": "प्रश्न",
+  "featureRashifal": "आज",
+  "featureFestivals": "त्योहार",
+  "featureNamkaran": "नामकरण",
+  "featureRemedies": "उपाय",
+  "featureHastrekha": "हस्तरेखा",
+  "shadbala": "षड्बल",
+  "ashtakavarga": "अष्टकवर्ग",
+  "sarvashtakavarga": "सर्वाष्टकवर्ग",
+  "bindus": "बिंदु",
+  "rupas": "रूप",
+  "needs": "चाहिए",
+  "strong": "बलवान",
+  "weak": "बल से कम",
+  "sadeSati": "साढ़ेसाती",
+  "runningPhase": "तीन में से {phase}रा चरण",
+  "@runningPhase": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "aspectsOnNatal": "आपकी कुंडली पर गोचर",
+  "nextReturn": "अपनी जन्म राशि में वापसी",
+  "chooseActivity": "कौन सा कार्य?",
+  "searchDays": "कितने दिन देखें",
+  "bestWindows": "सबसे शुभ समय",
+  "whyThisWindow": "क्यों",
+  "solarReturn": "सूर्य वापसी",
+  "muntha": "मुन्था",
+  "yearLord": "वर्षेश",
+  "chooseYear": "वर्ष",
+  "mulank": "मूलांक",
+  "bhagyank": "भाग्यांक",
+  "namank": "नामांक",
+  "loshuGrid": "लो शू ग्रिड",
+  "missingNumbers": "अनुपस्थित",
+  "repeatedNumbers": "बार-बार",
+  "luckyColour": "रंग",
+  "luckyNumber": "अंक",
+  "luckyDays": "दिन",
+  "askPrashna": "प्रश्न पूछें",
+  "prashnaHint": "जो प्रश्न मन में है, वह लिखें",
+  "castNow": "अभी की कुंडली बनाएँ",
+  "theLeaning": "कुंडली का संकेत",
+  "whatItReads": "किससे पढ़ा",
+  "dailyReading": "आज आपके लिए",
+  "tara": "तारा",
+  "upcoming": "आगे आने वाले",
+  "wholeYear": "पूरा वर्ष",
+  "syllable": "अक्षर",
+  "suggestedNames": "उपयुक्त नाम",
+  "otherPadas": "अन्य पाद",
+  "japaCount": "जप संख्या",
+  "daan": "दान",
+  "yantra": "यंत्र",
+  "simpleAct": "आज यह करें",
+  "gemstoneWarning": "रत्न धारण करने से पहले किसी जानकार से पूछें। मंत्र और दान सबके लिए सुरक्षित हैं।",
+  "tracePalm": "अपनी हथेली अंकित करें",
+  "handType": "हस्त प्रकार",
+  "palmLines": "रेखाएँ",
+  "palmMounts": "पर्वत",
+  "markBreak": "टूट",
+  "markChain": "श्रृंखला",
+  "markFork": "द्विशाखा",
+  "notPresent": "नहीं है",
+  "takePhoto": "हथेली की तस्वीर लें",
+  "clearPhoto": "तस्वीर हटाएँ",
+  "readMyPalm": "मेरी हथेली पढ़ें",
+  "dragToTrace": "बिंदुओं को अपनी रेखाओं पर खींचें",
+  "prominence": "कितना उभरा",
+  "listening": "सुन रहे हैं",
+  "tapToSpeak": "बोलने के लिए दबाएँ",
+  "speakAnswer": "सुनाएँ",
+  "stopSpeaking": "रोकें",
+  "voiceUnavailable": "इस डिवाइस पर आवाज़ उपलब्ध नहीं है",
+  "swamijiIdle": "अपनी कुंडली के बारे में पूछिए।",
+  "swamijiThinking": "कुंडली देख रहा हूँ।",
+  "moreFeatures": "और",
+  "computing": "कुंडली बन रही है"
 }

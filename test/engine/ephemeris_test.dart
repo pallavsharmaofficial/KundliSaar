@@ -8,9 +8,9 @@ import 'package:kundlisaar/engine/astro/ephemeris.dart';
 import 'package:kundlisaar/engine/astro/time.dart';
 
 /// Reference positions generated from JPL DE440s; see tools/ephemeris.
-Map<String, dynamic> loadFixtures() => jsonDecode(
-    File('test/fixtures/ephemeris_fixtures.json').readAsStringSync())
-    as Map<String, dynamic>;
+Map<String, dynamic> loadFixtures() =>
+    jsonDecode(File('test/fixtures/ephemeris_fixtures.json').readAsStringSync())
+        as Map<String, dynamic>;
 
 const Map<String, Graha> _grahaByName = <String, Graha>{
   'sun': Graha.sun,
@@ -60,10 +60,16 @@ void main() {
           worstLon = math.max(worstLon, dLon);
           worstLat = math.max(worstLat, dLat);
         }
-        expect(worstLon, lessThan(_toleranceArcsec[entry.key]!),
-            reason: 'worst longitude error for ${entry.key}');
-        expect(worstLat, lessThan(_toleranceArcsec[entry.key]!),
-            reason: 'worst latitude error for ${entry.key}');
+        expect(
+          worstLon,
+          lessThan(_toleranceArcsec[entry.key]!),
+          reason: 'worst longitude error for ${entry.key}',
+        );
+        expect(
+          worstLat,
+          lessThan(_toleranceArcsec[entry.key]!),
+          reason: 'worst latitude error for ${entry.key}',
+        );
       });
     }
   });
@@ -83,8 +89,11 @@ void main() {
     for (final MapEntry<int, double> entry in equinoxes.entries) {
       final double t = (entry.value - 2451545.0) / 36525.0;
       final double longitude = apparentOfDate(Graha.sun, t)[0];
-      expect((norm180(longitude) * 3600).abs(), lessThan(2.0),
-          reason: 'March equinox of ${entry.key}');
+      expect(
+        (norm180(longitude) * 3600).abs(),
+        lessThan(2.0),
+        reason: 'March equinox of ${entry.key}',
+      );
     }
   });
 
@@ -102,8 +111,11 @@ void main() {
         fixtures['fit_report'] as Map<String, dynamic>;
     for (final MapEntry<String, dynamic> entry in report.entries) {
       final Map<String, dynamic> body = entry.value as Map<String, dynamic>;
-      expect((body['lon_rms_arcsec'] as num).toDouble(), lessThan(2.0),
-          reason: '${entry.key} longitude fit');
+      expect(
+        (body['lon_rms_arcsec'] as num).toDouble(),
+        lessThan(2.0),
+        reason: '${entry.key} longitude fit',
+      );
     }
   });
 }

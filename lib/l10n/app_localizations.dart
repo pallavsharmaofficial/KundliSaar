@@ -775,6 +775,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop'**
   String get stopReading;
+
+  /// No description provided for @featureStrengths.
+  ///
+  /// In en, this message translates to:
+  /// **'Strengths'**
+  String get featureStrengths;
+
+  /// No description provided for @featureTransits.
+  ///
+  /// In en, this message translates to:
+  /// **'Transits'**
+  String get featureTransits;
+
+  /// No description provided for @featureMuhurta.
+  ///
+  /// In en, this message translates to:
+  /// **'Muhurta'**
+  String get featureMuhurta;
+
+  /// No description provided for @featureVarshphal.
+  ///
+  /// In en, this message translates to:
+  /// **'Year chart'**
+  String get featureVarshphal;
+
+  /// No description provided for @featureNumerology.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbers'**
+  String get featureNumerology;
+
+  /// No description provided for @featurePrashna.
+  ///
+  /// In en, this message translates to:
+  /// **'Prashna'**
+  String get featurePrashna;
+
+  /// No description provided for @featureRashifal.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get featureRashifal;
+
+  /// No description provided for @featureFestivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Festivals'**
+  String get featureFestivals;
+
+  /// No description provided for @featureNamkaran.
+  ///
+  /// In en, this message translates to:
+  /// **'Baby name'**
+  String get featureNamkaran;
+
+  /// No description provided for @featureRemedies.
+  ///
+  /// In en, this message translates to:
+  /// **'Remedies'**
+  String get featureRemedies;
+
+  /// No description provided for @featureHastrekha.
+  ///
+  /// In en, this message translates to:
+  /// **'Palm'**
+  String get featureHastrekha;
+
+  /// No description provided for @shadbala.
+  ///
+  /// In en, this message translates to:
+  /// **'Shadbala'**
+  String get shadbala;
+
+  /// No description provided for @ashtakavarga.
+  ///
+  /// In en, this message translates to:
+  /// **'Ashtakavarga'**
+  String get ashtakavarga;
+
+  /// No description provided for @sarvashtakavarga.
+  ///
+  /// In en, this message translates to:
+  /// **'Sarvashtakavarga'**
+  String get sarvashtakavarga;
+
+  /// No description provided for @bindus.
+  ///
+  /// In en, this message translates to:
+  /// **'bindus'**
+  String get bindus;
+
+  /// No description provided for @rupas.
+  ///
+  /// In en, this message translates to:
+  /// **'rupas'**
+  String get rupas;
+
+  /// No description provided for @needs.
+  ///
+  /// In en, this message translates to:
+  /// **'needs'**
+  String get needs;
+
+  /// No description provided for @strong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get strong;
+
+  /// No description provided for @weak.
+  ///
+  /// In en, this message translates to:
+  /// **'Below strength'**
+  String get weak;
+
+  /// No description provided for @sadeSati.
+  ///
+  /// In en, this message translates to:
+  /// **'Sade Sati'**
+  String get sadeSati;
+
+  /// No description provided for @runningPhase.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase {phase} of three'**
+  String runningPhase(String phase);
+
+  /// No description provided for @aspectsOnNatal.
+  ///
+  /// In en, this message translates to:
+  /// **'Transits touching your chart'**
+  String get aspectsOnNatal;
+
+  /// No description provided for @nextReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns to its natal sign'**
+  String get nextReturn;
+
+  /// No description provided for @chooseActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the work?'**
+  String get chooseActivity;
+
+  /// No description provided for @searchDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days to search'**
+  String get searchDays;
+
+  /// No description provided for @bestWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Best windows found'**
+  String get bestWindows;
+
+  /// No description provided for @whyThisWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get whyThisWindow;
+
+  /// No description provided for @solarReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Solar return'**
+  String get solarReturn;
+
+  /// No description provided for @muntha.
+  ///
+  /// In en, this message translates to:
+  /// **'Muntha'**
+  String get muntha;
+
+  /// No description provided for @yearLord.
+  ///
+  /// In en, this message translates to:
+  /// **'Lord of the year'**
+  String get yearLord;
+
+  /// No description provided for @chooseYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get chooseYear;
+
+  /// No description provided for @mulank.
+  ///
+  /// In en, this message translates to:
+  /// **'Mulank, the birth number'**
+  String get mulank;
+
+  /// No description provided for @bhagyank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bhagyank, the destiny number'**
+  String get bhagyank;
+
+  /// No description provided for @namank.
+  ///
+  /// In en, this message translates to:
+  /// **'Namank, the name number'**
+  String get namank;
+
+  /// No description provided for @loshuGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Lo Shu grid'**
+  String get loshuGrid;
+
+  /// No description provided for @missingNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get missingNumbers;
+
+  /// No description provided for @repeatedNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeated'**
+  String get repeatedNumbers;
+
+  /// No description provided for @luckyColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colours'**
+  String get luckyColour;
+
+  /// No description provided for @luckyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get luckyNumber;
+
+  /// No description provided for @luckyDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get luckyDays;
+
+  /// No description provided for @askPrashna.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the moment'**
+  String get askPrashna;
+
+  /// No description provided for @prashnaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the question you are holding'**
+  String get prashnaHint;
+
+  /// No description provided for @castNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cast the chart for now'**
+  String get castNow;
+
+  /// No description provided for @theLeaning.
+  ///
+  /// In en, this message translates to:
+  /// **'What the chart leans to'**
+  String get theLeaning;
+
+  /// No description provided for @whatItReads.
+  ///
+  /// In en, this message translates to:
+  /// **'What it read'**
+  String get whatItReads;
+
+  /// No description provided for @dailyReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Today for you'**
+  String get dailyReading;
+
+  /// No description provided for @tara.
+  ///
+  /// In en, this message translates to:
+  /// **'Tara'**
+  String get tara;
+
+  /// No description provided for @upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming up'**
+  String get upcoming;
+
+  /// No description provided for @wholeYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole year'**
+  String get wholeYear;
+
+  /// No description provided for @syllable.
+  ///
+  /// In en, this message translates to:
+  /// **'Syllable'**
+  String get syllable;
+
+  /// No description provided for @suggestedNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Names that fit'**
+  String get suggestedNames;
+
+  /// No description provided for @otherPadas.
+  ///
+  /// In en, this message translates to:
+  /// **'The other padas'**
+  String get otherPadas;
+
+  /// No description provided for @japaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Japa count'**
+  String get japaCount;
+
+  /// No description provided for @daan.
+  ///
+  /// In en, this message translates to:
+  /// **'What to give'**
+  String get daan;
+
+  /// No description provided for @yantra.
+  ///
+  /// In en, this message translates to:
+  /// **'Yantra'**
+  String get yantra;
+
+  /// No description provided for @simpleAct.
+  ///
+  /// In en, this message translates to:
+  /// **'Do this today'**
+  String get simpleAct;
+
+  /// No description provided for @gemstoneWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask someone knowledgeable before wearing a stone. Mantra and giving are safe for anyone.'**
+  String get gemstoneWarning;
+
+  /// No description provided for @tracePalm.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace your palm'**
+  String get tracePalm;
+
+  /// No description provided for @handType.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand type'**
+  String get handType;
+
+  /// No description provided for @palmLines.
+  ///
+  /// In en, this message translates to:
+  /// **'The lines'**
+  String get palmLines;
+
+  /// No description provided for @palmMounts.
+  ///
+  /// In en, this message translates to:
+  /// **'The mounts'**
+  String get palmMounts;
+
+  /// No description provided for @markBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Break'**
+  String get markBreak;
+
+  /// No description provided for @markChain.
+  ///
+  /// In en, this message translates to:
+  /// **'Chained'**
+  String get markChain;
+
+  /// No description provided for @markFork.
+  ///
+  /// In en, this message translates to:
+  /// **'Forked'**
+  String get markFork;
+
+  /// No description provided for @notPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not present'**
+  String get notPresent;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a photo of my palm'**
+  String get takePhoto;
+
+  /// No description provided for @clearPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the photo'**
+  String get clearPhoto;
+
+  /// No description provided for @readMyPalm.
+  ///
+  /// In en, this message translates to:
+  /// **'Read my palm'**
+  String get readMyPalm;
+
+  /// No description provided for @dragToTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the dots onto your own lines'**
+  String get dragToTrace;
+
+  /// No description provided for @prominence.
+  ///
+  /// In en, this message translates to:
+  /// **'How raised'**
+  String get prominence;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get listening;
+
+  /// No description provided for @tapToSpeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to speak'**
+  String get tapToSpeak;
+
+  /// No description provided for @speakAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Read it aloud'**
+  String get speakAnswer;
+
+  /// No description provided for @stopSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stopSpeaking;
+
+  /// No description provided for @voiceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice is not available on this device'**
+  String get voiceUnavailable;
+
+  /// No description provided for @swamijiIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me about your kundli.'**
+  String get swamijiIdle;
+
+  /// No description provided for @swamijiThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Let me look at the chart.'**
+  String get swamijiThinking;
+
+  /// No description provided for @moreFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreFeatures;
+
+  /// No description provided for @computing.
+  ///
+  /// In en, this message translates to:
+  /// **'Casting the chart'**
+  String get computing;
 }
 
 class _AppLocalizationsDelegate

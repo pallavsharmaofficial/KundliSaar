@@ -359,4 +359,244 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stopReading => 'Stop';
+
+  @override
+  String get featureStrengths => 'Strengths';
+
+  @override
+  String get featureTransits => 'Transits';
+
+  @override
+  String get featureMuhurta => 'Muhurta';
+
+  @override
+  String get featureVarshphal => 'Year chart';
+
+  @override
+  String get featureNumerology => 'Numbers';
+
+  @override
+  String get featurePrashna => 'Prashna';
+
+  @override
+  String get featureRashifal => 'Today';
+
+  @override
+  String get featureFestivals => 'Festivals';
+
+  @override
+  String get featureNamkaran => 'Baby name';
+
+  @override
+  String get featureRemedies => 'Remedies';
+
+  @override
+  String get featureHastrekha => 'Palm';
+
+  @override
+  String get shadbala => 'Shadbala';
+
+  @override
+  String get ashtakavarga => 'Ashtakavarga';
+
+  @override
+  String get sarvashtakavarga => 'Sarvashtakavarga';
+
+  @override
+  String get bindus => 'bindus';
+
+  @override
+  String get rupas => 'rupas';
+
+  @override
+  String get needs => 'needs';
+
+  @override
+  String get strong => 'Strong';
+
+  @override
+  String get weak => 'Below strength';
+
+  @override
+  String get sadeSati => 'Sade Sati';
+
+  @override
+  String runningPhase(String phase) {
+    return 'Phase $phase of three';
+  }
+
+  @override
+  String get aspectsOnNatal => 'Transits touching your chart';
+
+  @override
+  String get nextReturn => 'Returns to its natal sign';
+
+  @override
+  String get chooseActivity => 'What is the work?';
+
+  @override
+  String get searchDays => 'Days to search';
+
+  @override
+  String get bestWindows => 'Best windows found';
+
+  @override
+  String get whyThisWindow => 'Why';
+
+  @override
+  String get solarReturn => 'Solar return';
+
+  @override
+  String get muntha => 'Muntha';
+
+  @override
+  String get yearLord => 'Lord of the year';
+
+  @override
+  String get chooseYear => 'Year';
+
+  @override
+  String get mulank => 'Mulank, the birth number';
+
+  @override
+  String get bhagyank => 'Bhagyank, the destiny number';
+
+  @override
+  String get namank => 'Namank, the name number';
+
+  @override
+  String get loshuGrid => 'Lo Shu grid';
+
+  @override
+  String get missingNumbers => 'Missing';
+
+  @override
+  String get repeatedNumbers => 'Repeated';
+
+  @override
+  String get luckyColour => 'Colours';
+
+  @override
+  String get luckyNumber => 'Number';
+
+  @override
+  String get luckyDays => 'Days';
+
+  @override
+  String get askPrashna => 'Ask the moment';
+
+  @override
+  String get prashnaHint => 'Type the question you are holding';
+
+  @override
+  String get castNow => 'Cast the chart for now';
+
+  @override
+  String get theLeaning => 'What the chart leans to';
+
+  @override
+  String get whatItReads => 'What it read';
+
+  @override
+  String get dailyReading => 'Today for you';
+
+  @override
+  String get tara => 'Tara';
+
+  @override
+  String get upcoming => 'Coming up';
+
+  @override
+  String get wholeYear => 'Whole year';
+
+  @override
+  String get syllable => 'Syllable';
+
+  @override
+  String get suggestedNames => 'Names that fit';
+
+  @override
+  String get otherPadas => 'The other padas';
+
+  @override
+  String get japaCount => 'Japa count';
+
+  @override
+  String get daan => 'What to give';
+
+  @override
+  String get yantra => 'Yantra';
+
+  @override
+  String get simpleAct => 'Do this today';
+
+  @override
+  String get gemstoneWarning =>
+      'Ask someone knowledgeable before wearing a stone. Mantra and giving are safe for anyone.';
+
+  @override
+  String get tracePalm => 'Trace your palm';
+
+  @override
+  String get handType => 'Hand type';
+
+  @override
+  String get palmLines => 'The lines';
+
+  @override
+  String get palmMounts => 'The mounts';
+
+  @override
+  String get markBreak => 'Break';
+
+  @override
+  String get markChain => 'Chained';
+
+  @override
+  String get markFork => 'Forked';
+
+  @override
+  String get notPresent => 'Not present';
+
+  @override
+  String get takePhoto => 'Use a photo of my palm';
+
+  @override
+  String get clearPhoto => 'Remove the photo';
+
+  @override
+  String get readMyPalm => 'Read my palm';
+
+  @override
+  String get dragToTrace => 'Drag the dots onto your own lines';
+
+  @override
+  String get prominence => 'How raised';
+
+  @override
+  String get listening => 'Listening';
+
+  @override
+  String get tapToSpeak => 'Tap to speak';
+
+  @override
+  String get speakAnswer => 'Read it aloud';
+
+  @override
+  String get stopSpeaking => 'Stop';
+
+  @override
+  String get voiceUnavailable => 'Voice is not available on this device';
+
+  @override
+  String get swamijiIdle => 'Ask me about your kundli.';
+
+  @override
+  String get swamijiThinking => 'Let me look at the chart.';
+
+  @override
+  String get moreFeatures => 'More';
+
+  @override
+  String get computing => 'Casting the chart';
 }
