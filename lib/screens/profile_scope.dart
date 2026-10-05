@@ -117,18 +117,17 @@ class DeferredBuilder<T> extends StatefulWidget {
 }
 
 class _DeferredBuilderState<T> extends State<DeferredBuilder<T>> {
-  late Future<T> _future = _run();
+  late final Future<T> _future = _run();
 
   Future<T> _run() async {
     await Future<void>.delayed(const Duration(milliseconds: 32));
     return widget.work();
   }
 
-  @override
-  void didUpdateWidget(covariant DeferredBuilder<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.work != widget.work) _future = _run();
-  }
+  // The work is deliberately not re-run when the parent rebuilds: a closure is
+  // never equal to the one before it, so comparing them would restart the
+  // computation on every frame. Callers that need a fresh run pass a new key,
+  // which gives this a fresh state anyway.
 
   @override
   Widget build(BuildContext context) => FutureBuilder<T>(
