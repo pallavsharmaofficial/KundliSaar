@@ -11,8 +11,11 @@ permissions:
   id-token: write
 
 concurrency:
+  # One deployment at a time, but a run already publishing is allowed to
+  # finish: cancelling it leaves the site on the previous version and marks
+  # the run failed, which is what happened on 5 October.
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
