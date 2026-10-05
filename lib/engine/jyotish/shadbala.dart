@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
 import '../astro/angles.dart';
+import '../astro/ayanamsa.dart';
 import '../astro/ephemeris.dart';
 import '../astro/frames.dart';
 import '../astro/rise_set.dart';
+import '../astro/time.dart';
 import 'chart.dart';
 import 'graha_data.dart';
 import 'rashi.dart';
@@ -287,27 +289,65 @@ double _tribhagaBala(
   return graha == ruler ? 60 : 0;
 }
 
+const List<Graha> _weekdayLords = <Graha>[
+  Graha.sun,
+  Graha.moon,
+  Graha.mars,
+  Graha.mercury,
+  Graha.jupiter,
+  Graha.venus,
+  Graha.saturn,
+];
+
+/// The last time before [jdUt] that the sidereal Sun entered a sign.
+///
+/// The solar year begins when it enters Mesha and the solar month when it
+/// enters any sign; the lords of the year and the month are the lords of the
+/// weekdays those two moments fell on. That means actually looking for the
+/// ingress rather than counting civil years off an epoch.
+double _lastIngress(double jdUt, Ayanamsa ayanamsa, {required bool yearStart}) {
+  int signAt(double jd) {
+    final Instant instant = Instant.fromJulianDayUt(jd);
+    final double sun = toSidereal(
+      positionOf(Graha.sun, instant).tropicalLongitude,
+      ayanamsa,
+      instant.centuriesTt,
+    );
+    return (sun / 30).floor() % 12;
+  }
+
+  final int target = yearStart ? 0 : signAt(jdUt);
+  double high = jdUt;
+  for (double back = 5; back <= 400; back += 5) {
+    final double jd = jdUt - back;
+    if (signAt(jd) != target) {
+      double low = jd;
+      for (int i = 0; i < 24; i++) {
+        final double mid = (low + high) / 2;
+        if (signAt(mid) == target) {
+          high = mid;
+        } else {
+          low = mid;
+        }
+      }
+      return high;
+    }
+    high = jd;
+  }
+  return jdUt;
+}
+
 /// Lords of the year, month, day and hour, worth 15, 30, 45 and 60 virupas.
 double _varshadiBala(Kundli kundli, Graha graha, double jdUt, double sunrise) {
-  const List<Graha> weekdayLords = <Graha>[
-    Graha.sun,
-    Graha.moon,
-    Graha.mars,
-    Graha.mercury,
-    Graha.jupiter,
-    Graha.venus,
-    Graha.saturn,
-  ];
   final int weekday = (jdUt + 1.5).floor() % 7;
   double total = 0;
-  if (graha == weekdayLords[weekday]) total += 45;
+  if (graha == _weekdayLords[weekday]) total += 45;
 
-  // Year and month lords, counted from the solar year and month that were
-  // running at birth, by the weekday each began on.
-  final int yearIndex = ((jdUt - 2415020.5) / 365.25).floor();
-  if (graha == weekdayLords[(yearIndex * 3) % 7]) total += 15;
-  final int monthIndex = (kundli.grahas[Graha.sun]!.rashi.index);
-  if (graha == weekdayLords[(yearIndex * 3 + monthIndex * 2) % 7]) total += 30;
+  final Ayanamsa ayanamsa = kundli.ayanamsa;
+  final double yearStart = _lastIngress(jdUt, ayanamsa, yearStart: true);
+  final double monthStart = _lastIngress(jdUt, ayanamsa, yearStart: false);
+  if (graha == _weekdayLords[(yearStart + 1.5).floor() % 7]) total += 15;
+  if (graha == _weekdayLords[(monthStart + 1.5).floor() % 7]) total += 30;
 
   // Hora lord, the Chaldean order starting from the lord of the weekday.
   const List<Graha> chaldean = <Graha>[
@@ -320,7 +360,7 @@ double _varshadiBala(Kundli kundli, Graha graha, double jdUt, double sunrise) {
     Graha.moon,
   ];
   final int horaIndex = ((jdUt - sunrise) * 24).floor().clamp(0, 23);
-  final int first = chaldean.indexOf(weekdayLords[weekday]);
+  final int first = chaldean.indexOf(_weekdayLords[weekday]);
   if (graha == chaldean[(first + horaIndex) % 7]) total += 60;
   return total;
 }
