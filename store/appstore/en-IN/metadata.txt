@@ -1,0 +1,38 @@
+NAME (30 characters)
+KundliSaar: Kundli Panchang
+
+SUBTITLE (30 characters)
+Vedic charts, free & offline
+
+PROMOTIONAL TEXT (170 characters)
+Your kundli computed on your own iPhone, in Hindi and English. Charts, dashas, panchang, matching, muhurta, palmistry. No account, nothing uploaded, nothing to buy.
+
+KEYWORDS (100 characters, comma separated, no spaces)
+kundli,horoscope,panchang,jyotish,vedic,astrology,rashifal,muhurat,matching,hindi,janam,patrika
+
+CATEGORY
+Primary: Lifestyle
+Secondary: Reference
+
+AGE RATING
+4+ (no objectionable content; the app refuses health, legal and financial questions)
+
+PRIVACY
+Data Not Collected. No tracking. Privacy policy:
+https://pallavsharmaofficial.github.io/KundliSaar/privacy.html
+
+SUPPORT URL
+https://github.com/pallavsharmaofficial/KundliSaar/issues
+
+MARKETING URL
+https://pallavsharmaofficial.github.io/KundliSaar/
+
+DESCRIPTION
+(use store/play/en-IN/full_description.txt; the App Store allows the same text)
+
+REVIEW NOTES
+The app has no account and no server. Everything is computed on the device from
+bundled data. The microphone is used only while the user holds the mic button on
+the Ask screen, and the camera only if the user chooses to photograph their own
+palm on the Hastrekha screen; both are optional and every screen works without
+them. The app is free with no purchases.

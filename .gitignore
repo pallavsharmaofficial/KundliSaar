@@ -15,3 +15,8 @@ build/
 .venv/
 __pycache__/
 *.bsp
+
+# Android release signing, kept off the repository
+android/key.properties
+*.jks
+*.keystore

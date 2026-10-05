@@ -1,0 +1,40 @@
+KundliSaar makes your kundli on your own phone and explains what it found, in Hindi and English. No account, no sign-in, nothing uploaded, no advertising, and nothing to buy inside it.
+
+WHAT IT GIVES YOU
+
+• Lagna chart in North Indian, South Indian and chakra styles
+• All sixteen divisional charts, D1 to D60, by the Parashari rules
+• Every graha with its sign, degree, house, nakshatra, pada, dignity, retrogression and combustion
+• Vimshottari dasha to three levels with the balance at birth, and the Yogini cycle
+• Shadbala, with all six strengths in rupas against each graha's own minimum
+• Ashtakavarga: every bhinnashtakavarga and the sarvashtakavarga
+• Gochar, counted from your natal Moon, with Sade Sati and the dates each phase ends
+• Daily panchang for any date and any town: tithi, nakshatra, yoga, karana, vara with end times, sunrise, sunset, Rahu Kaal, Gulika, Yamaganda, Abhijit, choghadiya and horas
+• A muhurta finder that scores the coming weeks for griha pravesh, a vehicle, a journey, a business, a naming and more
+• Kundli Milan: Ashtakoota to 36 gunas, with every koota explained
+• Varshphal, the annual chart, with Muntha and the lord of the year
+• A festival and vrat calendar computed for your own town
+• Hastrekha: trace your own palm lines and have them read by the classical rules
+• Ank Jyotish: mulank, bhagyank, namank and the Lo Shu grid
+• Prashna, a chart for the moment you ask
+• Namkaran: the syllable a newborn's name should begin with
+• Upay chosen from your chart, with mantra, japa count, fasting day and daan
+• Ask about your kundli by speaking or typing, and hear the answer read aloud
+
+WHY THE NUMBERS CAN BE TRUSTED
+
+Planetary positions are computed inside the app by our own mathematics, fitted to NASA JPL's public-domain DE440s ephemeris. Between 1900 and 2070 the Sun holds to under two arc-seconds and the planets to under four, checked automatically every time the code changes. The app works with the network switched off.
+
+HOW IT TALKS TO YOU
+
+Every reading says which part of your chart produced it. A dosha comes with the classical cancellation the texts also give, because a dosha is a configuration, not a verdict on a person.
+
+WHAT IT WILL NOT DO
+
+No predictions about death, illness, pregnancy, exam results, court cases or investments. No fear, and nothing sold to make it go away. This is traditional guidance and cultural material, not medical, legal or financial advice.
+
+YOUR DETAILS STAY YOURS
+
+Birth details are the most identifying thing a person has. They are written to this phone's own storage and nowhere else. The microphone is used only while you hold the mic button, and the camera only if you choose to photograph your palm. Nothing is recorded or uploaded.
+
+Free software, MIT licensed. Source: github.com/pallavsharmaofficial/KundliSaar

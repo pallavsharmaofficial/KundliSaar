@@ -1,0 +1,75 @@
+:root {
+    --haldi: #e3a008;
+    --sindoor: #c1272d;
+    --maroon: #6b1d1d;
+    --indigo: #1f2a5e;
+    --ink: #221a14;
+    --parchment: #fdf6e8;
+    --parchment-deep: #f4e6c9;
+    --gold: #b8860b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Mukta, system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--parchment);
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 56px 0 28px; text-align: center; }
+  h1 {
+    font-family: 'Yatra One', Mukta, serif;
+    font-size: clamp(38px, 8vw, 62px);
+    margin: 0 0 6px;
+    color: var(--maroon);
+    letter-spacing: 0.5px;
+  }
+  .sub { font-size: clamp(17px, 3.4vw, 21px); color: #5a4a3a; margin: 0 auto 10px; max-width: 34ch; }
+  .devanagari { font-size: 20px; color: var(--indigo); }
+  .arch { display: block; margin: 22px auto 0; max-width: 320px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 28px 0 8px; }
+  .btn {
+    display: inline-block; padding: 14px 26px; border-radius: 14px;
+    text-decoration: none; font-weight: 600; font-size: 17px;
+    border: 1.5px solid var(--maroon);
+  }
+  .btn.primary { background: var(--maroon); color: var(--parchment); }
+  .btn.ghost { color: var(--maroon); }
+  .note { text-align: center; color: #6b5c4a; font-size: 15px; margin-top: 4px; }
+  section { padding: 30px 0; border-top: 1px solid rgba(34,26,20,0.12); }
+  h2 { font-size: 26px; margin: 0 0 14px; color: var(--maroon); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(34,26,20,0.14);
+    border-radius: 16px; padding: 18px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 19px; }
+  .card p { margin: 0; font-size: 16.5px; color: #4a3d30; }
+  table { width: 100%; border-collapse: collapse; font-size: 16.5px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(34,26,20,0.1); }
+  code { background: rgba(31,42,94,0.08); padding: 2px 6px; border-radius: 6px; font-size: 15px; }
+  footer { padding: 30px 0 60px; color: #6b5c4a; font-size: 15px; text-align: center; }
+  a { color: var(--indigo); }
+  @media (prefers-color-scheme: dark) {
+    body { background: #14183a; color: #f1e4c3; }
+    h1, h2 { color: var(--haldi); }
+    .sub, .card p, .note, footer { color: #cdbf9f; }
+    .card { background: rgba(255,255,255,0.05); border-color: rgba(241,228,195,0.18); }
+    .btn { border-color: var(--haldi); }
+    .btn.primary { background: var(--haldi); color: #14183a; }
+    .btn.ghost { color: var(--haldi); }
+    a { color: var(--haldi); }
+    th, td { border-color: rgba(241,228,195,0.16); }
+  }
+
+  /* Pages that are only text: privacy, terms. */
+  header.plain { padding: 40px 0 18px; text-align: left; }
+  header.plain h1 { font-size: clamp(30px, 6vw, 44px); margin-bottom: 4px; }
+  .back { margin: 0 0 18px; font-size: 16px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 10px; }
+  section p { margin: 0 0 14px; }
+  strong { font-weight: 700; }

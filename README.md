@@ -105,6 +105,13 @@ should happen. Readings are presented as what the tradition says about a
 configuration, with the classical source named, and a disclaimer travels with
 them.
 
+## Launching it
+
+Icons, splash screens, the web manifest, store listings in both languages, the
+privacy policy and the terms are all in the repository; see
+[docs/LAUNCH.md](docs/LAUNCH.md) for what is done and the few things that still
+need a human — a signing key, the store accounts, and screenshots.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE). Data and font credits are in

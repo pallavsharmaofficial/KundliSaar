@@ -1,35 +1,44 @@
 {
-    "name": "kundlisaar",
-    "short_name": "kundlisaar",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
-    "prefer_related_applications": false,
-    "icons": [
-        {
-            "src": "icons/Icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-maskable-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "icons/Icon-maskable-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable"
-        }
-    ]
+  "name": "KundliSaar — कुंडलीसार",
+  "short_name": "KundliSaar",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#FDF6E8",
+  "theme_color": "#6B1D1D",
+  "description": "Your Vedic kundli, computed on your own device in Hindi and English. Charts, dashas, panchang, matching, muhurta, palmistry and more, free and offline.",
+  "lang": "hi",
+  "dir": "ltr",
+  "categories": ["lifestyle", "education", "utilities"],
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/Icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/Icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/Icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "description": "The day read against your own chart",
+      "url": "./#/today",
+      "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Panchang",
+      "short_name": "Panchang",
+      "description": "Tithi, nakshatra and the timings for today",
+      "url": "./#/panchang",
+      "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New kundli",
+      "short_name": "New",
+      "description": "Cast a chart from birth details",
+      "url": "./#/new",
+      "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

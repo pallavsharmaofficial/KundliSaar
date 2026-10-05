@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../widgets/common.dart';
 
+/// Where the app says what it is, who made it, and what it does with your
+/// details. The two policy links are the ones the stores ask for, and they
+/// point at the same pages the website serves.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
+
+  static const String site =
+      'https://pallavsharmaofficial.github.io/KundliSaar';
+  static const String repository =
+      'https://github.com/pallavsharmaofficial/KundliSaar';
+
+  Future<void> _open(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,22 +44,48 @@ class AboutScreen extends StatelessWidget {
                   : 'Planetary positions are computed inside the app by our own series, fitted to the public-domain JPL DE440s ephemeris and holding to about an arc-second from 1900 to 2070. No server, no API.',
             ),
           ),
+          Card(
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.shield_outlined),
+                  title: Text(hindi ? 'निजता नीति' : 'Privacy policy'),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => _open('$site/privacy.html'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.gavel_outlined),
+                  title: Text(hindi ? 'उपयोग की शर्तें' : 'Terms of use'),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => _open('$site/terms.html'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: Text(hindi ? 'स्रोत कोड' : 'Source code'),
+                  subtitle: const Text('MIT'),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => _open(repository),
+                ),
+              ],
+            ),
+          ),
           Panel(
             title: hindi ? 'स्रोत और आभार' : 'Sources and credits',
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const FactRow('Ephemeris', 'NASA JPL DE440s (public domain)'),
-                const FactRow('Places', 'GeoNames cities15000 (CC BY 4.0)'),
-                const FactRow('Time zones', 'IANA tz database'),
-                const FactRow(
+                FactRow('Ephemeris', 'NASA JPL DE440s (public domain)'),
+                FactRow('Places', 'GeoNames cities15000 (CC BY 4.0)'),
+                FactRow('Time zones', 'IANA tz database'),
+                FactRow(
                   'Fonts',
                   'Mukta, Tiro Devanagari Hindi, Yatra One (OFL)',
                 ),
-                const FactRow(
+                FactRow(
                   'Classical rules',
                   'Brihat Parashara Hora Shastra, Phaladeepika',
                 ),
+                FactRow('Version', '0.2.0'),
               ],
             ),
           ),
