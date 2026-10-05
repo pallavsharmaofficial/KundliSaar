@@ -11,7 +11,7 @@ it scales from a 16 pixel favicon to a 1024 pixel store icon without help.
 import math
 import os
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HALDI = (227, 160, 8)
 SINDOOR = (193, 39, 45)
@@ -120,22 +120,64 @@ def maskable(size=512):
 
 
 def social_card(width=1200, height=630):
-    """The card that shows when the site is shared."""
+    """The card that shows when the link is shared.
+
+    The wordmark is set in Yatra One, the app's own display face, so the card
+    and the app look like the same thing. It stays in Latin: Pillow here is
+    built without Raqm, and unshaped Devanagari puts the matras in the wrong
+    place, which is worse than not setting it at all. The Hindi name travels
+    in the page's own Open Graph title beside the image.
+    """
     image = ground(width, inner=HALDI, outer=MAROON).resize((width, width))
     image = image.crop((0, (width - height) // 2, width, (width + height) // 2))
     draw = ImageDraw.Draw(image)
-    chart_mark(draw, width * 0.21, height / 2, height * 0.30,
-               max(2, round(height * 0.020)), PARCHMENT)
-    # The wordmark is drawn as a rule and blocks rather than set in a font, so
-    # the card needs no font file and cannot render differently elsewhere.
-    x = width * 0.40
-    draw.rounded_rectangle([x, height * 0.33, x + width * 0.40, height * 0.40],
-                           radius=height * 0.02, fill=PARCHMENT)
-    draw.rounded_rectangle([x, height * 0.45, x + width * 0.30, height * 0.50],
-                           radius=height * 0.015,
-                           fill=(253, 246, 232, 180))
-    draw.rounded_rectangle([x, height * 0.55, x + width * 0.34, height * 0.59],
-                           radius=height * 0.012, fill=GOLD)
+    chart_mark(draw, width * 0.165, height / 2, height * 0.28,
+               max(2, round(height * 0.019)), PARCHMENT)
+
+    def font(name, size):
+        return ImageFont.truetype(os.path.join('assets', 'fonts', name), size)
+
+    x = width * 0.33
+    draw.text((x, height * 0.24), 'KundliSaar', font=font('YatraOne-Regular.ttf', 84),
+              fill=PARCHMENT, anchor='ls')
+    draw.line([x, height * 0.30, x + width * 0.14, height * 0.30],
+              fill=PARCHMENT, width=5)
+    draw.text((x, height * 0.45), 'Your kundli, computed on your own device',
+              font=font('Mukta-SemiBold.ttf', 36), fill=PARCHMENT, anchor='ls')
+    draw.text((x, height * 0.58),
+              'Charts \u00b7 Dashas \u00b7 Panchang \u00b7 Milan \u00b7 Muhurta \u00b7 Hastrekha',
+              font=font('Mukta-Regular.ttf', 27), fill=(246, 231, 205), anchor='ls')
+    # A maroon pill, because gold on haldi disappears.
+    label = 'Free \u00b7 Offline \u00b7 No account \u00b7 Hindi and English'
+    pill = font('Mukta-SemiBold.ttf', 25)
+    box = draw.textbbox((x, height * 0.72), label, font=pill, anchor='ls')
+    draw.rounded_rectangle(
+        [box[0] - 18, box[1] - 12, box[2] + 18, box[3] + 12],
+        radius=26,
+        fill=MAROON,
+    )
+    draw.text((x, height * 0.72), label, font=pill, fill=PARCHMENT, anchor='ls')
+    return image
+
+
+def feature_graphic(width=1024, height=500):
+    """The banner Play shows at the top of the listing."""
+    image = ground(width, inner=HALDI, outer=MAROON).resize((width, width))
+    image = image.crop((0, (width - height) // 2, width, (width + height) // 2))
+    draw = ImageDraw.Draw(image)
+    chart_mark(draw, width * 0.17, height / 2, height * 0.30,
+               max(2, round(height * 0.022)), PARCHMENT)
+
+    def font(name, size):
+        return ImageFont.truetype(os.path.join('assets', 'fonts', name), size)
+
+    x = width * 0.34
+    draw.text((x, height * 0.42), 'KundliSaar', font=font('YatraOne-Regular.ttf', 76),
+              fill=PARCHMENT, anchor='ls')
+    draw.text((x, height * 0.60), 'Kundli, panchang and muhurta',
+              font=font('Mukta-SemiBold.ttf', 32), fill=PARCHMENT, anchor='ls')
+    draw.text((x, height * 0.74), 'computed on your own phone',
+              font=font('Mukta-Regular.ttf', 30), fill=(246, 231, 205), anchor='ls')
     return image
 
 
@@ -150,6 +192,9 @@ def main():
     splash(colour=MAROON).save(os.path.join(OUT, 'splash-light.png'))
     splash(colour=PARCHMENT).save(os.path.join(OUT, 'splash-dark.png'))
     social_card().save(os.path.join('site', 'og-image.png'))
+    os.makedirs(os.path.join('store', 'play'), exist_ok=True)
+    feature_graphic().save(os.path.join('store', 'play', 'feature-graphic.png'))
+    app_icon(512).save(os.path.join('store', 'play', 'icon-512.png'))
     # Optical sizing: below about sixty pixels the diagonals turn to mesh, so
     # the small renders keep the square, the rhombus and the sun only.
     for small in (16, 32, 48):

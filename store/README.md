@@ -14,9 +14,9 @@ Everything a submission needs, so the console is only copy and paste.
 
 | Asset | Size | Source |
 |---|---|---|
-| App icon | 512 × 512 | `assets/branding/icon-512.png` |
+| App icon | 512 × 512 | `store/play/icon-512.png` |
 | iOS icon | 1024 × 1024 | `assets/branding/icon-1024.png` |
-| Feature graphic | 1024 × 500 | crop `site/og-image.png`, or rerun `tools/branding/make_icon.py` |
+| Feature graphic | 1024 × 500 | `store/play/feature-graphic.png` |
 | Phone screenshots | 1080 × 1920, at least two | take from a device or an emulator |
 
 Screenshots are the one thing that cannot be generated from the repository:
