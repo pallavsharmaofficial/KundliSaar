@@ -275,7 +275,13 @@ class KundliChartPainter extends CustomPainter {
       ),
     );
     final TextPainter painter = TextPainter(
-      text: TextSpan(children: spans),
+      // Name the bundled face rather than leaving the cell to the device's
+      // default font, so Devanagari graha letters never depend on what the
+      // handset ships with.
+      text: TextSpan(
+        style: const TextStyle(fontFamily: 'Mukta'),
+        children: spans,
+      ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
       maxLines: 4,
