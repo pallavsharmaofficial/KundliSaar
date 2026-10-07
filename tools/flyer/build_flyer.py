@@ -52,6 +52,30 @@ TARGET = 'https://pallavsharmaofficial.github.io/KundliSaar/get/'
 
 PANEL_W, PANEL_H = 123.0, 63.0
 
+# The hook, and the fine print that justifies it.
+#
+# "Nine out of ten" is not a figure of speech. The Moon shares the Sun's sign
+# only while it passes through it -- about 2.3 days of each 29.5-day cycle --
+# so roughly 92% of people have a different chandra rashi from their surya
+# rashi. A number that survives being checked is stickier than an adjective,
+# and this one survives.
+#
+# Swap HOOK for any of the alternates; the layout takes two or three lines.
+HOOK = 'आपकी राशि वो नहीं है<br>जो आप बताते हैं।'
+HOOK_ALTERNATES = [
+    'आपकी राशि वो नहीं है<br>जो आप बताते हैं।',
+    'दस में से नौ लोग<br>अपनी ग़लत राशि बताते हैं।',
+    'जो राशि आप बताते हैं,<br>शायद वो आपकी है ही नहीं।',
+]
+# The fine print sits where a note carries its legal line, so it reads as
+# furniture and persuades at the same time.
+FINE = ('सूर्य राशि पश्चिमी ज्योतिष की है, चंद्र राशि भारतीय। '
+        'दस में से नौ लोगों की दोनों अलग निकलती हैं।')
+FINE_FACE = ('चंद्र राशि, नक्षत्र, दशा और पंचांग — गणना आपके अपने फ़ोन पर, '
+             'कुछ भी अपलोड नहीं।')
+
+
+
 
 def qr_svg(data: str) -> str:
     """Error correction Q, so a creased and street-dirtied print still scans."""
@@ -87,6 +111,7 @@ NOTE_FACE = f'''
     <div class="n-words">मुफ़्त जन्मकुंडली</div>
   </div>
   <div class="n-promise">धारक को पूरी जन्मकुंडली देने का वचन</div>
+  <div class="n-fine">{FINE_FACE}</div>
   <div class="n-disclaim">यह नोट नहीं है <b>·</b> NOT LEGAL TENDER</div>
 </div>
 '''
@@ -94,8 +119,9 @@ NOTE_FACE = f'''
 NOTE_REVERSE = f'''
 <div class="panel note rev">
   {artwork("reverse", note.reverse())}
-  <div class="r-hook">आपकी राशि वो नहीं है<br>जो आप सोचते हैं।</div>
-  <div class="r-foot">खोलिए <b>·</b> स्कैन कीजिए</div>
+  <div class="r-hook">{HOOK}</div>
+  <div class="r-fine">{FINE}</div>
+  <div class="r-foot">अपनी देखिए — खोलिए <b>·</b> स्कैन कीजिए</div>
 </div>
 '''
 
@@ -183,10 +209,10 @@ body { background: #fff;
 .n-disclaim { position: absolute; bottom: 6.4mm; left: 0; right: 0; text-align: center;
               font-size: 2.6mm; font-weight: 700; color: #4a1f0c; }
 .n-disclaim b { color: #7a4a18; }
-.rev .r-hook { position: absolute; top: 17mm; left: 24mm; width: 75mm;
+.rev .r-hook { position: absolute; top: 14mm; left: 22mm; width: 79mm;
                text-align: center; font-size: 6.4mm; font-weight: 700;
                color: #4a1f0c; line-height: 1.28; }
-.rev .r-foot { position: absolute; bottom: 7.5mm; left: 0; right: 0;
+.rev .r-foot { position: absolute; bottom: 6.2mm; left: 0; right: 0;
                text-align: center; font-size: 3.1mm; font-weight: 700; color: #4a1f0c; }
 
 /* --- inside panels: dark, so the fold reveals a change --- */
@@ -219,6 +245,15 @@ body { background: #fff;
 .fields label { display: flex; align-items: baseline; gap: 2mm; }
 .fields span { font-size: 3mm; font-weight: 600; color: #7a4a18; white-space: nowrap; }
 .fields i { flex: 1; height: .25mm; background: #3a2512; opacity: .45; }
+
+/* Where a note carries its legal line. Reads as furniture, and does the
+   persuading at the same time. Positioned, or it paints under the artwork. */
+.rev .r-fine { position: absolute; bottom: 11.6mm; left: 19mm; width: 85mm;
+               text-align: center; font-size: 2.2mm; line-height: 1.4;
+               font-weight: 600; color: #3a1d08; opacity: .95; }
+.n-fine { position: absolute; bottom: 11.0mm; left: 25mm; width: 62mm;
+          text-align: center; font-size: 1.95mm; line-height: 1.36;
+          font-weight: 600; color: #3a1d08; opacity: .9; }
 '''
 
 DEFS = '''<svg width="0" height="0" style="position:absolute"><defs>
