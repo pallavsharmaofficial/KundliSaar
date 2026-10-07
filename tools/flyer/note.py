@@ -18,6 +18,42 @@ DEEP = '#4a1f0c'
 INK = '#3a1d08'
 
 
+def rosette(cx, cy, seed, scale, op=0.62):
+    """Two lathe passes at opposed phase. The crossing lines make the fine
+    mesh a real note shows; one pass on its own reads as a flower."""
+    return (lathe(cx, cy, 7, seed, scale, 0.085, op)
+            + lathe(cx, cy, 7, seed + math.pi / 2.3, scale * 0.97, 0.085, op)
+            + lathe(cx, cy, 4, seed + 1.1, scale * 0.46, 0.09, op * 0.9))
+
+
+def ribbons(w, h, seed=0.0):
+    """The wide banded curves that sweep across a note behind the type,
+    each one a hatched band rather than a single line."""
+    out = []
+    for b in range(2):
+        for k in range(22):
+            pts = []
+            for i in range(201):
+                x = i / 200 * w
+                base = h * (0.34 + 0.3 * b) + 5.5 * math.sin(
+                    x * 0.026 + seed + b * 2.1)
+                out_y = base + (k - 11) * 0.34 * math.cos(x * 0.011 + b)
+                pts.append(f'{x:.2f},{out_y:.2f}')
+            out.append(
+                f'<polyline points="{" ".join(pts)}" fill="none" '
+                f'stroke="{BROWN}" stroke-width="0.055" opacity="0.17"/>')
+    return ''.join(out)
+
+
+def watermark(cx, cy, rx, ry):
+    """The pale oval a note leaves for its watermark: the engraving stops
+    and the paper shows through."""
+    return (f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" '
+            f'fill="url(#wm)"/>'
+            f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="none" '
+            f'stroke="{BROWN}" stroke-width="0.16" opacity="0.5"/>')
+
+
 def lathe(cx, cy, rings, seed, scale, width=0.11, op=0.62):
     """A guilloche rosette: two coupled circles traced as one line, the way a
     geometric lathe draws one. Hairline weight, many rings -- that is what
@@ -137,10 +173,16 @@ def corner_zero(x, y, size, anchor='start', op=1.0):
 
 
 def ground(w, h):
+    """Paper, the engine-turned field, then the iris wash. A note's colour
+    travels across the sheet; a single flat tone is the clearest tell that
+    something is not one."""
     return (
         f'<rect width="{w}" height="{h}" fill="url(#paper)"/>'
-        + wave_field(w, h, 44, 0.55, 0.42)
-        + wave_field(w, h, 15, 1.4, 0.17, width=0.07, op=0.13)
+        + wave_field(w, h, 60, 0.45, 0.52)
+        + wave_field(w, h, 22, 1.3, 0.19, width=0.065, op=0.15)
+        + wave_field(w, h, 34, 0.8, 0.31, width=0.06, op=0.12)
+        + f'<rect width="{w}" height="{h}" fill="url(#iris)" '
+          f'style="mix-blend-mode:multiply"/>'
     )
 
 
@@ -148,16 +190,13 @@ def face(w=123.0, h=63.0):
     """The side that lies face up on the pavement."""
     return f'''<svg class="noteart" viewBox="0 0 {w} {h}" preserveAspectRatio="none">
   {ground(w, h)}
-  {border(w, h, 2.4)}
-  {border(w, h, 4.0)}
-  {lathe(21, 34, 6, 0.0, 0.70, 0.1, 0.5)}
-  {latent(100.5, 9.5, 5.4, 11.0)}
-  {kundli_vignette(100, 38, 19)}
-  {corner_zero(8.5, 15.5, 9.5)}
-  {corner_zero(w - 7.5, h - 6.0, 7.0, 'end', 0.75)}
+  {watermark(101, 32, 13.5, 19)}
+  {border(w, h, 2.2)}
+  {border(w, h, 3.6)}
+  {border(w, h, 5.2)}
+  {rosette(21, 32, 0.0, 0.76)}
+  {latent(88.5, 8.0, 5.0, 10.0)}
   {microtext(30, 57.6, 64)}
-  <text x="30" y="60.6" font-size="2.1" fill="{INK}" opacity="0.95"
-        font-family="Helvetica,Arial,sans-serif" letter-spacing="0.35">KS 0000000</text>
 </svg>'''
 
 
@@ -165,12 +204,11 @@ def reverse(w=123.0, h=63.0):
     """The side that shows when the folded packet is turned over."""
     return f'''<svg class="noteart" viewBox="0 0 {w} {h}" preserveAspectRatio="none">
   {ground(w, h)}
-  {border(w, h, 2.4)}
-  {border(w, h, 4.0)}
-  {lathe(17, 32, 6, 1.3, 0.56, 0.09, 0.4)}
-  {lathe(106, 32, 6, 2.1, 0.56, 0.09, 0.4)}
-  {corner_zero(8.5, 14.5, 7.5, 'start', 0.8)}
-  {corner_zero(w - 7.5, h - 5.5, 7.5, 'end', 0.8)}
+  {border(w, h, 2.2)}
+  {border(w, h, 3.6)}
+  {border(w, h, 5.2)}
+  {rosette(19, 32, 1.3, 0.62)}
+  {rosette(104, 32, 2.1, 0.62)}
   {microtext(26, 58.4, 71)}
 </svg>'''
 

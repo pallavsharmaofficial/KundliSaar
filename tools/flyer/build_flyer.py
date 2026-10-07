@@ -263,7 +263,17 @@ body { background: #fff;
 DEFS = '''<svg width="0" height="0" style="position:absolute"><defs>
 <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0" stop-color="#eedcb4"/><stop offset=".5" stop-color="#e4cb9c"/>
-<stop offset="1" stop-color="#ecd8b1"/></linearGradient></defs></svg>'''
+<stop offset="1" stop-color="#ecd8b1"/></linearGradient><linearGradient id="iris" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" stop-color="#6b3410" stop-opacity=".40"/>
+<stop offset=".28" stop-color="#9c4f18" stop-opacity=".20"/>
+<stop offset=".52" stop-color="#c98a3e" stop-opacity=".07"/>
+<stop offset=".74" stop-color="#8a7b3a" stop-opacity=".17"/>
+<stop offset="1" stop-color="#5c6136" stop-opacity=".34"/></linearGradient>
+<radialGradient id="wm" cx=".5" cy=".5" r=".5">
+<stop offset="0" stop-color="#f7ecd2" stop-opacity=".93"/>
+<stop offset=".72" stop-color="#f2e3c3" stop-opacity=".72"/>
+<stop offset="1" stop-color="#eeddba" stop-opacity="0"/></radialGradient>
+</defs></svg>'''
 
 
 def marks() -> str:
