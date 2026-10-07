@@ -11,6 +11,7 @@ import '../state/settings_cubit.dart';
 import '../widgets/chart/chart_styles.dart';
 import '../widgets/common.dart';
 import 'profile_scope.dart';
+import 'varshphal_sections.dart';
 
 /// Varshphal: the chart of the moment the Sun comes back to where it was at
 /// birth, read for the year that starts there.
@@ -24,6 +25,11 @@ class VarshphalScreen extends StatefulWidget {
 class _VarshphalScreenState extends State<VarshphalScreen> {
   int? _age;
 
+  /// The age under the thumb while the slider is being dragged. The year is
+  /// only worked out when the thumb is let go: a whole Tajika reading takes a
+  /// moment, and doing it at every tick of a drag would pile the work up.
+  double? _dragging;
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context)!;
@@ -36,14 +42,17 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
         final int currentAge =
             DateTime.now().year - kundli.birth.localDateTime.year;
         final int age = _age ?? (currentAge < 0 ? 0 : currentAge);
+        final double shown = _dragging ?? age.toDouble();
         return DeferredBuilder<Varshphal>(
           key: ValueKey<int>(age),
           message: l.computing,
           work: () =>
               computeVarshphal(kundli, age, ayanamsa: settings.ayanamsa),
           builder: (BuildContext context, Varshphal varshphal) {
-            final ThemeData theme = Theme.of(context);
             final DateTime moment = varshphal.returnMoment.add(
+              kundli.birth.utcOffset,
+            );
+            final DateTime nextMoment = varshphal.nextReturnMoment.add(
               kundli.birth.utcOffset,
             );
             return ListView(
@@ -54,16 +63,20 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
                     Text(l.chooseYear),
                     Expanded(
                       child: Slider(
-                        value: age.toDouble(),
+                        value: shown,
                         min: 0,
                         max: 100,
                         divisions: 100,
-                        label: '$age',
+                        label: '${shown.round()}',
                         onChanged: (double value) =>
-                            setState(() => _age = value.round()),
+                            setState(() => _dragging = value),
+                        onChangeEnd: (double value) => setState(() {
+                          _age = value.round();
+                          _dragging = null;
+                        }),
                       ),
                     ),
-                    Text('$age'),
+                    Text('${shown.round()}'),
                   ],
                 ),
                 Center(
@@ -85,6 +98,17 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
                         emphasise: true,
                       ),
                       FactRow(
+                        hindi ? 'वर्ष समाप्त' : 'Year ends',
+                        '${nextMoment.day}/${nextMoment.month}/${nextMoment.year} '
+                        '${nextMoment.hour.toString().padLeft(2, '0')}:${nextMoment.minute.toString().padLeft(2, '0')}',
+                      ),
+                      FactRow(
+                        hindi ? 'प्रवेश का समय' : 'Pravesh falls',
+                        varshphal.isDay
+                            ? (hindi ? 'दिन में' : 'by day')
+                            : (hindi ? 'रात्रि में' : 'by night'),
+                      ),
+                      FactRow(
                         l.lagna,
                         hindi
                             ? rashiInfo(varshphal.chart.lagnaRashi).hindi
@@ -94,6 +118,12 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
                         l.muntha,
                         '${hindi ? rashiInfo(Rashi.values[varshphal.munthaSign]).hindi : rashiInfo(Rashi.values[varshphal.munthaSign]).english}'
                         ' · ${l.house} ${varshphal.munthaHouse}',
+                      ),
+                      FactRow(
+                        hindi ? 'मुन्था पति' : 'Muntha lord',
+                        hindi
+                            ? grahaInfo(varshphal.munthaLord).hindi
+                            : grahaInfo(varshphal.munthaLord).english,
                       ),
                       FactRow(
                         l.yearLord,
@@ -107,34 +137,18 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
                 ),
                 Panel(
                   title: l.muntha,
-                  child: Text(
-                    munthaReading(varshphal.munthaHouse, hindi: hindi),
-                  ),
-                ),
-                Panel(
-                  title: l.yearLord,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(yearLordReading(varshphal.yearLord, hindi: hindi)),
-                      const SizedBox(height: 10),
+                      Text(munthaReading(varshphal.munthaHouse, hindi: hindi)),
+                      const SizedBox(height: 8),
                       Text(
-                        hindi
-                            ? 'पाँच दावेदारों में से षड्बल के आधार पर चुना गया:'
-                            : 'Chosen from the five contenders by shadbala:',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        munthaLordReading(varshphal).of(hindi),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 13.5,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      for (final MapEntry<dynamic, double> entry
-                          in varshphal.candidates.entries)
-                        FactRow(
-                          hindi
-                              ? grahaInfo(entry.key).hindi
-                              : grahaInfo(entry.key).english,
-                          '${entry.value.toStringAsFixed(2)} ${l.rupas}',
-                        ),
                     ],
                   ),
                 ),
@@ -156,6 +170,15 @@ class _VarshphalScreenState extends State<VarshphalScreen> {
                     ],
                   ),
                 ),
+                YearLordSection(
+                  varshphal: varshphal,
+                  hindi: hindi,
+                  title: l.yearLord,
+                ),
+                YearTimelineSection(varshphal: varshphal, hindi: hindi),
+                DashaSection(varshphal: varshphal, hindi: hindi),
+                TajikaSection(varshphal: varshphal, hindi: hindi),
+                SahamSection(varshphal: varshphal, hindi: hindi),
                 DisclaimerNote(l.disclaimer),
               ],
             );
