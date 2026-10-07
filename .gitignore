@@ -22,3 +22,7 @@ android/key.properties
 *.keystore
 
 tools/flyer/build/
+tools/flyer/art/*.png
+tools/flyer/art/*.jpg
+tools/flyer/art/*.jpeg
+tools/flyer/art/*.webp

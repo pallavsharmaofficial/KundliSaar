@@ -13,12 +13,33 @@ note.py, not copied from anywhere.
 Text is kept to a minimum on every panel: a note carries very little, and
 a panel that reads as a leaflet stops reading as money.
 """
+import base64
 import pathlib
 import subprocess
 import sys
 
 import qrcode
 import note
+
+ART = pathlib.Path(__file__).resolve().parent / 'art'
+
+
+def artwork(stem: str, fallback: str) -> str:
+    """Use a generated background from art/ when one is there, else fall back
+    to the drawn furniture in note.py.
+
+    Drop art/face.png and art/reverse.png in at 1453 x 744 px or larger (that
+    is 123 x 63 mm at 300 dpi) and they are embedded at full resolution. The
+    text and the QR are always laid over the top as live vector, never baked
+    into the image, so they stay crisp at any size and can be edited."""
+    for ext in ('png', 'jpg', 'jpeg', 'webp'):
+        f = ART / f'{stem}.{ext}'
+        if f.exists():
+            mime = 'jpeg' if ext in ('jpg', 'jpeg') else ext
+            b64 = base64.b64encode(f.read_bytes()).decode('ascii')
+            return (f'<img class="noteart" alt="" '
+                    f'src="data:image/{mime};base64,{b64}">')
+    return fallback
 
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE / 'build'
@@ -59,7 +80,7 @@ def qr_svg(data: str) -> str:
 
 NOTE_FACE = f'''
 <div class="panel note">
-  {note.face()}
+  {artwork("face", note.face())}
   <div class="n-brand">कुंडलीसार<span>KUNDLISAAR</span></div>
   <div class="n-value">
     <div class="n-big">शून्य</div>
@@ -72,7 +93,7 @@ NOTE_FACE = f'''
 
 NOTE_REVERSE = f'''
 <div class="panel note rev">
-  {note.reverse()}
+  {artwork("reverse", note.reverse())}
   <div class="r-hook">आपकी राशि वो नहीं है<br>जो आप सोचते हैं।</div>
   <div class="r-foot">खोलिए <b>·</b> स्कैन कीजिए</div>
 </div>
@@ -144,7 +165,8 @@ body { background: #fff;
 .fold.r { left: auto; right: -7mm; }
 .foldlabel { position: absolute; right: -7mm; font: 2.4mm/1 sans-serif; color: #777; }
 .panel { width: 123mm; height: 63mm; position: relative; overflow: hidden; }
-.noteart { position: absolute; inset: 0; width: 100%; height: 100%; }
+.noteart { position: absolute; inset: 0; width: 100%; height: 100%;
+           object-fit: cover; }
 
 /* --- the note faces --- */
 .note { background: #e9d3a8; }
