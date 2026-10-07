@@ -145,7 +145,11 @@ bool isBenefic(Kundli kundli, Graha graha) {
     case Graha.ketu:
       return false;
     case Graha.moon:
-      return _moonPhase(kundli) > 72;
+      // Bright from the fifth tithi of the waxing half to the fifth tithi
+      // before the next new moon: 72 to 288 degrees from the Sun. A waning
+      // crescent is as faint as a new moon.
+      final double phase = _moonPhase(kundli);
+      return phase > 72 && phase < 288;
     case Graha.mercury:
       final int mercurySign = kundli.grahas[Graha.mercury]!.rashi.index;
       final bool withMalefic = kundli.grahas.values.any(
@@ -266,7 +270,10 @@ double _pakshaBala(Kundli kundli, Graha graha) {
   final double elongation = _moonPhase(kundli);
   final double waxing = elongation <= 180 ? elongation : 360 - elongation;
   final double beneficShare = waxing / 180.0 * 60.0;
-  final bool benefic = isBenefic(kundli, graha);
+  // The Moon's own paksha bala always follows its brightness, so it is least
+  // at the new moon and greatest at the full moon, doubled. Taking it for a
+  // malefic near the new moon gave the new Moon the greatest bala of all.
+  final bool benefic = graha == Graha.moon || isBenefic(kundli, graha);
   final double value = benefic ? beneficShare : 60 - beneficShare;
   return graha == Graha.moon ? value * 2 : value;
 }

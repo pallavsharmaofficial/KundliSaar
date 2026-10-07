@@ -60,6 +60,12 @@ class DashaPeriod {
 /// The first mahadasha is the one of the Moon's nakshatra lord, and only the
 /// unspent part of it is left at birth, which is why a five-minute error in
 /// birth time can move every later period by weeks.
+///
+/// That first mahadasha began before the person was born, so its antardashas
+/// and pratyantardashas keep the grid of the whole span and birth simply cuts
+/// into it: the native is born part-way through whichever sub-period was
+/// running, and the sub-periods before that one never appear. Squeezing nine
+/// sub-periods into the balance instead would misdate every one of them.
 List<DashaPeriod> vimshottariTree({
   required double moonSiderealLongitude,
   required double birthJdUt,
@@ -77,9 +83,8 @@ List<DashaPeriod> vimshottariTree({
   double cursor = birthJdUt;
   for (int i = 0; i < mahadashas; i++) {
     final Graha lord = vimshottariOrder[(startIndex + i) % 9];
-    final double days = i == 0
-        ? balanceDays
-        : vimshottariYears[lord]! * vimshottariYear;
+    final double fullDays = vimshottariYears[lord]! * vimshottariYear;
+    final double days = i == 0 ? balanceDays : fullDays;
     final double end = cursor + days;
     periods.add(
       DashaPeriod(
@@ -88,7 +93,14 @@ List<DashaPeriod> vimshottariTree({
         endJdUt: end,
         level: 1,
         children: levels > 1
-            ? _subPeriods(lord, cursor, end, 2, levels)
+            ? _subPeriods(
+                lord,
+                end - fullDays,
+                end,
+                2,
+                levels,
+                clipFrom: i == 0 ? cursor : null,
+              )
             : const <DashaPeriod>[],
       ),
     );
@@ -97,13 +109,19 @@ List<DashaPeriod> vimshottariTree({
   return periods;
 }
 
+/// Splits [start, end] among the nine sub-lords in proportion to their years.
+///
+/// With [clipFrom] set, anything that ended before it is dropped and the one
+/// straddling it starts there, with its own children still laid out on the
+/// grid of its whole span.
 List<DashaPeriod> _subPeriods(
   Graha lord,
   double start,
   double end,
   int level,
-  int maxLevel,
-) {
+  int maxLevel, {
+  double? clipFrom,
+}) {
   final int startIndex = vimshottariOrder.indexOf(lord);
   final double total = end - start;
   final List<DashaPeriod> out = <DashaPeriod>[];
@@ -112,17 +130,28 @@ List<DashaPeriod> _subPeriods(
     final Graha sub = vimshottariOrder[(startIndex + i) % 9];
     final double share = vimshottariYears[sub]! / 120.0;
     final double subEnd = i == 8 ? end : cursor + total * share;
-    out.add(
-      DashaPeriod(
-        lord: sub,
-        startJdUt: cursor,
-        endJdUt: subEnd,
-        level: level,
-        children: level < maxLevel
-            ? _subPeriods(sub, cursor, subEnd, level + 1, maxLevel)
-            : const <DashaPeriod>[],
-      ),
-    );
+    final bool before = clipFrom != null && subEnd <= clipFrom;
+    if (!before) {
+      final bool straddles = clipFrom != null && cursor < clipFrom;
+      out.add(
+        DashaPeriod(
+          lord: sub,
+          startJdUt: straddles ? clipFrom : cursor,
+          endJdUt: subEnd,
+          level: level,
+          children: level < maxLevel
+              ? _subPeriods(
+                  sub,
+                  cursor,
+                  subEnd,
+                  level + 1,
+                  maxLevel,
+                  clipFrom: straddles ? clipFrom : null,
+                )
+              : const <DashaPeriod>[],
+        ),
+      );
+    }
     cursor = subEnd;
   }
   return out;

@@ -118,7 +118,13 @@ void main() {
 
     test('antardashas tile their mahadasha exactly', () {
       for (final DashaPeriod maha in kundli.vimshottari) {
-        expect(maha.children.length, 9);
+        // The first mahadasha began before birth, so birth cuts into its
+        // grid and the sub-periods already over never appear.
+        if (identical(maha, kundli.vimshottari.first)) {
+          expect(maha.children.length, inInclusiveRange(1, 9));
+        } else {
+          expect(maha.children.length, 9);
+        }
         expect(maha.children.first.startJdUt, closeTo(maha.startJdUt, 1e-9));
         expect(maha.children.last.endJdUt, closeTo(maha.endJdUt, 1e-9));
         for (int i = 1; i < maha.children.length; i++) {
@@ -127,6 +133,45 @@ void main() {
             closeTo(maha.children[i - 1].endJdUt, 1e-9),
           );
         }
+      }
+    });
+
+    test('the first mahadasha keeps the grid of its whole span', () {
+      // The first mahadasha began before birth. Its antardashas sit on the
+      // grid of the whole span, birth cuts into it, and those already over
+      // never appear. Squeezing nine of them into the balance would misdate
+      // every one.
+      final DashaPeriod first = kundli.vimshottari.first;
+      final double fullDays = vimshottariYears[first.lord]! * vimshottariYear;
+      final int at = vimshottariOrder.indexOf(first.lord);
+      double cursor = first.endJdUt - fullDays;
+      for (int i = 0; i < 9; i++) {
+        final Graha sub = vimshottariOrder[(at + i) % 9];
+        final double end = cursor + fullDays * vimshottariYears[sub]! / 120.0;
+        final List<DashaPeriod> found = first.children
+            .where((DashaPeriod p) => p.lord == sub)
+            .toList();
+        if (end <= first.startJdUt) {
+          expect(found, isEmpty, reason: '${sub.name} was over before birth');
+        } else {
+          expect(found.length, 1);
+          expect(found.first.endJdUt, closeTo(end, 1e-6));
+          expect(
+            found.first.startJdUt,
+            closeTo(cursor < first.startJdUt ? first.startJdUt : cursor, 1e-6),
+          );
+        }
+        cursor = end;
+      }
+      // The sub-period running at birth is cut the same way one level down.
+      final DashaPeriod atBirth = first.children.first;
+      expect(atBirth.children.first.startJdUt, atBirth.startJdUt);
+      expect(atBirth.children.last.endJdUt, closeTo(atBirth.endJdUt, 1e-9));
+      for (int i = 1; i < atBirth.children.length; i++) {
+        expect(
+          atBirth.children[i].startJdUt,
+          closeTo(atBirth.children[i - 1].endJdUt, 1e-9),
+        );
       }
     });
 
