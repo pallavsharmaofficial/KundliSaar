@@ -44,3 +44,11 @@
 5. **Sadhana tracker** for the remedies, with a daily count kept on the device.
 6. **Android and iOS store builds**, once the web beta has been through real
    charts.
+7. **Practitioner mode** — the depth a working pandit reads from, printable,
+   without the consumer hand-holding: full phaladesh, every saham, Mudda
+   dasha. See docs/SELLING.md for why this is the channel that matters.
+8. **Consult handoff** — a button that opens the user's own WhatsApp to a
+   named pandit with a message they compose. The app transmits nothing; the
+   user gives their own details or does not.
+9. **Verified-by credit** on readings a practising pandit has checked, and a
+   **referral code** at order time.

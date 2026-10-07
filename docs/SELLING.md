@@ -57,3 +57,49 @@ In this order, because this is the order that converts.
   it should stay in the sales pitch too; people trust it more, not less.
 - Do not buy reviews, installs or traffic. It risks the Play account you are
   three weeks from launching on, and the account is worth more than the sales.
+
+## The pandit channel
+
+The strongest channel available is a practising pandit in the family. He has
+clients who already trust him; the app has arithmetic he currently does by
+hand. Neither side of that is buyable.
+
+He gets the app free and permanently, with no revenue condition. In return he
+reads the phaladesh and corrects it — which is the only way the interpretation
+gets checked by someone with credentials, and the only way the Hindi gets
+read by a first-language reader. The app then carries his name and photograph
+as the reader who verified it.
+
+Four revenue paths, in the order they start:
+
+| Path | Who pays | Split |
+| --- | --- | --- |
+| Reports to his own clients | his client, ₹299 | he keeps ₹200 |
+| Consultation routed from the app | app user, ₹501 per half hour | 70% him |
+| Muhurta and ceremony bookings | the family booking it | almost all his |
+| He becomes the face of the content | nobody directly | — |
+
+The consultation path is the one that scales with installs rather than with
+effort, and it is the app's largest unmonetised surface: people read a chart
+and then want to ask a person, most of all about the questions the app
+refuses.
+
+The refusals bind him too. No death timing, no illness, no pregnancy, no exam
+results, no court outcomes, no investment advice, and no fear-sold remedies.
+A consultation reached through the app cannot be where those get answered,
+because being the honest product in this market is the only asset here that a
+competitor cannot copy.
+
+Birth data stays the user's to give. The app uploads nothing and that promise
+is literal: the handoff is the user opening their own WhatsApp and typing
+their own details. No chart is ever transmitted.
+
+### What this needs built
+
+1. **Practitioner mode** — full phaladesh, every saham, Mudda dasha,
+   printable, without the hand-holding the consumer screens carry.
+2. **Consult button** — deep-links to WhatsApp with a message the user
+   composes themselves.
+3. **Verified-by credit** — name and photograph, on the readings he checked.
+4. **Referral code** at order time, so an order's origin is never a matter of
+   opinion.
