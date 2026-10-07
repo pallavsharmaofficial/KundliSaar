@@ -97,6 +97,30 @@ void main() {
     }
   });
 
+  test('positionOf is the apparent position of date, with nothing added', () {
+    // The series are already in the true ecliptic of date. positionOf once ran
+    // them through precession and nutation a second time, which put every
+    // planet 0.36 degrees ahead in 2026 and every Sankranti hours early.
+    for (final DateTime when in <DateTime>[
+      DateTime.utc(1905, 3, 21, 6),
+      DateTime.utc(1988, 8, 14, 4, 5),
+      DateTime.utc(2025, 1, 14, 3, 30),
+      DateTime.utc(2026, 10, 7),
+      DateTime.utc(2051, 6, 1),
+    ]) {
+      final Instant instant = Instant.fromUtc(when);
+      for (final Graha graha in _grahaByName.values) {
+        final double ours = positionOf(graha, instant).tropicalLongitude;
+        final double direct = apparentOfDate(graha, instant.centuriesTt)[0];
+        expect(
+          angleDiff(ours, direct).abs() * 3600,
+          lessThan(0.001),
+          reason: '${graha.name} on $when',
+        );
+      }
+    }
+  });
+
   test('retrograde motion is detected for Mars in 2026', () {
     // Mars is retrograde in the first days of 2026.
     final Instant instant = Instant.fromUtc(DateTime.utc(2026, 1, 10));

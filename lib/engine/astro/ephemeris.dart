@@ -166,14 +166,16 @@ BodyPosition positionOf(Graha graha, Instant instant) {
       speed: speed,
     );
   }
-  final List<double> j2000 = apparentOfDate(graha, t);
-  final Ecliptic ofDate = precessFromJ2000(Ecliptic(j2000[0], j2000[1]), t);
-  final double longitude = norm360(ofDate.longitude + nutation(t).longitude);
+  // Already in the true ecliptic of date: precession and nutation are inside
+  // the fitted series, so neither is applied again here. Applying them a
+  // second time moved every planet by the precession since J2000 (0.36 degrees
+  // in 2026, 8 hours of the Sun's motion) and put each Sankranti hours early.
+  final List<double> ofDate = apparentOfDate(graha, t);
   return BodyPosition(
     graha: graha,
-    tropicalLongitude: longitude,
-    latitude: ofDate.latitude,
-    distanceAu: j2000[2],
+    tropicalLongitude: ofDate[0],
+    latitude: ofDate[1],
+    distanceAu: ofDate[2],
     speed: speed,
   );
 }
