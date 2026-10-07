@@ -60,6 +60,19 @@ class AboutScreen extends StatelessWidget {
                   onTap: () => _open('$site/terms.html'),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.favorite_outline),
+                  title: Text(
+                    hindi ? 'इस काम को सहयोग दें' : 'Support the work',
+                  ),
+                  subtitle: Text(
+                    hindi
+                        ? 'ऐप मुफ़्त ही रहेगा'
+                        : 'The app stays free either way',
+                  ),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => _open('$site/support.html'),
+                ),
+                ListTile(
                   leading: const Icon(Icons.code),
                   title: Text(hindi ? 'स्रोत कोड' : 'Source code'),
                   subtitle: const Text('MIT'),
