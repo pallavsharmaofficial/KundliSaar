@@ -599,4 +599,135 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get computing => 'कुंडली बन रही है';
+
+  @override
+  String get featurePhaladesh => 'जीवन फलादेश';
+
+  @override
+  String get phTimeline => 'समय-रेखा';
+
+  @override
+  String get phHouses => 'भाव फल';
+
+  @override
+  String get phPeriods => 'दशा फल';
+
+  @override
+  String get phGrahas => 'ग्रह फल';
+
+  @override
+  String get phGochar => 'गोचर फल';
+
+  @override
+  String get phTimelineTitle => 'आपका जीवन, चरण-दर-चरण';
+
+  @override
+  String get phTimelineSub =>
+      'जन्म से लगभग नब्बे वर्ष तक की अवधियाँ, तिथियों सहित, हर एक आपकी अपनी कुंडली के आधार पर पढ़ी गई है।';
+
+  @override
+  String get phHousesTitle => 'बारह भाव';
+
+  @override
+  String get phHousesSub =>
+      'हर भाव को उसकी राशि, उसके स्वामी, उसमें बैठे और उस पर दृष्टि डालने वाले ग्रहों के आधार पर पढ़ा गया है।';
+
+  @override
+  String get phPeriodsTitle => 'दशा-दर-दशा';
+
+  @override
+  String get phPeriodsSub =>
+      'हर महादशा, अंतर्दशा और प्रत्यंतर्दशा, तिथियों सहित, आगे-पीछे और ऊपर की अवधियों के साथ जोड़कर पढ़ी गई है।';
+
+  @override
+  String get phGrahasTitle => 'नौ ग्रह';
+
+  @override
+  String get phGrahasSub =>
+      'हर ग्रह अपनी राशि और भाव में, अपनी स्थिति और युति के साथ।';
+
+  @override
+  String get phGocharTitle => 'अभी का गोचर';
+
+  @override
+  String get phGocharSub =>
+      'धीमी चाल वाले ग्रह आपकी कुंडली के साथ पढ़े गए, हर राशि में आने और जाने की तिथियों सहित।';
+
+  @override
+  String get phNow => 'अभी आप यहाँ हैं';
+
+  @override
+  String phAge(String from, String to) {
+    return 'आयु $from से $to वर्ष';
+  }
+
+  @override
+  String get phAsks => 'यह आपसे क्या माँगता है';
+
+  @override
+  String get phRelief => 'राहत';
+
+  @override
+  String get phLord => 'स्वामी';
+
+  @override
+  String get phLordStands => 'स्वामी की स्थिति';
+
+  @override
+  String get phOccupants => 'भाव में स्थित ग्रह';
+
+  @override
+  String get phAspects => 'दृष्टि डालने वाले ग्रह';
+
+  @override
+  String get phNone => 'कोई नहीं';
+
+  @override
+  String get phEntered => 'राशि में प्रवेश';
+
+  @override
+  String get phLeaves => 'राशि से प्रस्थान';
+
+  @override
+  String get phFromMoon => 'चंद्र से';
+
+  @override
+  String get phFromLagna => 'लग्न से';
+
+  @override
+  String get phFocus => 'ज़ोर का क्षेत्र';
+
+  @override
+  String get phToneSupportive => 'अनुकूल';
+
+  @override
+  String get phToneMixed => 'मिला-जुला';
+
+  @override
+  String get phToneDemanding => 'परिश्रम माँगता है';
+
+  @override
+  String get phYogas => 'जिन योगों में यह शामिल है';
+
+  @override
+  String get phApproxTime =>
+      'आपने जन्म का समय अनुमानित बताया है। दशा की तिथियाँ चंद्र की ठीक स्थिति पर टिकी होती हैं, इसलिए यहाँ की हर तिथि महीनों खिसक सकती है। तिथियों से अधिक अवधियों के क्रम पर भरोसा करें।';
+
+  @override
+  String get phScope =>
+      'ये फलादेश जीवन के क्षेत्रों और समय के स्वभाव का वर्णन करते हैं। ये मृत्यु, बीमारी, गर्भावस्था, परीक्षा, क़ानूनी मामलों या निवेश के बारे में कुछ नहीं कहते, और यहाँ कुछ भी किसी घटना की भविष्यवाणी नहीं है।';
+
+  @override
+  String get phPromise => 'यह स्वामी क्या संकेत देता है';
+
+  @override
+  String get phModifier => 'ऊपर की दशा के स्वामी से गिनने पर';
+
+  @override
+  String get phContext => 'आगे-पीछे की अवधियाँ';
+
+  @override
+  String phUntil(String date) {
+    return '$date तक';
+  }
 }

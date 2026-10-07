@@ -15,6 +15,7 @@ import 'package:kundlisaar/screens/hastrekha_screen.dart';
 import 'package:kundlisaar/screens/muhurta_screen.dart';
 import 'package:kundlisaar/screens/namkaran_screen.dart';
 import 'package:kundlisaar/screens/numerology_screen.dart';
+import 'package:kundlisaar/screens/phaladesh_screen.dart';
 import 'package:kundlisaar/screens/prashna_screen.dart';
 import 'package:kundlisaar/screens/rashifal_screen.dart';
 import 'package:kundlisaar/screens/remedies_screen.dart';
@@ -97,6 +98,7 @@ void main() {
 
   group('every feature screen builds on a phone', () {
     final Map<String, Widget Function()> screens = <String, Widget Function()>{
+      'phaladesh': () => const PhaladeshScreen(),
       'strengths': () => const StrengthsScreen(),
       'transits': () => const TransitsScreen(),
       'today': () => const RashifalScreen(),

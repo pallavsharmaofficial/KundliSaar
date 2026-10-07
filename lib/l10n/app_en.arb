@@ -219,5 +219,62 @@
   "swamijiIdle": "Ask me about your kundli.",
   "swamijiThinking": "Let me look at the chart.",
   "moreFeatures": "More",
-  "computing": "Casting the chart"
+  "computing": "Casting the chart",
+  "featurePhaladesh": "Life timeline",
+  "phTimeline": "Timeline",
+  "phHouses": "Houses",
+  "phPeriods": "Periods",
+  "phGrahas": "Grahas",
+  "phGochar": "Transits",
+  "phTimelineTitle": "Your life, window by window",
+  "phTimelineSub": "Dated windows from birth to about ninety, each read from your own chart.",
+  "phHousesTitle": "The twelve houses",
+  "phHousesSub": "Each house read from its sign, its lord, who sits in it and who looks at it.",
+  "phPeriodsTitle": "Dasha by dasha",
+  "phPeriodsSub": "Every mahadasha, antardasha and pratyantardasha with its dates, read against the periods before it, after it and around it.",
+  "phGrahasTitle": "The nine grahas",
+  "phGrahasSub": "Each graha in its sign and house, with its dignity and the company it keeps.",
+  "phGocharTitle": "Transits now",
+  "phGocharSub": "The slow grahas read against your chart, with the dates they enter and leave each sign.",
+  "phNow": "You are here",
+  "phAge": "Age {from} to {to}",
+  "@phAge": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "phAsks": "What it asks of you",
+  "phRelief": "Relief",
+  "phLord": "Lord",
+  "phLordStands": "Lord stands in",
+  "phOccupants": "Occupants",
+  "phAspects": "Aspected by",
+  "phNone": "None",
+  "phEntered": "Entered the sign",
+  "phLeaves": "Leaves the sign",
+  "phFromMoon": "From the Moon",
+  "phFromLagna": "From the lagna",
+  "phFocus": "Focus",
+  "phToneSupportive": "Supportive",
+  "phToneMixed": "Mixed",
+  "phToneDemanding": "Asks for effort",
+  "phYogas": "Yogas it takes part in",
+  "phApproxTime": "You marked the birth time as approximate. Dasha dates rest on the Moon’s exact position, so every date here can move by months. Trust the order of the periods more than the dates.",
+  "phScope": "These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.",
+  "phPromise": "What this lord promises",
+  "phModifier": "Counted from the lord of the period above",
+  "phContext": "The periods before and after",
+  "phUntil": "until {date}",
+  "@phUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

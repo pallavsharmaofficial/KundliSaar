@@ -84,6 +84,11 @@ class HomeScreen extends StatelessWidget {
                 _Section(
                   title: l.tabChart,
                   tiles: <_Tile>[
+                    _Tile(
+                      Icons.timeline_outlined,
+                      l.featurePhaladesh,
+                      '/phaladesh',
+                    ),
                     _Tile(Icons.today_outlined, l.featureRashifal, '/today'),
                     _Tile(
                       Icons.speed_outlined,

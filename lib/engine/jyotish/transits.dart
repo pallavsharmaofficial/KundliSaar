@@ -153,6 +153,72 @@ DateTime? _nextIngress(
   return null;
 }
 
+/// When a graha entered the sign it stands in, and when it next leaves it.
+class SignStay {
+  const SignStay({
+    required this.sign,
+    required this.entered,
+    required this.leaves,
+  });
+
+  final int sign;
+
+  /// The most recent moment the graha crossed into [sign], or null when it has
+  /// been there longer than the search reaches.
+  final DateTime? entered;
+
+  /// The first moment after the one asked for that it stands outside [sign].
+  /// A retrograde graha can come back across the line, so this is when it
+  /// first leaves, not when it is done with the sign for good.
+  final DateTime? leaves;
+}
+
+int _signAt(Graha graha, double jdUt, Ayanamsa ayanamsa) =>
+    (_sidereal(graha, Instant.fromJulianDayUt(jdUt), ayanamsa) / 30).floor() %
+    12;
+
+/// Finds the entry into, and the first exit from, the sign [graha] occupies at
+/// [moment]. The scan steps [stepDays] at a time and bisects the step that
+/// crosses the boundary, which is exact to well under a minute.
+SignStay signStayAt(
+  Graha graha,
+  DateTime moment,
+  Ayanamsa ayanamsa, {
+  int maxDays = 1600,
+  double stepDays = 5,
+}) {
+  final double jd = julianDayFromUtc(moment.toUtc());
+  final int here = _signAt(graha, jd, ayanamsa);
+
+  double? crossing(double direction) {
+    for (double day = stepDays; day <= maxDays; day += stepDays) {
+      final double at = jd + direction * day;
+      if (_signAt(graha, at, ayanamsa) == here) continue;
+      // [inside] still stands in the sign, [outside] no longer does.
+      double inside = jd + direction * (day - stepDays);
+      double outside = at;
+      for (int i = 0; i < 24; i++) {
+        final double mid = (inside + outside) / 2;
+        if (_signAt(graha, mid, ayanamsa) == here) {
+          inside = mid;
+        } else {
+          outside = mid;
+        }
+      }
+      return (inside + outside) / 2;
+    }
+    return null;
+  }
+
+  final double? back = crossing(-1);
+  final double? ahead = crossing(1);
+  return SignStay(
+    sign: here,
+    entered: back == null ? null : utcFromJulianDay(back),
+    leaves: ahead == null ? null : utcFromJulianDay(ahead),
+  );
+}
+
 SadeSatiWindow _sadeSati(Kundli kundli, DateTime moment) {
   final Ayanamsa ayanamsa = kundli.ayanamsa;
   final int moonSign = kundli.moonRashi.index;

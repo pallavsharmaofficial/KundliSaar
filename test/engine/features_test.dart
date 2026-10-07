@@ -119,6 +119,36 @@ void main() {
       );
     });
 
+    test('the Moon’s paksha bala follows its brightness', () {
+      // New moon 29 January 2025 at 12:36 UT, full moon 12 February at 13:53.
+      // The Moon's paksha bala is doubled and runs from nothing at the new
+      // moon to its greatest at the full moon. It once ran backwards inside
+      // 72 degrees of the Sun, which gave the new Moon the most of all.
+      Kundli at(DateTime utc) => computeKundli(
+        BirthData(
+          name: 'x',
+          localDateTime: utc,
+          utcOffset: Duration.zero,
+          place: delhi,
+        ),
+      );
+      final Kundli newMoon = at(DateTime.utc(2025, 1, 29, 12, 36));
+      final Kundli fullMoon = at(DateTime.utc(2025, 2, 12, 14));
+      final Kundli crescent = at(DateTime.utc(2025, 1, 26, 12));
+      final Kundli waxingCrescent = at(DateTime.utc(2025, 1, 31, 12));
+      expect(computeShadbala(newMoon)[Graha.moon]!.paksha, lessThan(5));
+      expect(computeShadbala(fullMoon)[Graha.moon]!.paksha, greaterThan(115));
+      expect(
+        computeShadbala(waxingCrescent)[Graha.moon]!.paksha,
+        lessThan(computeShadbala(fullMoon)[Graha.moon]!.paksha),
+      );
+      // Natural benefic only while bright: neither crescent counts.
+      expect(isBenefic(newMoon, Graha.moon), isFalse);
+      expect(isBenefic(crescent, Graha.moon), isFalse);
+      expect(isBenefic(waxingCrescent, Graha.moon), isFalse);
+      expect(isBenefic(fullMoon, Graha.moon), isTrue);
+    });
+
     test('naisargika bala follows the fixed classical order', () {
       expect(bala[Graha.sun]!.naisargika, 60.0);
       expect(bala[Graha.saturn]!.naisargika, 8.57);

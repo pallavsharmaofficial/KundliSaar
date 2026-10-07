@@ -1249,6 +1249,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Casting the chart'**
   String get computing;
+
+  /// No description provided for @featurePhaladesh.
+  ///
+  /// In en, this message translates to:
+  /// **'Life timeline'**
+  String get featurePhaladesh;
+
+  /// No description provided for @phTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get phTimeline;
+
+  /// No description provided for @phHouses.
+  ///
+  /// In en, this message translates to:
+  /// **'Houses'**
+  String get phHouses;
+
+  /// No description provided for @phPeriods.
+  ///
+  /// In en, this message translates to:
+  /// **'Periods'**
+  String get phPeriods;
+
+  /// No description provided for @phGrahas.
+  ///
+  /// In en, this message translates to:
+  /// **'Grahas'**
+  String get phGrahas;
+
+  /// No description provided for @phGochar.
+  ///
+  /// In en, this message translates to:
+  /// **'Transits'**
+  String get phGochar;
+
+  /// No description provided for @phTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your life, window by window'**
+  String get phTimelineTitle;
+
+  /// No description provided for @phTimelineSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Dated windows from birth to about ninety, each read from your own chart.'**
+  String get phTimelineSub;
+
+  /// No description provided for @phHousesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The twelve houses'**
+  String get phHousesTitle;
+
+  /// No description provided for @phHousesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Each house read from its sign, its lord, who sits in it and who looks at it.'**
+  String get phHousesSub;
+
+  /// No description provided for @phPeriodsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dasha by dasha'**
+  String get phPeriodsTitle;
+
+  /// No description provided for @phPeriodsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Every mahadasha, antardasha and pratyantardasha with its dates, read against the periods before it, after it and around it.'**
+  String get phPeriodsSub;
+
+  /// No description provided for @phGrahasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The nine grahas'**
+  String get phGrahasTitle;
+
+  /// No description provided for @phGrahasSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Each graha in its sign and house, with its dignity and the company it keeps.'**
+  String get phGrahasSub;
+
+  /// No description provided for @phGocharTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transits now'**
+  String get phGocharTitle;
+
+  /// No description provided for @phGocharSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The slow grahas read against your chart, with the dates they enter and leave each sign.'**
+  String get phGocharSub;
+
+  /// No description provided for @phNow.
+  ///
+  /// In en, this message translates to:
+  /// **'You are here'**
+  String get phNow;
+
+  /// No description provided for @phAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Age {from} to {to}'**
+  String phAge(String from, String to);
+
+  /// No description provided for @phAsks.
+  ///
+  /// In en, this message translates to:
+  /// **'What it asks of you'**
+  String get phAsks;
+
+  /// No description provided for @phRelief.
+  ///
+  /// In en, this message translates to:
+  /// **'Relief'**
+  String get phRelief;
+
+  /// No description provided for @phLord.
+  ///
+  /// In en, this message translates to:
+  /// **'Lord'**
+  String get phLord;
+
+  /// No description provided for @phLordStands.
+  ///
+  /// In en, this message translates to:
+  /// **'Lord stands in'**
+  String get phLordStands;
+
+  /// No description provided for @phOccupants.
+  ///
+  /// In en, this message translates to:
+  /// **'Occupants'**
+  String get phOccupants;
+
+  /// No description provided for @phAspects.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspected by'**
+  String get phAspects;
+
+  /// No description provided for @phNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get phNone;
+
+  /// No description provided for @phEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered the sign'**
+  String get phEntered;
+
+  /// No description provided for @phLeaves.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaves the sign'**
+  String get phLeaves;
+
+  /// No description provided for @phFromMoon.
+  ///
+  /// In en, this message translates to:
+  /// **'From the Moon'**
+  String get phFromMoon;
+
+  /// No description provided for @phFromLagna.
+  ///
+  /// In en, this message translates to:
+  /// **'From the lagna'**
+  String get phFromLagna;
+
+  /// No description provided for @phFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get phFocus;
+
+  /// No description provided for @phToneSupportive.
+  ///
+  /// In en, this message translates to:
+  /// **'Supportive'**
+  String get phToneSupportive;
+
+  /// No description provided for @phToneMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get phToneMixed;
+
+  /// No description provided for @phToneDemanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks for effort'**
+  String get phToneDemanding;
+
+  /// No description provided for @phYogas.
+  ///
+  /// In en, this message translates to:
+  /// **'Yogas it takes part in'**
+  String get phYogas;
+
+  /// No description provided for @phApproxTime.
+  ///
+  /// In en, this message translates to:
+  /// **'You marked the birth time as approximate. Dasha dates rest on the Moon’s exact position, so every date here can move by months. Trust the order of the periods more than the dates.'**
+  String get phApproxTime;
+
+  /// No description provided for @phScope.
+  ///
+  /// In en, this message translates to:
+  /// **'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.'**
+  String get phScope;
+
+  /// No description provided for @phPromise.
+  ///
+  /// In en, this message translates to:
+  /// **'What this lord promises'**
+  String get phPromise;
+
+  /// No description provided for @phModifier.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted from the lord of the period above'**
+  String get phModifier;
+
+  /// No description provided for @phContext.
+  ///
+  /// In en, this message translates to:
+  /// **'The periods before and after'**
+  String get phContext;
+
+  /// No description provided for @phUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'until {date}'**
+  String phUntil(String date);
 }
 
 class _AppLocalizationsDelegate

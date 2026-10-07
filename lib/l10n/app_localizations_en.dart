@@ -599,4 +599,135 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get computing => 'Casting the chart';
+
+  @override
+  String get featurePhaladesh => 'Life timeline';
+
+  @override
+  String get phTimeline => 'Timeline';
+
+  @override
+  String get phHouses => 'Houses';
+
+  @override
+  String get phPeriods => 'Periods';
+
+  @override
+  String get phGrahas => 'Grahas';
+
+  @override
+  String get phGochar => 'Transits';
+
+  @override
+  String get phTimelineTitle => 'Your life, window by window';
+
+  @override
+  String get phTimelineSub =>
+      'Dated windows from birth to about ninety, each read from your own chart.';
+
+  @override
+  String get phHousesTitle => 'The twelve houses';
+
+  @override
+  String get phHousesSub =>
+      'Each house read from its sign, its lord, who sits in it and who looks at it.';
+
+  @override
+  String get phPeriodsTitle => 'Dasha by dasha';
+
+  @override
+  String get phPeriodsSub =>
+      'Every mahadasha, antardasha and pratyantardasha with its dates, read against the periods before it, after it and around it.';
+
+  @override
+  String get phGrahasTitle => 'The nine grahas';
+
+  @override
+  String get phGrahasSub =>
+      'Each graha in its sign and house, with its dignity and the company it keeps.';
+
+  @override
+  String get phGocharTitle => 'Transits now';
+
+  @override
+  String get phGocharSub =>
+      'The slow grahas read against your chart, with the dates they enter and leave each sign.';
+
+  @override
+  String get phNow => 'You are here';
+
+  @override
+  String phAge(String from, String to) {
+    return 'Age $from to $to';
+  }
+
+  @override
+  String get phAsks => 'What it asks of you';
+
+  @override
+  String get phRelief => 'Relief';
+
+  @override
+  String get phLord => 'Lord';
+
+  @override
+  String get phLordStands => 'Lord stands in';
+
+  @override
+  String get phOccupants => 'Occupants';
+
+  @override
+  String get phAspects => 'Aspected by';
+
+  @override
+  String get phNone => 'None';
+
+  @override
+  String get phEntered => 'Entered the sign';
+
+  @override
+  String get phLeaves => 'Leaves the sign';
+
+  @override
+  String get phFromMoon => 'From the Moon';
+
+  @override
+  String get phFromLagna => 'From the lagna';
+
+  @override
+  String get phFocus => 'Focus';
+
+  @override
+  String get phToneSupportive => 'Supportive';
+
+  @override
+  String get phToneMixed => 'Mixed';
+
+  @override
+  String get phToneDemanding => 'Asks for effort';
+
+  @override
+  String get phYogas => 'Yogas it takes part in';
+
+  @override
+  String get phApproxTime =>
+      'You marked the birth time as approximate. Dasha dates rest on the Moon’s exact position, so every date here can move by months. Trust the order of the periods more than the dates.';
+
+  @override
+  String get phScope =>
+      'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.';
+
+  @override
+  String get phPromise => 'What this lord promises';
+
+  @override
+  String get phModifier => 'Counted from the lord of the period above';
+
+  @override
+  String get phContext => 'The periods before and after';
+
+  @override
+  String phUntil(String date) {
+    return 'until $date';
+  }
 }
