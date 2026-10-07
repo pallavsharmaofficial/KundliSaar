@@ -10,42 +10,53 @@
 <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="../favicon.png">
 <meta name="theme-color" content="#6B1D1D">
-<meta name="robots" content="index,follow">
 <link rel="canonical" href="https://pallavsharmaofficial.github.io/KundliSaar/get/">
 <link rel="stylesheet" href="../style.css">
 <style>
   .get-hero { text-align: center; }
-  .steps { list-style: none; padding: 0; margin: 1.5rem 0 0; }
-  .steps li { padding: .55rem 0; border-top: 1px solid rgba(184,134,11,.25); }
+  .hook { font-size: 1.45rem; font-weight: 700; line-height: 1.3; margin: .2rem 0 .6rem; }
+  .steps { list-style: none; padding: 0; margin: 1rem 0 0; }
+  .steps li { padding: .5rem 0; border-top: 1px solid rgba(184,134,11,.25); }
   .steps li:first-child { border-top: 0; }
-  .soon { opacity: .72; font-size: .92rem; }
+  .btn.big { font-size: 1.1rem; padding: .9rem 1.6rem; }
+  .how { font-size: .92rem; opacity: .8; margin-top: .5rem; }
+  .ios-steps { display: none; text-align: left; max-width: 26rem;
+               margin: .8rem auto 0; font-size: .95rem; line-height: 1.6; }
+  .ios-steps.show { display: block; }
+  kbd { background: rgba(184,134,11,.18); border-radius: .3rem;
+        padding: .1rem .4rem; font-family: inherit; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="get-hero">
     <h1>कुंडलीसार</h1>
-    <p class="sub devanagari">आपकी राशि वो नहीं है जो आप सोचते हैं।</p>
+    <p class="hook devanagari">आपकी राशि वो नहीं है जो आप सोचते हैं।</p>
     <p class="note">सूर्य राशि अंग्रेज़ी ज्योतिष की है। भारतीय परंपरा चंद्र राशि से चलती है — और वो अक्सर अलग निकलती है।</p>
 
-    <div class="cta">
-      <a class="btn primary" href="../app/">अभी कुंडली बनाइए · Open now</a>
+    <div class="cta" id="cta">
+      <a class="btn primary big" id="open" href="../app/">अभी कुंडली बनाइए</a>
     </div>
-    <p class="note">बिना इंस्टॉल किए, ब्राउज़र में ही चलती है। बिलकुल मुफ़्त।</p>
+    <p class="how" id="how">बिलकुल मुफ़्त। कोई खाता नहीं।</p>
+
+    <div class="ios-steps" id="iosSteps">
+      <b>होम स्क्रीन पर लगाने के लिए:</b><br>
+      नीचे <kbd>Share</kbd> दबाइए → <kbd>Add to Home Screen</kbd> चुनिए।
+      फिर यह बिलकुल ऐप की तरह खुलेगा, बिना इंटरनेट के भी।
+    </div>
   </header>
 
   <section>
     <h2>क्या चाहिए</h2>
     <ul class="steps">
-      <li><b>नाम</b></li>
-      <li><b>जन्म तिथि</b></li>
+      <li><b>नाम</b> और <b>जन्म तिथि</b></li>
       <li><b>सही जन्म समय</b> — यही सबसे ज़रूरी है। पाँच मिनट के फ़र्क़ से दशा हफ़्तों आगे-पीछे हो जाती है, इसलिए माँ या पिताजी से पूछ लीजिए।</li>
       <li><b>जन्म स्थान</b></li>
     </ul>
   </section>
 
   <section>
-    <h2>क्या मिलेगा</h2>
+    <h2>क्या मिलेगा — सब मुफ़्त</h2>
     <ul class="steps">
       <li>लग्न कुंडली और सोलह वर्ग कुंडलियाँ</li>
       <li>विंशोत्तरी दशा — कौन सी तारीख़ से कौन सी तारीख़ तक</li>
@@ -66,15 +77,6 @@
     </ul>
   </section>
 
-  <section>
-    <h2>Android ऐप</h2>
-    <p class="soon">Play Store पर परीक्षण चल रहा है। तब तक ऊपर वाला लिंक ब्राउज़र में पूरी तरह काम करता है —
-      वही गणना, वही सुविधाएँ, कुछ भी कम नहीं।</p>
-    <div class="cta">
-      <a class="btn ghost" href="https://github.com/pallavsharmaofficial/KundliSaar">Source on GitHub</a>
-    </div>
-  </section>
-
   <footer>
     <nav class="topnav centered" aria-label="Site sections">
       <a href="../">मुख्य पृष्ठ</a>
@@ -84,5 +86,82 @@
     </nav>
   </footer>
 </div>
+
+<script>
+(function () {
+  'use strict';
+  // When the Play listing is public, put its URL here and Android visitors are
+  // sent there first. Until then the PWA install below IS the Android app --
+  // same engine, home-screen icon, works offline. Nothing else needs changing,
+  // and no printed QR ever has to be reissued.
+  var PLAY_URL = null;
+
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPad|iPhone|iPod/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+
+  var cta = document.getElementById('cta');
+  var open = document.getElementById('open');
+  var how = document.getElementById('how');
+  var iosSteps = document.getElementById('iosSteps');
+
+  function addButton(label, onClick, href) {
+    var a = document.createElement('a');
+    a.className = 'btn primary big';
+    a.textContent = label;
+    if (href) { a.href = href; } else { a.href = '#'; }
+    if (onClick) {
+      a.addEventListener('click', function (e) { e.preventDefault(); onClick(); });
+    }
+    cta.insertBefore(a, cta.firstChild);
+    open.className = 'btn ghost';
+    return a;
+  }
+
+  if (standalone) {
+    // Already installed and launched from the home screen: get out of the way.
+    how.textContent = 'ऐप लगी हुई है। नीचे से सीधे खोलिए।';
+    return;
+  }
+
+  if (PLAY_URL && isAndroid) {
+    addButton('Play Store से इंस्टॉल करें', null, PLAY_URL);
+    how.textContent = 'या बिना इंस्टॉल किए ब्राउज़र में चलाइए।';
+    return;
+  }
+
+  // Chrome fires this when the app qualifies for installation. Holding onto it
+  // lets us offer a real install button instead of hoping someone finds the
+  // browser menu.
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    var btn = addButton('ऐप इंस्टॉल करें', function () {
+      if (!deferred) { return; }
+      deferred.prompt();
+      deferred.userChoice.then(function (choice) {
+        if (choice.outcome === 'accepted') { btn.remove(); }
+        deferred = null;
+      });
+    });
+    how.textContent = 'होम स्क्रीन पर लग जाएगी और बिना इंटरनेट भी चलेगी।';
+  });
+
+  window.addEventListener('appinstalled', function () {
+    how.textContent = 'लग गई! अब होम स्क्रीन से खोलिए।';
+  });
+
+  if (isIOS) {
+    // Safari has no install prompt, so the steps have to be spelled out.
+    iosSteps.classList.add('show');
+  } else if (isAndroid) {
+    how.textContent = 'बिलकुल मुफ़्त। चाहें तो होम स्क्रीन पर भी लगा सकते हैं।';
+  }
+})();
+</script>
 </body>
 </html>
