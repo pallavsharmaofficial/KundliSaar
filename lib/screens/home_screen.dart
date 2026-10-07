@@ -91,6 +91,21 @@ class HomeScreen extends StatelessWidget {
                     ),
                     _Tile(Icons.today_outlined, l.featureRashifal, '/today'),
                     _Tile(
+                      Icons.donut_large_outlined,
+                      l.featureSudarshan,
+                      '/sudarshan',
+                    ),
+                    _Tile(
+                      Icons.event_busy_outlined,
+                      l.featureGhatChakra,
+                      '/ghat-chakra',
+                    ),
+                    _Tile(
+                      Icons.grid_on_outlined,
+                      l.featureSarvatobhadra,
+                      '/sarvatobhadra',
+                    ),
+                    _Tile(
                       Icons.speed_outlined,
                       l.featureStrengths,
                       '/strengths',

@@ -601,6 +601,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get computing => 'कुंडली बन रही है';
 
   @override
+  String get featureGhatChakra => 'घात चक्र';
+
+  @override
+  String get featureSarvatobhadra => 'सर्वतोभद्र चक्र';
+
+  @override
+  String get featureSudarshan => 'सुदर्शन चक्र';
+
+  @override
   String get featurePhaladesh => 'जीवन फलादेश';
 
   @override

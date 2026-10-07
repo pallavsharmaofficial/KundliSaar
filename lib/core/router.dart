@@ -14,7 +14,10 @@ import '../screens/muhurta_screen.dart';
 import '../screens/namkaran_screen.dart';
 import '../screens/numerology_screen.dart';
 import '../screens/panchang_screen.dart';
+import '../screens/ghat_chakra_screen.dart';
 import '../screens/phaladesh_screen.dart';
+import '../screens/sarvatobhadra_screen.dart';
+import '../screens/sudarshan_screen.dart';
 import '../screens/prashna_screen.dart';
 import '../screens/rashifal_screen.dart';
 import '../screens/remedies_screen.dart';
@@ -78,6 +81,21 @@ GoRouter createRouter() => GoRouter(
       path: '/phaladesh',
       builder: (BuildContext context, GoRouterState state) =>
           const PhaladeshScreen(),
+    ),
+    GoRoute(
+      path: '/ghat-chakra',
+      builder: (BuildContext context, GoRouterState state) =>
+          const GhatChakraScreen(),
+    ),
+    GoRoute(
+      path: '/sarvatobhadra',
+      builder: (BuildContext context, GoRouterState state) =>
+          const SarvatobhadraScreen(),
+    ),
+    GoRoute(
+      path: '/sudarshan',
+      builder: (BuildContext context, GoRouterState state) =>
+          const SudarshanScreen(),
     ),
     GoRoute(
       path: '/strengths',

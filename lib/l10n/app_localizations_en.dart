@@ -601,6 +601,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get computing => 'Casting the chart';
 
   @override
+  String get featureGhatChakra => 'Ghat Chakra';
+
+  @override
+  String get featureSarvatobhadra => 'Sarvatobhadra Chakra';
+
+  @override
+  String get featureSudarshan => 'Sudarshan Chakra';
+
+  @override
   String get featurePhaladesh => 'Life timeline';
 
   @override

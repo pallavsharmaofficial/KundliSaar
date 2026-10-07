@@ -1250,6 +1250,24 @@ abstract class AppLocalizations {
   /// **'Casting the chart'**
   String get computing;
 
+  /// No description provided for @featureGhatChakra.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghat Chakra'**
+  String get featureGhatChakra;
+
+  /// No description provided for @featureSarvatobhadra.
+  ///
+  /// In en, this message translates to:
+  /// **'Sarvatobhadra Chakra'**
+  String get featureSarvatobhadra;
+
+  /// No description provided for @featureSudarshan.
+  ///
+  /// In en, this message translates to:
+  /// **'Sudarshan Chakra'**
+  String get featureSudarshan;
+
   /// No description provided for @featurePhaladesh.
   ///
   /// In en, this message translates to:
