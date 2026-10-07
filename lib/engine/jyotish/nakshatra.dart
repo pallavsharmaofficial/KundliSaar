@@ -259,7 +259,7 @@ const List<NakshatraInfo> nakshatraTable = <NakshatraInfo>[
     hindi: 'मूल',
     lord: Graha.ketu,
     deityEnglish: 'Nirriti',
-    deityHindi: 'निर्ऱति',
+    deityHindi: 'निर्ऋति',
     symbolEnglish: 'Bunch of roots',
     gana: Gana.rakshasa,
     yoni: 'dog',

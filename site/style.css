@@ -73,3 +73,63 @@
   li { margin-bottom: 10px; }
   section p { margin: 0 0 14px; }
   strong { font-weight: 700; }
+
+  /* Reference pages: learn/ and panchang/. The prose is generated from the
+     engine by tools/site, so these rules only dress what it emits. */
+  .page-head .sub { max-width: 62ch; margin: 0 0 10px; }
+  .topnav { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 18px; font-size: 16px; }
+  .topnav a { font-weight: 600; text-decoration: none; }
+  .topnav a:hover { text-decoration: underline; }
+  .topnav.centered { justify-content: center; margin: 22px 0 0; }
+  .crumbs ol { display: flex; flex-wrap: wrap; list-style: none; margin: 0 0 12px; padding: 0; font-size: 15px; color: #6b5c4a; }
+  .crumbs li { margin: 0; }
+  .crumbs li + li::before { content: "\203A"; margin: 0 8px; color: var(--gold); }
+  .h1-hi { display: inline-block; font-family: Mukta, system-ui, sans-serif; font-size: 0.6em; font-weight: 400; color: var(--indigo); }
+  .langjump { margin: 10px 0 0; font-size: 16px; }
+  section h2:not(:first-child) { margin-top: 30px; }
+  .prose { margin: 0 0 16px; }
+  .note { color: #6b5c4a; font-size: 15px; }
+  .scroll { overflow-x: auto; margin: 0 0 18px; -webkit-overflow-scrolling: touch; }
+  .scroll table { min-width: 460px; }
+  table caption { text-align: left; font-weight: 600; padding: 6px; color: var(--maroon); }
+  thead th { border-bottom: 2px solid rgba(34,26,20,0.2); font-size: 15px; }
+  .facts th { width: 12rem; font-weight: 600; color: #5a4a3a; vertical-align: top; }
+  .facts td { vertical-align: top; }
+  small { color: #6b5c4a; font-size: 14.5px; }
+  .callout { margin: 24px 0; padding: 18px 20px; background: var(--parchment-deep); border: 1px solid rgba(34,26,20,0.14); border-radius: 16px; }
+  .callout h3 { margin: 0 0 6px; font-size: 20px; color: var(--maroon); }
+  .callout p { margin: 0 0 12px; }
+  .callout p:last-child { margin-bottom: 0; }
+  a.card { display: block; color: inherit; text-decoration: none; }
+  a.card:hover, a.card:focus-visible { border-color: var(--gold); }
+  .card .h3-hi { color: var(--indigo); font-weight: 400; font-size: 0.9em; }
+  .sibs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 26px 0 10px; border-top: 1px solid rgba(34,26,20,0.12); }
+  .sib { display: block; padding: 12px 16px; text-decoration: none; background: rgba(255,255,255,0.6); border: 1px solid rgba(34,26,20,0.14); border-radius: 14px; }
+  .sib:hover, .sib:focus-visible { border-color: var(--gold); }
+  .sib.next { grid-column: 2; text-align: right; }
+  .sib .dir { display: block; font-size: 14px; color: #6b5c4a; }
+  .pill { display: inline-block; padding: 1px 10px; font-size: 14px; border-radius: 999px; border: 1px solid rgba(34,26,20,0.2); }
+  .pill.good { color: #1f6b3a; border-color: #1f6b3a; }
+  .pill.bad { color: var(--sindoor); border-color: var(--sindoor); }
+  .pill.major { color: var(--maroon); border-color: var(--gold); background: rgba(227,160,8,0.16); }
+  .stamp { display: inline-block; margin: 4px 0 0; padding: 2px 12px; font-size: 15px; color: var(--maroon); background: rgba(227,160,8,0.18); border-radius: 999px; }
+  .tight td, .tight th { padding: 6px 6px; font-size: 16px; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .facts th { width: 8.5rem; }
+    .sibs { grid-template-columns: 1fr; }
+    .sib.next { grid-column: auto; text-align: left; }
+  }
+  @media (prefers-color-scheme: dark) {
+    .h1-hi, .card .h3-hi { color: #e6d6a6; }
+    .crumbs ol, .note, small, .sib .dir { color: #cdbf9f; }
+    table caption, .callout h3 { color: var(--haldi); }
+    .facts th { color: #d9cba8; }
+    thead th { border-bottom-color: rgba(241,228,195,0.3); }
+    .callout { background: rgba(255,255,255,0.06); border-color: rgba(241,228,195,0.18); }
+    .sib { background: rgba(255,255,255,0.05); border-color: rgba(241,228,195,0.18); }
+    .pill { border-color: rgba(241,228,195,0.3); }
+    .pill.good { color: #7fd29a; border-color: #7fd29a; }
+    .pill.bad { color: #ff8f8f; border-color: #ff8f8f; }
+    .pill.major { color: var(--haldi); }
+    .stamp { color: var(--haldi); background: rgba(227,160,8,0.16); }
+  }

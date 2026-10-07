@@ -45,6 +45,15 @@ jobs:
           flutter build web --release \
             --base-href "/${{ github.event.repository.name }}/app/"
 
+      - name: Generate the Learn pages and the panchang
+        # Built from the engine on every deploy, so a change to the engine
+        # reaches the site without anyone remembering to regenerate. The
+        # panchang takes today's date in IST, which is why the daily-panchang
+        # workflow exists: it asks for this deploy once a day.
+        run: |
+          dart run tools/site/build_pages.dart
+          dart run tools/site/build_panchang.dart
+
       - name: Assemble site
         run: |
           rm -rf dist

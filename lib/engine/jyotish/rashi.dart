@@ -121,7 +121,7 @@ const List<RashiInfo> rashiTable = <RashiInfo>[
     element: Element.water,
     quality: Quality.fixed,
     symbolEnglish: 'Scorpion',
-    symbolHindi: 'बिछू',
+    symbolHindi: 'बिच्छू',
   ),
   RashiInfo(
     rashi: Rashi.dhanu,

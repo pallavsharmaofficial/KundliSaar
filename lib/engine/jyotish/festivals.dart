@@ -5,6 +5,7 @@ import '../astro/houses.dart';
 import '../astro/rise_set.dart';
 import '../astro/time.dart';
 import 'panchang.dart';
+import 'rashi.dart';
 
 /// The twelve amanta lunar months, which run new moon to new moon and take
 /// their name from the solar sign the Sun enters inside them.
@@ -61,7 +62,7 @@ class Festival {
 /// it. Diwali is the clearest case: Lakshmi Puja is done at dusk, so the day
 /// holding Amavasya in the evening takes the festival even when that morning
 /// still belonged to Chaturdashi.
-enum _When { sunrise, midday, pradosh, nishita }
+enum _When { sunrise, midday, aparahna, pradosh, nishita }
 
 /// A rule of the form "this month, this paksha, this tithi".
 class _Rule {
@@ -118,11 +119,18 @@ const List<_Rule> _rules = <_Rule>[
     15,
     'Sarva Pitru Amavasya',
     'सर्व पितृ अमावस्या',
-    when: _When.midday,
+    when: _When.aparahna,
   ),
   _Rule(6, true, 1, 'Sharad Navratri begins', 'शारदीय नवरात्रि आरंभ'),
   _Rule(6, true, 8, 'Durga Ashtami', 'दुर्गाष्टमी'),
-  _Rule(6, true, 10, 'Dussehra, Vijayadashami', 'दशहरा, विजयादशमी'),
+  _Rule(
+    6,
+    true,
+    10,
+    'Dussehra, Vijayadashami',
+    'दशहरा, विजयादशमी',
+    when: _When.aparahna,
+  ),
   _Rule(6, true, 15, 'Sharad Purnima', 'शरद पूर्णिमा'),
   _Rule(6, false, 13, 'Dhanteras', 'धनतेरस', when: _When.pradosh),
   _Rule(6, false, 14, 'Narak Chaturdashi, Choti Diwali', 'नरक चतुर्दशी'),
@@ -186,6 +194,8 @@ class LunarDay {
     required this.sunsetJdUt,
     required this.tithiIndex,
     required this.tithiAtMidday,
+    required this.tithiAtAparahnaStart,
+    required this.tithiAtAparahnaEnd,
     required this.tithiAtPradosh,
     required this.tithiAtNishita,
     required this.bhadraAtPradosh,
@@ -199,9 +209,17 @@ class LunarDay {
   /// Zero to twenty-nine from the new moon, at sunrise.
   final int tithiIndex;
 
-  /// The same count at midday, at dusk and in the middle of the night, which
-  /// is what the rule for each festival actually asks for.
+  /// The same count at the moments the rules actually ask for. The day is
+  /// divided into five parts: madhyahna is the third and aparahna the fourth,
+  /// and a festival read in one of them can fall a day away from a festival
+  /// read in the other.
   final int tithiAtMidday;
+
+  /// Aparahna is a stretch, not an instant, and the rule is whether the tithi
+  /// touches it at all. Sampling one moment put Vijayadashami a day late in
+  /// years where Dashami begins inside that window.
+  final int tithiAtAparahnaStart;
+  final int tithiAtAparahnaEnd;
   final int tithiAtPradosh;
   final int tithiAtNishita;
 
@@ -213,10 +231,17 @@ class LunarDay {
 
   int tithiFor(int when) => switch (when) {
     1 => tithiAtMidday,
-    2 => tithiAtPradosh,
-    3 => tithiAtNishita,
+    2 => tithiAtAparahnaStart,
+    3 => tithiAtPradosh,
+    4 => tithiAtNishita,
     _ => tithiIndex,
   };
+
+  /// Every tithi the day carries at the moment this rule is read at. Aparahna
+  /// spans a stretch of the afternoon, so it can hold two.
+  List<int> tithisFor(int when) => when == 2
+      ? <int>{tithiAtAparahnaStart, tithiAtAparahnaEnd}.toList()
+      : <int>[tithiFor(when)];
 
   bool get isShukla => tithiIndex < 15;
   int get tithiInPaksha => (tithiIndex % 15) + 1;
@@ -282,6 +307,8 @@ List<LunarDay> lunarYear({
         sunsetJdUt: sunset,
         tithiIndex: tithi,
         tithiAtMidday: tithiAt((sunrise + sunset) / 2),
+        tithiAtAparahnaStart: tithiAt(sunrise + (sunset - sunrise) * 0.6),
+        tithiAtAparahnaEnd: tithiAt(sunrise + (sunset - sunrise) * 0.8),
         // Pradosh runs from dusk for about two and a half ghatis.
         tithiAtPradosh: tithiAt(sunset + 0.02),
         // Nishita is the middle of the night, after midnight.
@@ -316,12 +343,15 @@ List<Festival> festivalsForYear({
   for (final _Rule rule in _rules) {
     final List<LunarDay> matches = <LunarDay>[];
     for (final LunarDay day in days) {
-      final int observed = day.tithiFor(rule.when.index);
-      if (rule.month == day.monthIndex &&
-          rule.shukla == (observed < 15) &&
-          rule.tithi == (observed % 15) + 1) {
-        matches.add(day);
-      }
+      final bool hit = day
+          .tithisFor(rule.when.index)
+          .any(
+            (int observed) =>
+                rule.month == day.monthIndex &&
+                rule.shukla == (observed < 15) &&
+                rule.tithi == (observed % 15) + 1,
+          );
+      if (hit) matches.add(day);
     }
     if (matches.isEmpty) continue;
     LunarDay chosen = matches.first;
@@ -339,7 +369,12 @@ List<Festival> festivalsForYear({
         if (index >= 0 && index + 1 < days.length) chosen = days[index + 1];
       }
     }
-    final int observed = chosen.tithiFor(rule.when.index);
+    final int observed = chosen
+        .tithisFor(rule.when.index)
+        .firstWhere(
+          (int t) => rule.tithi == (t % 15) + 1 && rule.shukla == (t < 15),
+          orElse: () => chosen.tithiFor(rule.when.index),
+        );
     out.add(
       Festival(
         date: chosen.date,
@@ -434,13 +469,13 @@ List<Festival> festivalsForYear({
         Festival(
           date: day.date,
           english: '${names[sign]} Sankranti',
-          hindi: '${names[sign]} संक्रांति',
+          hindi: '${rashiTable[sign].hindi} संक्रांति',
           detail: sign == 9
               ? 'Makar Sankranti: the Sun turns north. Kites, til and gur.'
               : 'The Sun enters ${names[sign]}.',
           detailHindi: sign == 9
               ? 'मकर संक्रांति: सूर्य उत्तरायण होते हैं।'
-              : 'सूर्य ${names[sign]} राशि में प्रवेश करते हैं।',
+              : 'सूर्य ${rashiTable[sign].hindi} राशि में प्रवेश करते हैं।',
           isMajor: sign == 9,
         ),
       );

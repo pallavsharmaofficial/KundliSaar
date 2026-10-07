@@ -89,7 +89,8 @@ namesBySyllable = <String, List<SuggestedName>>{
     SuggestedName('Chetana', 'चेतना', 'Awareness', 'चेतना'),
   ],
   'Cho': <SuggestedName>[
-    SuggestedName('Chodan', 'चोदन', 'One who urges on', 'प्रेरक'),
+    SuggestedName('Chaitali', 'चैताली', 'Born in Chaitra', 'चैत्र में जन्मी'),
+    SuggestedName('Chodhary', 'चौधरी', 'One who leads', 'नेतृत्व करने वाला'),
   ],
   'La': <SuggestedName>[
     SuggestedName('Lakshya', 'लक्ष्य', 'The aim', 'उद्देश्य'),

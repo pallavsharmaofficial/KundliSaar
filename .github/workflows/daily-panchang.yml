@@ -1,0 +1,66 @@
+name: Refresh the daily panchang
+
+on:
+  schedule:
+    # 19:00 UTC is 00:30 IST, so the page is rebuilt half an hour after the
+    # Delhi date turns over and carries the new day's tithi before sunrise.
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  # contents: commit the regenerated page. actions: ask the existing deploy
+  # workflow to publish it, because a push made with the workflow token does
+  # not start other workflows by itself.
+  contents: write
+  actions: write
+
+concurrency:
+  group: daily-panchang
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # The workflow commits to the branch it runs on and then deploys, so it
+    # must only ever run on the branch that is published.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        # The generators import the engine through the app's package, so the
+        # Flutter toolchain resolves it even though the engine itself is
+        # plain Dart.
+        run: flutter pub get
+
+      - name: Regenerate the panchang
+        run: dart run tools/site/build_panchang.dart
+
+      - name: Commit if it changed
+        id: commit
+        run: |
+          git add site/panchang/index.html site/sitemap.xml
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Panchang already up to date."
+            exit 0
+          fi
+          date_stamp="$(sed -n 's/.*kundlisaar:generated" content="\([0-9-]*\)".*/\1/p' site/panchang/index.html)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: refresh panchang for ${date_stamp}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish through the deploy workflow
+        # The deploy workflow regenerates the site and builds the app itself,
+        # so this only has to ask for it rather than repeat any of it.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref "${{ github.ref_name }}"

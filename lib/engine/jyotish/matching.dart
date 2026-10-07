@@ -92,7 +92,9 @@ const List<List<String>> _yoniEnemies = <List<String>>[
   <String>['goat', 'monkey'],
 ];
 
-const Map<String, List<int>> _ganaScores = <String, List<int>>{
+/// Gana kuta points. Public so the website's reference pages quote the same
+/// numbers the matcher uses instead of a second copy that could drift.
+const Map<String, List<int>> ganaScores = <String, List<int>>{
   // groom gana -> [bride deva, bride manushya, bride rakshasa]
   'deva': <int>[6, 6, 0],
   'manushya': <int>[5, 6, 0],
@@ -237,7 +239,7 @@ MatchResult matchCharts(Kundli bride, Kundli groom) {
 
   // 6. Gana.
   final double gana =
-      _ganaScores[groomNakshatra.gana.name]![brideNakshatra.gana.index]
+      ganaScores[groomNakshatra.gana.name]![brideNakshatra.gana.index]
           .toDouble();
   kootas.add(
     Koota(

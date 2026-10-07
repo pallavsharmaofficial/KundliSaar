@@ -144,6 +144,18 @@ const List<ActivityInfo> activityTable = <ActivityInfo>[
 ActivityInfo activityInfo(Activity activity) =>
     activityTable.firstWhere((ActivityInfo a) => a.activity == activity);
 
+/// How much each choghadiya moves a muhurta score. Public so the website's
+/// panchang page marks the slots with the same judgement the finder applies.
+const Map<String, int> choghadiyaScore = <String, int>{
+  'Amrit': 20,
+  'Shubh': 15,
+  'Labh': 15,
+  'Char': 5,
+  'Udveg': -15,
+  'Kaal': -20,
+  'Rog': -20,
+};
+
 /// Yogas the texts call unfit for beginnings.
 const List<int> inauspiciousYogas = <int>[0, 5, 8, 9, 12, 16, 18, 26];
 
@@ -216,16 +228,7 @@ List<MuhurtaWindow> findMuhurta({
       final List<String> hindi = <String>[];
 
       // Choghadiya quality.
-      const Map<String, int> choghadiya = <String, int>{
-        'Amrit': 20,
-        'Shubh': 15,
-        'Labh': 15,
-        'Char': 5,
-        'Udveg': -15,
-        'Kaal': -20,
-        'Rog': -20,
-      };
-      score += choghadiya[slot.name] ?? 0;
+      score += choghadiyaScore[slot.name] ?? 0;
       reasons.add('${slot.name} choghadiya');
       hindi.add('${slot.name} चौघड़िया');
 

@@ -237,6 +237,16 @@ void main() {
       expect(sankranti.date.day, inInclusiveRange(14, 15));
     });
 
+    test('Dussehra is read at aparahna, not at sunrise', () {
+      // Published panchangs put Vijayadashami 2026 on 20 October. Dashami
+      // begins that afternoon, inside aparahna, and runs past the following
+      // sunrise; reading the tithi at sunrise, or at one instant of aparahna,
+      // lands a day late.
+      final Festival dussehra = find('Dussehra');
+      expect(dussehra.date.month, 10);
+      expect(dussehra.date.day, 20);
+    });
+
     test('Holi follows Holika Dahan by a day', () {
       final Festival dahan = find('Holika Dahan');
       final Festival holi = find('Holi,');
