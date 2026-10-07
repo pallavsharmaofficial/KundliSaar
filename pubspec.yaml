@@ -1,7 +1,7 @@
 name: kundlisaar
 description: "KundliSaar - a free Vedic kundli app that computes everything on your device, in Hindi and English."
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.2.1+3
 
 environment:
   sdk: ^3.8.0
