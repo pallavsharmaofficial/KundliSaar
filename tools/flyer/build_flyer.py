@@ -105,6 +105,7 @@ def qr_svg(data: str) -> str:
 NOTE_FACE = f'''
 <div class="panel note">
   {artwork("face", note.face())}
+  {note.furniture(True)}
   <div class="n-brand">कुंडलीसार<span>KUNDLISAAR</span></div>
   <div class="n-value">
     <div class="n-big">शून्य</div>
@@ -119,6 +120,7 @@ NOTE_FACE = f'''
 NOTE_REVERSE = f'''
 <div class="panel note rev">
   {artwork("reverse", note.reverse())}
+  {note.furniture(False)}
   <div class="r-hook">{HOOK}</div>
   <div class="r-fine">{FINE}</div>
   <div class="r-foot">अपनी देखिए — खोलिए <b>·</b> स्कैन कीजिए</div>
@@ -193,6 +195,8 @@ body { background: #fff;
 .panel { width: 123mm; height: 63mm; position: relative; overflow: hidden; }
 .noteart { position: absolute; inset: 0; width: 100%; height: 100%;
            object-fit: cover; }
+/* Drawn over whichever background is in use, never part of it. */
+.furniture { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* --- the note faces --- */
 .note { background: #e9d3a8; }

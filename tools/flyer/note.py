@@ -173,3 +173,35 @@ def reverse(w=123.0, h=63.0):
   {corner_zero(w - 7.5, h - 5.5, 7.5, 'end', 0.8)}
   {microtext(26, 58.4, 71)}
 </svg>'''
+
+
+def furniture(face_side: bool, w=123.0, h=63.0) -> str:
+    """The printed furniture, as a transparent layer over whichever background
+    is in use.
+
+    It has to be separate: a generated background replaces the drawn art
+    wholesale, and the corner numerals, serial and kundli vignette would go
+    with it. They are what make the panel read as a denominated note rather
+    than as decorative paper, so they are drawn over the top either way.
+    """
+    parts = [f'<svg class="furniture" viewBox="0 0 {w} {h}" '
+             f'preserveAspectRatio="none">']
+    if face_side:
+        parts.append(corner_zero(11.5, 18.0, 10.5))
+        parts.append(corner_zero(w - 10.5, h - 8.0, 8.0, 'end', 0.85))
+        # Over the watermark oval on the right, where a portrait would be.
+        parts.append(kundli_vignette(101, 33, 20))
+        parts.append(
+            f'<text x="12" y="{h - 3.4}" font-size="2.2" fill="{INK}" '
+            f'opacity="0.8" font-family="Helvetica,Arial,sans-serif" '
+            f'letter-spacing="0.4">KS 0000000</text>')
+        parts.append(
+            f'<text x="{w - 12}" y="{h - 3.4}" font-size="2.2" fill="{INK}" '
+            f'opacity="0.8" text-anchor="end" '
+            f'font-family="Helvetica,Arial,sans-serif" '
+            f'letter-spacing="0.4">KS 0000000</text>')
+    else:
+        parts.append(corner_zero(11.5, 17.0, 8.5, 'start', 0.9))
+        parts.append(corner_zero(w - 10.5, h - 7.5, 8.5, 'end', 0.9))
+    parts.append('</svg>')
+    return ''.join(parts)

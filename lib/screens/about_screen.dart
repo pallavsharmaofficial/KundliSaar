@@ -95,8 +95,10 @@ class AboutScreen extends StatelessWidget {
                   'Mukta, Tiro Devanagari Hindi, Yatra One (OFL)',
                 ),
                 FactRow(
-                  'Classical rules',
-                  'Brihat Parashara Hora Shastra, Phaladeepika',
+                  'Rule tradition',
+                  'Parashari, after Brihat Parashara Hora Shastra and '
+                      'Phaladeepika. How strongly each rule weighs is this '
+                      "app's own convention, not theirs.",
                 ),
                 FactRow('Version', '0.2.0'),
               ],

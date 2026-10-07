@@ -9,6 +9,7 @@ import 'package:kundlisaar/engine/jyotish/chart.dart';
 import 'package:kundlisaar/engine/jyotish/festivals.dart';
 import 'package:kundlisaar/engine/jyotish/hastrekha.dart';
 import 'package:kundlisaar/engine/jyotish/muhurta.dart';
+import 'package:kundlisaar/ask/answer_engine.dart';
 import 'package:kundlisaar/engine/jyotish/nakshatra.dart';
 import 'package:kundlisaar/engine/jyotish/namkaran.dart';
 import 'package:kundlisaar/engine/jyotish/numerology.dart';
@@ -442,6 +443,36 @@ void main() {
           .map((MapEntry<String, int> e) => e.key)
           .toList();
       expect(alone, <String>['mongoose']);
+    });
+  });
+
+  group('what the app will not answer', () {
+    // The app states it refuses these. "exam" on its own stays with
+    // education, because education as an area of life is read; it is the
+    // result that is never predicted.
+    test('a question about an exam result is refused, not answered', () {
+      for (final String q in <String>[
+        'will i pass my exam',
+        'exam result kya hoga',
+        'kya main paas hounga',
+        'मेरा रिजल्ट क्या होगा',
+      ]) {
+        expect(
+          answerQuestion(kundli, q, hindi: false).isRefusal,
+          isTrue,
+          reason: q,
+        );
+      }
+    });
+
+    test('education as a subject is still read', () {
+      final Answer a = answerQuestion(
+        kundli,
+        'what does my chart say about education',
+        hindi: false,
+      );
+      expect(a.isRefusal, isFalse);
+      expect(a.basis, isNotEmpty);
     });
   });
 }

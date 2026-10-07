@@ -16,6 +16,8 @@ import '../state/profiles_cubit.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/chart/chart_styles.dart';
 import '../widgets/common.dart';
+import '../widgets/upagraha_panel.dart';
+import '../widgets/yoga_cards.dart';
 
 class ChartScreen extends StatefulWidget {
   const ChartScreen({super.key, required this.profileId});
@@ -284,6 +286,7 @@ class _GrahaTab extends StatelessWidget {
               );
             },
           ),
+        UpagrahaSection(kundli: kundli, hindi: hindi),
       ],
     );
   }
@@ -389,7 +392,14 @@ class _DashaTab extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final DateTime now = DateTime.now();
     final List<DashaPeriod> chain = kundli.dashaChainAt(now);
-    String date(DateTime d) => '${d.day}/${d.month}/${d.year}';
+    // start and end are UTC. Shown raw they disagreed with the
+    // phaladesh screen by a day for births far from Greenwich, so
+    // both now read in the birth place's own zone.
+    final Duration zone = kundli.birth.utcOffset;
+    String date(DateTime d) {
+      final DateTime local = d.add(zone);
+      return '${local.day}/${local.month}/${local.year}';
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -481,62 +491,9 @@ class _YogaTab extends StatelessWidget {
         if (findings.isEmpty)
           Panel(child: Text(l.noYogasFound))
         else
-          ...findings.map(
-            (YogaFinding f) => Panel(
-              title: hindi ? f.nameHindi : f.nameEnglish,
-              trailing: Icon(
-                f.isDosha ? Icons.shield_outlined : Icons.star_outline,
-                size: 20,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _Labelled(l.whyThis, hindi ? f.ruleHindi : f.ruleEnglish),
-                  _Labelled(
-                    l.whatItMeans,
-                    hindi ? f.meaningHindi : f.meaningEnglish,
-                  ),
-                  if (f.isCancelled)
-                    _Labelled(
-                      l.cancelledBy,
-                      hindi ? f.cancellationHindi! : f.cancellationEnglish!,
-                    ),
-                ],
-              ),
-            ),
-          ),
+          YogaFindingsList(findings: findings, hindi: hindi),
         DisclaimerNote(l.disclaimer),
       ],
-    );
-  }
-}
-
-class _Labelled extends StatelessWidget {
-  const _Labelled(this.label, this.text);
-
-  final String label;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: 13.5,
-              letterSpacing: 0.3,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(text, style: theme.textTheme.bodyMedium),
-        ],
-      ),
     );
   }
 }
