@@ -80,6 +80,10 @@ _Vashya _vashyaOf(int sign, double degreeInSign) {
 }
 
 /// Yoni pairs the texts call enemies; everything else is neutral or friendly.
+///
+/// Seven pairs for the fourteen yonis, each listed once: the lookup below
+/// tests both orders, so a mirrored entry would only be a second place to
+/// forget to edit.
 const List<List<String>> _yoniEnemies = <List<String>>[
   <String>['cow', 'tiger'],
   <String>['elephant', 'lion'],
@@ -88,8 +92,6 @@ const List<List<String>> _yoniEnemies = <List<String>>[
   <String>['monkey', 'sheep'],
   <String>['cat', 'rat'],
   <String>['serpent', 'mongoose'],
-  <String>['lion', 'elephant'],
-  <String>['goat', 'monkey'],
 ];
 
 /// Gana kuta points. Public so the website's reference pages quote the same

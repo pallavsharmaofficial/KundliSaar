@@ -185,7 +185,6 @@ const Map<String, String> _yoniHindi = <String, String>{
   'serpent': 'साँप (सर्प)',
   'dog': 'कुत्ता (श्वान)',
   'cat': 'बिल्ली (मार्जार)',
-  'goat': 'बकरी (अज)',
   'rat': 'चूहा (मूषक)',
   'cow': 'गाय (गौ)',
   'buffalo': 'भैंस (महिष)',

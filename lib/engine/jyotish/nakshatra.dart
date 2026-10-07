@@ -130,7 +130,7 @@ const List<NakshatraInfo> nakshatraTable = <NakshatraInfo>[
     deityHindi: 'बृहस्पति',
     symbolEnglish: "Cow's udder",
     gana: Gana.deva,
-    yoni: 'goat',
+    yoni: 'sheep',
     nadi: Nadi.madhya,
   ),
   NakshatraInfo(

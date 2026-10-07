@@ -9,6 +9,7 @@ import 'package:kundlisaar/engine/jyotish/chart.dart';
 import 'package:kundlisaar/engine/jyotish/festivals.dart';
 import 'package:kundlisaar/engine/jyotish/hastrekha.dart';
 import 'package:kundlisaar/engine/jyotish/muhurta.dart';
+import 'package:kundlisaar/engine/jyotish/nakshatra.dart';
 import 'package:kundlisaar/engine/jyotish/namkaran.dart';
 import 'package:kundlisaar/engine/jyotish/numerology.dart';
 import 'package:kundlisaar/engine/jyotish/prashna.dart';
@@ -380,6 +381,37 @@ void main() {
         expect(remedy.japaCount, greaterThan(0));
         expect(remedy.simpleActHindi, isNotEmpty);
       }
+    });
+  });
+
+  group('yoni', () {
+    test('the twenty-seven nakshatras fall into exactly fourteen yonis', () {
+      final Set<String> yonis = nakshatraTable
+          .map((NakshatraInfo n) => n.yoni)
+          .toSet();
+      expect(yonis.length, 14);
+    });
+
+    test('Krittika and Pushya share the sheep yoni', () {
+      // Mesha (Edaka) yoni covers both. Filing Pushya separately as "goat"
+      // cost the pair the four same-yoni points.
+      String yoniOf(String english) => nakshatraTable
+          .firstWhere((NakshatraInfo n) => n.english == english)
+          .yoni;
+      expect(yoniOf('Krittika'), 'sheep');
+      expect(yoniOf('Pushya'), 'sheep');
+    });
+
+    test('Mongoose is the only yoni held by a single nakshatra', () {
+      final Map<String, int> counts = <String, int>{};
+      for (final NakshatraInfo n in nakshatraTable) {
+        counts[n.yoni] = (counts[n.yoni] ?? 0) + 1;
+      }
+      final List<String> alone = counts.entries
+          .where((MapEntry<String, int> e) => e.value == 1)
+          .map((MapEntry<String, int> e) => e.key)
+          .toList();
+      expect(alone, <String>['mongoose']);
     });
   });
 }

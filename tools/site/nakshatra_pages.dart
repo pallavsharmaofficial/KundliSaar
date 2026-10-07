@@ -384,15 +384,8 @@ _Prose _proseFor(NakshatraInfo info, List<_Pada> padas, List<PageRef> refs) {
     info,
     (NakshatraInfo n) => n.yoni == info.yoni,
   ).isNotEmpty;
-  final bool sheepOrGoat = info.yoni == 'sheep' || info.yoni == 'goat';
-  final String yoniEn = sheepOrGoat
-      ? ' The engine files Krittika under sheep and Pushya under goat, though most published tables treat them as one yoni, so sources differ.'
-      : hasPartner
-      ? ' A shared yoni scores 4 of 4.'
-      : '';
-  final String yoniHi = sheepOrGoat
-      ? ' इंजन कृत्तिका को भेड़ और पुष्य को बकरी में रखता है; अधिकांश प्रकाशित तालिकाएँ दोनों की एक ही योनि मानती हैं, इसलिए स्रोत भिन्न हैं।'
-      : hasPartner
+  final String yoniEn = hasPartner ? ' A shared yoni scores 4 of 4.' : '';
+  final String yoniHi = hasPartner
       ? ' एक ही योनि होने पर 4 में से 4 अंक मिलते हैं।'
       : '';
   final String p3En =
