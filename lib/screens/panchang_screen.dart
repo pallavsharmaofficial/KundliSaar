@@ -19,14 +19,19 @@ import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
 
 class PanchangScreen extends StatefulWidget {
-  const PanchangScreen({super.key});
+  const PanchangScreen({super.key, this.initialDate});
+
+  /// The day to open on. Defaults to today; a test pins it so the screen does
+  /// not quietly change shape with the calendar -- which sections appear
+  /// depends on which yogas fall on the day.
+  final DateTime? initialDate;
 
   @override
   State<PanchangScreen> createState() => _PanchangScreenState();
 }
 
 class _PanchangScreenState extends State<PanchangScreen> {
-  DateTime _date = DateTime.now();
+  late DateTime _date = widget.initialDate ?? DateTime.now();
   Place? _place;
 
   /// The saved chart the personal balas are read for; the first one until the
