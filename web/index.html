@@ -52,5 +52,42 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // A service worker serves the build it cached, so a freshly deployed
+    // version only appeared on the visit AFTER the next one -- which meant
+    // clearing site data by hand every time. Ask for an update on each load
+    // and, when a new worker has installed over an existing one, reload once
+    // so the person is actually looking at what was deployed.
+    (function () {
+      'use strict';
+      if (!('serviceWorker' in navigator)) return;
+      var RELOADED = 'ks-sw-reloaded';
+
+      function reloadOnce() {
+        // Guard against a loop if the new worker never takes control.
+        try {
+          if (sessionStorage.getItem(RELOADED)) return;
+          sessionStorage.setItem(RELOADED, '1');
+        } catch (e) { /* private window: reload at most via controllerchange */ }
+        window.location.reload();
+      }
+
+      navigator.serviceWorker.ready.then(function (reg) {
+        try { sessionStorage.removeItem(RELOADED); } catch (e) {}
+        reg.update().catch(function () {});
+        reg.addEventListener('updatefound', function () {
+          var next = reg.installing;
+          if (!next) return;
+          next.addEventListener('statechange', function () {
+            // "installed" with a controller already present means this is an
+            // update rather than a first install.
+            if (next.state === 'installed' && navigator.serviceWorker.controller) {
+              reloadOnce();
+            }
+          });
+        });
+      }).catch(function () {});
+    })();
+  </script>
 </body>
 </html>
