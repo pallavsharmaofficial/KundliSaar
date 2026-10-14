@@ -492,6 +492,7 @@ class _YogaTab extends StatelessWidget {
           Panel(child: Text(l.noYogasFound))
         else
           YogaFindingsList(findings: findings, hindi: hindi),
+        YogaMatbhedList(items: findYogaMatbhed(kundli), hindi: hindi),
         DisclaimerNote(l.disclaimer),
       ],
     );

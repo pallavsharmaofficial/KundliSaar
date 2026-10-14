@@ -9,9 +9,11 @@ import 'package:kundlisaar/engine/astro/time.dart';
 import 'package:kundlisaar/engine/jyotish/chart.dart';
 import 'package:kundlisaar/engine/jyotish/ghat_chakra.dart';
 import 'package:kundlisaar/engine/jyotish/graha_data.dart';
+import 'package:kundlisaar/engine/jyotish/mat.dart';
 import 'package:kundlisaar/engine/jyotish/rashi.dart';
 import 'package:kundlisaar/engine/jyotish/sarvatobhadra.dart';
 import 'package:kundlisaar/engine/jyotish/sudarshan.dart';
+import 'package:kundlisaar/engine/jyotish/tajika_common.dart' show Bi;
 import 'package:kundlisaar/engine/jyotish/upagrahas.dart';
 import 'package:kundlisaar/engine/jyotish/yogas.dart';
 
@@ -1909,5 +1911,541 @@ void main() {
       expect(m.nameEnglish, 'Mangal dosha');
       expect(m.hasRelief, isTrue);
     });
+  });
+
+  group('two views, where the books differ (मतभेद)', () {
+    YogaMatbhed disputed(Kundli k, String key) =>
+        findYogaMatbhed(k).firstWhere((YogaMatbhed m) => m.key == key);
+    bool listed(Kundli k, String key) =>
+        findYogaMatbhed(k).any((YogaMatbhed m) => m.key == key);
+    List<bool> holds(YogaMatbhed m) =>
+        m.matbhed.views.map((Mat v) => v.holds!).toList();
+
+    test(
+      'every disputed yoga carries complete positions, one of them the default',
+      () {
+        final List<Kundli> charts = manyCharts(150, seed: 11);
+        final Set<String> seen = <String>{};
+        for (final Kundli k in charts) {
+          final Set<String> found = keys(k);
+          for (final YogaMatbhed m in findYogaMatbhed(k)) {
+            seen.add(m.key);
+            expect(m.matbhed.isComplete, isTrue, reason: m.key);
+            expect(
+              m.matbhed.views.length,
+              inInclusiveRange(2, 3),
+              reason: m.key,
+            );
+            expect(
+              m.matbhed.views.where((Mat v) => v.isDefault).length,
+              1,
+              reason: m.key,
+            );
+            expect(m.matbhed.views.first.isDefault, isTrue);
+            expect(m.name.isComplete, isTrue);
+            expect(
+              m.formsInAnyView,
+              isTrue,
+              reason: '${m.key} is listed only when some reading finds it',
+            );
+            for (final Mat v in m.matbhed.views) {
+              expect(v.holds, isNotNull);
+              expect(v.holder.isComplete, isTrue, reason: m.key);
+              expect(RegExp('[ऀ-ॿ]').hasMatch(v.reasoning.hi), isTrue);
+            }
+            // The app's own reading is the reading findYogas uses.
+            if (<String>{
+              'vish_yoga',
+              'adhi',
+              'lakshmi',
+              'kahala',
+              'parvata',
+              'dhana_2_11',
+              'daridra',
+              'nabhasa_mala',
+              'nabhasa_sarpa',
+              'nabhasa_vajra',
+              'nabhasa_yava',
+            }.contains(m.key)) {
+              expect(
+                m.formsByDefault,
+                found.contains(m.key),
+                reason: '${m.key} default view against findYogas',
+              );
+            }
+          }
+          // And a yoga that findYogas has is always listed with its other view.
+          for (final String key in <String>[
+            'adhi',
+            'lakshmi',
+            'kahala',
+            'parvata',
+          ]) {
+            if (found.contains(key)) {
+              expect(listed(k, key), isTrue, reason: key);
+            }
+          }
+        }
+        expect(seen, containsAll(<String>['adhi', 'ardha_chandra', 'daridra']));
+      },
+    );
+
+    test('nothing the two views say mentions what the app never speaks of', () {
+      for (final Kundli k in manyCharts(120, seed: 12)) {
+        for (final YogaMatbhed m in findYogaMatbhed(k)) {
+          final List<Bi> texts = <Bi>[
+            m.matbhed.topic,
+            m.matbhed.defaultReason,
+            ?m.matbhed.whyTheyDiffer,
+            for (final Mat v in m.matbhed.views) ...<Bi>[
+              v.position,
+              v.holder,
+              v.reasoning,
+              v.result,
+            ],
+          ];
+          for (final Bi t in texts) {
+            expect(banned.hasMatch(t.en), isFalse, reason: '${m.key}: ${t.en}');
+            expect(
+              bannedHindi.hasMatch(t.hi),
+              isFalse,
+              reason: '${m.key}: ${t.hi}',
+            );
+          }
+        }
+      }
+    });
+
+    test('Ardha Chandra: strict needs every house held, loose does not', () {
+      // Houses 2 to 8, one graha in each.
+      final Kundli whole = bySigns(
+        sun: 1,
+        moon: 2,
+        mars: 3,
+        mercury: 4,
+        jupiter: 5,
+        venus: 6,
+        saturn: 7,
+        rahu: 0,
+        ketu: 6,
+      );
+      expect(holds(disputed(whole, 'ardha_chandra')), <bool>[true, true]);
+      // The same, but Saturn joins Venus and the 8th house stays empty.
+      final Kundli gap = bySigns(
+        sun: 1,
+        moon: 2,
+        mars: 3,
+        mercury: 4,
+        jupiter: 5,
+        venus: 6,
+        saturn: 6,
+        rahu: 0,
+        ketu: 6,
+      );
+      final YogaMatbhed m = disputed(gap, 'ardha_chandra');
+      expect(holds(m), <bool>[false, true]);
+      expect(m.matbhed.differs, isTrue);
+      expect(m.matbhed.views[0].result.en, contains('Does not form'));
+      expect(m.matbhed.views[1].result.en, contains('Forms'));
+      // Seven houses from a kendra is some other yoga, not this one.
+      final Kundli fromKendra = bySigns(
+        sun: 0,
+        moon: 1,
+        mars: 2,
+        mercury: 3,
+        jupiter: 4,
+        venus: 5,
+        saturn: 6,
+      );
+      expect(listed(fromKendra, 'ardha_chandra'), isFalse);
+    });
+
+    test('Punarphoo: the opposition counts only in the second reading', () {
+      final YogaMatbhed together = disputed(
+        bySigns(moon: 2, saturn: 2),
+        'vish_yoga',
+      );
+      expect(holds(together), <bool>[true, true]);
+      final Kundli opposite = bySigns(moon: 2, saturn: 8);
+      final YogaMatbhed m = disputed(opposite, 'vish_yoga');
+      expect(holds(m), <bool>[false, true]);
+      expect(keys(opposite), isNot(contains('vish_yoga')));
+      expect(m.matbhed.views[1].result.en, contains('face each other'));
+      expect(listed(bySigns(moon: 2, saturn: 5), 'vish_yoga'), isFalse);
+    });
+
+    test('Adhi: a part of the group counts only when graded by number', () {
+      final Kundli whole = bySigns(jupiter: 5, venus: 6, mercury: 7);
+      expect(holds(disputed(whole, 'adhi')), <bool>[true, true]);
+      expect(keys(whole), contains('adhi'));
+      // Only Jupiter in the 7th from the Moon.
+      final Kundli part = bySigns(jupiter: 6, venus: 2, mercury: 3);
+      final YogaMatbhed m = disputed(part, 'adhi');
+      expect(holds(m), <bool>[false, true]);
+      expect(keys(part), isNot(contains('adhi')));
+      expect(m.matbhed.views[1].result.en, contains('the lowest rank'));
+      expect(
+        m.matbhed.whyTheyDiffer!.en,
+        contains('does not grade by how many'),
+      );
+    });
+
+    test(
+      'Lakshmi: a 9th lord in a trikona counts in the second and third readings',
+      () {
+        // Mesha lagna: the 9th lord Jupiter in Dhanu (house 9, a trikona, his
+        // own sign), the lagna lord Mars in his own sign, Venus in Libra.
+        final Kundli k = bySigns(jupiter: 8, mars: 0, venus: 6);
+        final YogaMatbhed m = disputed(k, 'lakshmi');
+        expect(holds(m), <bool>[false, true, true]);
+        expect(keys(k), isNot(contains('lakshmi')));
+        expect(m.matbhed.title.hi, 'तीन मत');
+        // In a kendra all three agree: Jupiter in Karka, exalted, the 4th house.
+        final YogaMatbhed all = disputed(
+          bySigns(jupiter: 3, mars: 0, venus: 6),
+          'lakshmi',
+        );
+        expect(holds(all), <bool>[true, true, true]);
+      },
+    );
+
+    test(
+      'Kahala: the 4th and 9th lords in kendras count in the second reading',
+      () {
+        // Vrishabha lagna: the 4th lord is the Sun (in Leo, his own sign), the
+        // 9th lord Saturn stands in Vrishchika, the 4th from Leo; Venus, the
+        // lagna lord, is in her own sign; Jupiter is not in a kendra from the Sun.
+        final Kundli k = bySigns(
+          sun: 4,
+          saturn: 7,
+          venus: 1,
+          jupiter: 5,
+          ascendant: 45,
+        );
+        final YogaMatbhed m = disputed(k, 'kahala');
+        expect(m.matbhed.views.length, 3);
+        expect(m.matbhed.views[0].holds, isFalse);
+        expect(m.matbhed.views[1].holds, isTrue);
+        expect(keys(k), isNot(contains('kahala')));
+        expect(m.matbhed.differs, isTrue);
+      },
+    );
+
+    test(
+      'Parvata: the verse asks less than the app, and Raman names other houses',
+      () {
+        // Jupiter and the Sun in the lagna, the bright Moon in the 4th, Venus in
+        // the 7th, Mercury in the 10th; the 7th, 8th and 6th are clean.
+        final Kundli k = bySigns(
+          sun: 0,
+          jupiter: 0,
+          moon: 3,
+          venus: 6,
+          mercury: 9,
+          mars: 1,
+          saturn: 2,
+        );
+        final YogaMatbhed m = disputed(k, 'parvata');
+        expect(holds(m), <bool>[false, true, true]);
+        expect(keys(k), isNot(contains('parvata')));
+        expect(m.matbhed.views[0].holder.en, contains('own tightening'));
+      },
+    );
+
+    test(
+      'Dhana: the lagna group of BPHS chapter 41 is read beside the 2nd-11th link',
+      () {
+        // Simha lagna: the Sun is the lagna lord, in the lagna with Mars and
+        // Jupiter; the 2nd and 11th lord is one graha, so the app's link cannot
+        // form.
+        final Kundli k = bySigns(sun: 4, mars: 4, jupiter: 4, ascendant: 135);
+        final YogaMatbhed m = disputed(k, 'dhana_2_11');
+        expect(holds(m), <bool>[false, true]);
+        expect(keys(k), isNot(contains('dhana_2_11')));
+        expect(m.matbhed.views[1].result.en, contains('lagna lord'));
+      },
+    );
+
+    test('Daridra: the 11th lord alone is enough in the second reading', () {
+      // Mesha lagna: the 11th lord Saturn in Kanya (house 6); the 2nd lord
+      // Venus in Mesha.
+      final Kundli k = bySigns(saturn: 5, venus: 0);
+      final YogaMatbhed m = disputed(k, 'daridra');
+      expect(m.matbhed.views[0].holds, isFalse);
+      expect(m.matbhed.views[1].holds, isTrue);
+      expect(keys(k), isNot(contains('daridra')));
+      // Both lords in the 6th, 8th or 12th: the app's reading holds too.
+      final YogaMatbhed both = disputed(
+        bySigns(saturn: 5, venus: 7),
+        'daridra',
+      );
+      expect(both.matbhed.views[0].holds, isTrue);
+      expect(both.matbhed.views[1].holds, isTrue);
+    });
+
+    test(
+      'Mala, Sarpa, Vajra and Yava: the Moon and the nodes change the count',
+      () {
+        // Jupiter in the 1st, Venus in the 4th, the bright Moon in the 10th.
+        final Kundli mala = bySigns(
+          sun: 7,
+          moon: 9,
+          jupiter: 0,
+          venus: 3,
+          mercury: 1,
+          mars: 1,
+          saturn: 1,
+        );
+        expect(holds(disputed(mala, 'nabhasa_mala')), <bool>[false, true]);
+        expect(keys(mala), isNot(contains('nabhasa_mala')));
+        // The Sun in the 1st, Mars in the 4th, Rahu in the 7th.
+        final Kundli sarpa = bySigns(
+          sun: 0,
+          mars: 3,
+          saturn: 1,
+          rahu: 6,
+          ketu: 0,
+          moon: 1,
+          jupiter: 1,
+          venus: 2,
+          mercury: 2,
+        );
+        expect(holds(disputed(sarpa, 'nabhasa_sarpa')), <bool>[false, true]);
+        // Jupiter in the 1st, Venus in the 7th, Rahu in the 4th, the waning Moon
+        // in the 10th.
+        final Kundli vajra = bySigns(
+          sun: 11,
+          moon: 9,
+          jupiter: 0,
+          venus: 6,
+          rahu: 3,
+          ketu: 9,
+          mars: 1,
+          saturn: 2,
+          mercury: 2,
+        );
+        expect(holds(disputed(vajra, 'nabhasa_vajra')), <bool>[false, true]);
+        expect(keys(vajra), isNot(contains('nabhasa_vajra')));
+        final YogaMatbhed m = disputed(vajra, 'nabhasa_vajra');
+        expect(
+          m.matbhed.views[1].position.en,
+          contains('waning Moon as a malefic'),
+        );
+      },
+    );
+  });
+
+  group('two views on the ghat chakra, the upagrahas and the sudarshan', () {
+    test(
+      'the second ghat table is whole and its lagnas stand seven signs apart',
+      () {
+        expect(ghatChakraRathTable.length, 12);
+        final Set<Rashi> sameSex = <Rashi>{};
+        int apart = 0;
+        for (final GhatRathRow r in ghatChakraRathTable) {
+          expect(r.janma, Rashi.values[ghatChakraRathTable.indexOf(r)]);
+          expect(
+            (r.lagnaOpposite.index - r.lagnaSameSex.index + 12) % 12,
+            6,
+            reason: 'the lagna for the other sex is the 7th',
+          );
+          sameSex.add(r.lagnaSameSex);
+          final GhatRow common = ghatRowFor(r.janma);
+          final Rashi woman = ghatMoonForWoman[r.janma.index];
+          if (r.ghatMoon != common.chandra && r.ghatMoon != woman) apart++;
+          // Same tithi group, weekday and nakshatra, except Dhanu's nakshatra.
+          if (r.janma != Rashi.dhanu) {
+            final List<int> rathNakshatra = <int>[
+              9,
+              12,
+              14,
+              16,
+              18,
+              21,
+              23,
+              26,
+              1,
+              3,
+              5,
+              8,
+            ];
+            expect(rathNakshatra[r.janma.index], common.nakshatraIndex);
+          }
+        }
+        expect(
+          sameSex.length,
+          12,
+          reason: 'the same-sex lagnas are a permutation',
+        );
+        expect(apart, 9, reason: 'the card says nine of the twelve differ');
+        // The common table's first column is what the app has always shown.
+        expect(ghatRowFor(Rashi.karka).chandra, Rashi.vrishabha);
+        expect(ghatMoonForWoman[Rashi.karka.index], Rashi.dhanu);
+      },
+    );
+
+    test('each janma rashi gets both tables, worked out, in both languages', () {
+      for (final Rashi r in Rashi.values) {
+        final Kundli k = bySigns(moon: r.index);
+        final Matbhed m = ghatChakraMatbhed(k);
+        expect(m.isComplete, isTrue, reason: '$r');
+        expect(m.views.length, 2);
+        expect(m.views.first.isDefault, isTrue);
+        final GhatRathRow rath = ghatRathRowFor(r);
+        final String rathMoon = rashiInfo(rath.ghatMoon).english;
+        expect(m.views[1].result.en, contains('ghataka Moon $rathMoon'));
+        expect(
+          m.views[1].result.en,
+          contains(rashiInfo(rath.lagnaSameSex).english),
+        );
+        expect(m.views[1].result.hi, contains(rashiInfo(rath.ghatMoon).hindi));
+        expect(m.views[0].result.en, contains('prints no ghat lagna'));
+        expect(
+          m.views[0].result.en,
+          contains(rashiInfo(ghatRowFor(r).chandra).english),
+        );
+      }
+      // Sanjay Rath's Mithuna case: ghataka Moon Kumbha (Aquarius), lagna Karka
+      // (Cancer) for the same sex and Makara (Capricorn) for the opposite.
+      final Matbhed mithuna = ghatChakraMatbhed(bySigns(moon: 2));
+      expect(mithuna.views[1].result.en, contains('Kumbha'));
+      expect(mithuna.views[1].result.en, contains('Karka'));
+      expect(mithuna.views[1].result.en, contains('Makara'));
+      // Dhanu's nakshatra is where the two tables part.
+      final Matbhed dhanu = ghatChakraMatbhed(bySigns(moon: 8));
+      expect(dhanu.views[0].result.en, contains('Bharani'));
+      expect(dhanu.views[1].result.en, contains('Dveja'));
+      expect(ghatLeftOut.single.isComplete, isTrue);
+    });
+
+    test(
+      'the month column is matched by the lunar month and by the Sun, and they can part',
+      () {
+        // Moon in Vrishchika: the ghat month is Ashwina. On 25 October 2026 the
+        // lunar month is still Ashwina but the Sun has entered Tula.
+        final Kundli k = bySigns(moon: 7);
+        final Matbhed m = ghatMonthMatbhed(k, DateTime(2026, 10, 25));
+        expect(m.isComplete, isTrue);
+        expect(m.views.length, 2);
+        expect(m.views[0].isDefault, isTrue);
+        expect(m.views[0].value, 1);
+        expect(m.views[1].value, 0);
+        expect(m.differs, isTrue);
+        expect(m.views[0].result.en, contains('running'));
+        expect(m.views[1].result.en, contains('not running'));
+        // On 14 October the two agree.
+        final Matbhed same = ghatMonthMatbhed(k, DateTime(2026, 10, 14));
+        expect(same.views[0].value, same.views[1].value);
+      },
+    );
+
+    test('Mandi at the end, the middle and the start of Saturn’s part', () {
+      final Kundli k = real(DateTime(2026, 10, 13, 10, 30));
+      final Matbhed m = upagrahaMatbhed(
+        k,
+      ).firstWhere((Matbhed x) => x.key == 'upagraha_mandi');
+      expect(m.isComplete, isTrue);
+      expect(m.views.length, 3);
+      expect(m.title.hi, 'तीन मत');
+      expect(m.differs, isTrue);
+      final Set<double> longitudes = m.views
+          .map((Mat v) => double.parse(v.value!.toStringAsFixed(3)))
+          .toSet();
+      expect(longitudes.length, 3);
+      // The default is what the upagraha list has always shown.
+      expect(
+        m.defaultView.value,
+        closeTo(computeUpagrahas(k).of(Upagraha.mandi).siderealLongitude, 1e-9),
+      );
+      expect(
+        m.views[2].value,
+        closeTo(
+          computeUpagrahas(k).of(Upagraha.gulika).siderealLongitude,
+          1e-9,
+        ),
+        reason: 'Mandi at the start of the part is Gulika',
+      );
+      // The middle is the point between the start and the end of the part.
+      final double begin = m.views[2].value!;
+      final double middle = m.views[1].value!;
+      final double end = m.views[0].value!;
+      expect(
+        ((middle - begin + 360) % 360) < ((end - begin + 360) % 360),
+        isTrue,
+      );
+    });
+
+    test(
+      'the eighth part moves four upagrahas on a Monday and none on a Sunday',
+      () {
+        // 12 October 2026 is a Monday; 11 October a Sunday.
+        expect(DateTime(2026, 10, 12).weekday, DateTime.monday);
+        final Kundli monday = real(DateTime(2026, 10, 12, 10, 30));
+        final Matbhed m = upagrahaMatbhed(
+          monday,
+        ).firstWhere((Matbhed x) => x.key == 'upagraha_eighth');
+        expect(m.isComplete, isTrue);
+        expect(m.views.length, 2);
+        expect(m.differs, isTrue);
+        expect(
+          m.views[1].value,
+          1,
+          reason: 'on a Monday only Kaala falls after Saturn',
+        );
+        expect(m.views[0].result.en, contains('part 7'));
+        expect(m.views[1].result.en, contains('part 8'));
+        // Saturn’s part is the same in both readings.
+        final UpagrahaResult a = computeUpagrahas(monday);
+        final UpagrahaResult b = computeUpagrahas(
+          monday,
+          convention: const UpagrahaConvention(eighth: EighthPart.cycleOfEight),
+        );
+        expect(
+          b.of(Upagraha.gulika).siderealLongitude,
+          a.of(Upagraha.gulika).siderealLongitude,
+        );
+        expect(
+          b.of(Upagraha.mandi).siderealLongitude,
+          a.of(Upagraha.mandi).siderealLongitude,
+        );
+        expect(a.of(Upagraha.kaala).partNumber, 7);
+        expect(b.of(Upagraha.kaala).partNumber, 8);
+        final Matbhed sunday = upagrahaMatbhed(
+          real(DateTime(2026, 10, 11, 10, 30)),
+        ).firstWhere((Matbhed x) => x.key == 'upagraha_eighth');
+        expect(sunday.views[1].value, 0);
+        expect(sunday.differs, isFalse);
+      },
+    );
+
+    test(
+      'Rahu and Ketu are given no aspect, or the 7th, or the 5th, 7th and 9th',
+      () {
+        for (final Kundli k in manyCharts(20, seed: 13)) {
+          final Matbhed m = sudarshanMatbhed(k);
+          expect(m.isComplete, isTrue);
+          expect(m.views.length, 3);
+          expect(m.defaultView.value, 0);
+          expect(m.views.first.isDefault, isTrue);
+        }
+        expect(
+          manyCharts(
+            40,
+            seed: 14,
+          ).any((Kundli k) => sudarshanMatbhed(k).views[2].value! > 0),
+          isTrue,
+          reason: 'a node’s aspect changes a verdict on some chart',
+        );
+        // Rahu in the lagna looks at the 7th: that house gains one unfavourable
+        // mark in the lagna ring.
+        final Kundli k = bySigns(rahu: 0, ketu: 6);
+        final int before = computeSudarshan(k).houses[6].fromLagna.unfavourable;
+        final int after = computeSudarshan(
+          k,
+          nodeAspects: const <int>[7],
+        ).houses[6].fromLagna.unfavourable;
+        expect(after, before + 1);
+      },
+    );
   });
 }

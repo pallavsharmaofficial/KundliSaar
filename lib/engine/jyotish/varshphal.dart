@@ -5,11 +5,13 @@ import '../astro/houses.dart';
 import '../astro/rise_set.dart';
 import '../astro/time.dart';
 import 'chart.dart';
+import 'mat.dart';
 import 'rashi.dart';
 import 'saham.dart';
 import 'tajika_aspects.dart';
 import 'tajika_bala.dart';
 import 'tajika_common.dart';
+import 'tajika_matbhed.dart';
 import 'varshphal_dasha.dart';
 import 'varshphal_months.dart';
 
@@ -43,6 +45,11 @@ class Varshphal {
     required this.mudda,
     required this.patyayini,
     required this.windows,
+    this.sahamMatbhed = const <SahamMatbhed>[],
+    this.extraSign,
+    this.tajikaMatbhed = const <Matbhed>[],
+    this.dashaMatbhed = const <Matbhed>[],
+    this.leftOut = const <LeftOut>[],
   });
 
   /// The age the person completes in this year.
@@ -77,6 +84,28 @@ class Varshphal {
 
   /// The year in dated windows, tiling it exactly.
   final List<YearWindow> windows;
+
+  /// The sahams the books disagree on, each worked out under every position:
+  /// the ones that used to be left out, and Asha and Mrityu, whose formula the
+  /// app had chosen without saying so. Shown as "Two views" beside the sahams.
+  final List<SahamMatbhed> sahamMatbhed;
+
+  /// The disagreement about the sahams as a whole, not one point: when a
+  /// saham takes its extra sign. Worked out on every saham of this year chart.
+  final Matbhed? extraSign;
+
+  /// The disagreements about the Tajika aspects and yogas: the orb of a pair,
+  /// when an Ishrafa begins, and the yogas (Gairi-kamboola, Tambira, Kuttha,
+  /// Durapha) that used to be left out because their definitions are not
+  /// agreed. Each is worked out on this year chart under every position.
+  final List<Matbhed> tajikaMatbhed;
+
+  /// The disagreement about how the Patyayini dasha is reckoned, worked out
+  /// for this year.
+  final List<Matbhed> dashaMatbhed;
+
+  /// What is still not computed, with the reason.
+  final List<LeftOut> leftOut;
 
   /// Varshesha, the lord of the year.
   Graha get yearLord => varshesh.lord;
@@ -289,6 +318,11 @@ Varshphal computeVarshphal(Kundli natal, int age, {Ayanamsa? ayanamsa}) {
     mudda: mudda,
     patyayini: patyayini,
     windows: windows,
+    sahamMatbhed: computeSahamMatbhed(annual, sahams, isDay: isDay),
+    extraSign: extraSignMatbhed(annual, isDay: isDay),
+    tajikaMatbhed: computeTajikaMatbhed(annual, bala, tajika),
+    dashaMatbhed: <Matbhed>[patyayiniMatbhed(annual, bala, endJd - startJd)],
+    leftOut: <LeftOut>[...sahamLeftOut, ...dashaLeftOut, ...tajikaLeftOut],
   );
 }
 

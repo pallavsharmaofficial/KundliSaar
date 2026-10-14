@@ -4,6 +4,7 @@ import 'package:kundlisaar/engine/astro/ayanamsa.dart';
 import 'package:kundlisaar/engine/astro/ephemeris.dart';
 import 'package:kundlisaar/engine/astro/houses.dart';
 import 'package:kundlisaar/engine/astro/time.dart';
+import 'package:kundlisaar/engine/jyotish/mat.dart';
 import 'package:kundlisaar/engine/jyotish/nakshatra.dart';
 import 'package:kundlisaar/engine/jyotish/panchang.dart';
 import 'package:kundlisaar/engine/jyotish/panchang_calendar.dart';
@@ -1116,6 +1117,329 @@ void main() {
       for (int wd = 0; wd < 7; wd++) {
         expect(dishaShoolTable[wd].weekday, wd);
       }
+    });
+  });
+
+  group('two views, where the panchang traditions differ (मतभेद)', () {
+    final List<PanchangDetails> october = <PanchangDetails>[
+      for (int day = 0; day < 61; day++) detailsFor(2026, 10, 1 + day),
+    ];
+
+    Matbhed of(PanchangDetails d, String key) =>
+        d.matbhed.firstWhere((Matbhed m) => m.key == key);
+
+    double hours(PanchangDetails d, String noteKey) => d.auspicious
+        .where((PanchangWindow w) => w.key == noteKey)
+        .fold(
+          0.0,
+          (double a, PanchangWindow w) => a + (w.endJdUt - w.startJdUt) * 24,
+        );
+
+    test('the Vikram year has three names, Drik’s the default', () {
+      final PanchangDetails d = detailsFor(2026, 10, 14);
+      final Matbhed m = of(d, 'samvatsara');
+      expect(m.isComplete, isTrue);
+      expect(m.views.length, 3);
+      expect(m.title.hi, 'तीन मत');
+      expect(m.views.map((Mat v) => v.value).toList(), <double>[53, 54, 40]);
+      expect(m.views[0].isDefault, isTrue);
+      expect(m.views[0].result.en, contains('Siddharthi'));
+      expect(m.views[1].result.en, contains('Raudra'));
+      expect(m.views[2].result.en, contains('Parabhava'));
+      expect(m.views[0].result.hi, contains(samvatsaraNamesHindi[52]));
+      expect(m.views[1].result.hi, contains(samvatsaraNamesHindi[53]));
+      expect(m.views[2].result.hi, contains(samvatsaraNamesHindi[39]));
+      expect(m.differs, isTrue);
+      // Drik’s other row: the Jupiter-samvatsara running today is Raudra,
+      // since 21 April 2026.
+      expect(m.views[0].result.en, contains('Raudra'));
+      expect(m.views[0].result.en, contains('21 Apr 2026'));
+      // The explanation says how far apart the names are, and what the
+      // “12 years” is.
+      expect(m.whyTheyDiffer!.en, contains('13 places'));
+      expect(m.whyTheyDiffer!.en, contains('is 14'));
+      expect(m.whyTheyDiffer!.en, contains('Gujarati'));
+      // The calendar still prints the southern name, as it always did.
+      expect(d.calendar.samvatsara.name, 'Parabhava');
+    });
+
+    test('the model gives the names Drik prints for Vikram 2079 to 2086', () {
+      // Positions in the sixty-cycle, counted from one, as read on the Drik
+      // day pages. 2085 is Dundubhi: Durmati (55) is skipped.
+      const Map<int, int> drik = <int, int>{
+        2079: 49,
+        2080: 50,
+        2081: 51,
+        2082: 52,
+        2083: 53,
+        2084: 54,
+        2085: 56,
+        2086: 57,
+      };
+      drik.forEach((int vikram, int position) {
+        expect(
+          drikVikramNameIndex(vikram, Ayanamsa.lahiri) + 1,
+          position,
+          reason: 'Vikram $vikram',
+        );
+      });
+    });
+
+    test('its changeover moments fall within an hour of those Drik prints', () {
+      // IST, as printed under "Brihaspati Samvatsara": the moment the name
+      // upto which is shown ends.
+      final List<DateTime> printed = <DateTime>[
+        DateTime.utc(2025, 4, 25, 15, 7).subtract(ist),
+        DateTime.utc(2026, 4, 21, 15, 53).subtract(ist),
+        DateTime.utc(2027, 4, 17, 16, 25).subtract(ist),
+        DateTime.utc(2028, 4, 12, 17, 4).subtract(ist),
+        DateTime.utc(2029, 4, 8, 17, 17).subtract(ist),
+      ];
+      for (final DateTime moment in printed) {
+        final DateTime model = jovianSamvatsaraStartUtc(
+          moment.add(const Duration(days: 2)),
+        );
+        expect(
+          model.difference(moment).inMinutes.abs(),
+          lessThan(60),
+          reason: 'printed $moment, model $model',
+        );
+      }
+      expect(jovianYearDays, closeTo(361.0267, 1e-4));
+    });
+
+    test('the Hindi press reading, and the Gujarati count twelve ahead', () {
+      expect(pressVikramNameIndex(2083) + 1, 54);
+      expect(pressVikramNameIndex(2082) + 1, 53);
+      expect(pressVikramNameIndex(2080) + 1, 51);
+      // Gujarati Vikram 2083 is Kalayukta on Drik (52); its offset over the
+      // southern count is 12.
+      final int gujarati = (2083 + 8) % 60;
+      expect(gujarati + 1, 52);
+      expect(gujarati - southernNameIndex(1948), 12);
+      // And Mesha Sankranti falls in mid-April.
+      final DateTime sankranti = meshaSankrantiUtc(2026, Ayanamsa.lahiri);
+      expect(sankranti.month, 4);
+      expect(sankranti.day, inInclusiveRange(13, 15));
+    });
+
+    test(
+      'Ravi Yoga: the six distances, the five without the 9th, and the Sunday rule',
+      () {
+        bool sawNinth = false;
+        bool sawSundayRule = false;
+        for (final PanchangDetails d in october) {
+          final Matbhed m = of(d, 'panchang_ravi_yoga');
+          expect(m.isComplete, isTrue);
+          expect(m.views.length, 3);
+          expect(m.views.first.isDefault, isTrue);
+          // The default is exactly the Ravi Yoga the day already lists.
+          expect(m.views[0].value, closeTo(hours(d, 'ravi_yoga'), 1e-6));
+          // Leaving the 9th out can only shorten it.
+          expect(m.views[2].value!, lessThanOrEqualTo(m.views[0].value!));
+          if (m.views[2].value! < m.views[0].value!) sawNinth = true;
+          if (d.panchang.weekday != 0) {
+            expect(m.views[1].value, 0);
+            expect(m.views[1].result.en, contains('not a Sunday'));
+          } else if (m.views[1].value! > 0) {
+            sawSundayRule = true;
+          }
+        }
+        expect(
+          sawNinth,
+          isTrue,
+          reason: 'a day in the 9th from the Sun’s star',
+        );
+        expect(
+          sawSundayRule,
+          isTrue,
+          reason: 'a Sunday on one of the four stars',
+        );
+        // 19 October 2026: Drik’s window starts at 15:38, the 9th from the Sun.
+        final Matbhed m = of(detailsFor(2026, 10, 19), 'panchang_ravi_yoga');
+        expect(m.views[0].value!, greaterThan(m.views[2].value!));
+        expect(m.views[0].result.en, contains('15:3'));
+      },
+    );
+
+    test(
+      'Tripushkar: the Bhadra tithis, the Jaya tithis, and a shorter list',
+      () {
+        for (final PanchangDetails d in october) {
+          final Matbhed m = of(d, 'panchang_tripushkar');
+          expect(m.isComplete, isTrue);
+          expect(m.views[0].value, closeTo(hours(d, 'tripushkar'), 1e-6));
+          expect(m.views[2].value!, lessThanOrEqualTo(m.views[0].value!));
+          if (!<int>[0, 2, 6].contains(d.panchang.weekday)) {
+            for (final Mat v in m.views) {
+              expect(v.value, 0);
+              expect(
+                v.result.en,
+                contains('Not a Sunday, Tuesday or Saturday'),
+              );
+            }
+          }
+        }
+        // 28 April 2026: Tripushkar by Drik's six nakshatras all day, and none by
+        // Vedpanchang's three.
+        final Matbhed short = of(
+          detailsFor(2026, 4, 28),
+          'panchang_tripushkar',
+        );
+        expect(short.views[0].value, greaterThan(0));
+        expect(short.views[2].value, 0);
+        expect(short.differs, isTrue);
+        // A day only the Jaya tithis would call Tripushkar: 31 January 2026, a
+        // Saturday on the 13th tithi.
+        final Matbhed jaya = of(detailsFor(2026, 1, 31), 'panchang_tripushkar');
+        expect(jaya.views[0].value, 0);
+        expect(jaya.views[1].value, greaterThan(0));
+        expect(jaya.differs, isTrue);
+      },
+    );
+
+    test('the kind of Panchak by the clock weekday and by the panchang day', () {
+      // Drik prints these starts: 21 Jan 01:35 Wednesday, 13 Apr 03:44 Monday,
+      // 4 Jul 00:48 Saturday. Before sunrise the panchang day is the day
+      // before.
+      final Map<DateTime, (String, String)> expected =
+          <DateTime, (String, String)>{
+            DateTime(2026, 1, 21): ('Madhyam Panchak', 'Agni Panchak'),
+            DateTime(2026, 4, 13): ('Raja Panchak', 'Roga Panchak'),
+            DateTime(2026, 7, 4): ('Mrityu Panchak', 'Chora Panchak'),
+          };
+      expected.forEach((DateTime date, (String, String) kinds) {
+        final Matbhed m = of(
+          detailsFor(date.year, date.month, date.day),
+          'panchang_panchak_kind',
+        );
+        expect(m.isComplete, isTrue);
+        expect(m.views[0].isDefault, isTrue);
+        expect(m.views[0].result.en, contains(kinds.$1), reason: '$date');
+        expect(m.views[1].result.en, contains(kinds.$2), reason: '$date');
+        expect(m.differs, isTrue, reason: '$date');
+        expect(m.views[0].result.hi, isNot(equals(m.views[1].result.hi)));
+      });
+      // When the Moon enters Kumbha after sunrise the two readings agree.
+      for (final PanchangDetails d in october) {
+        final Matbhed? m = d.matbhed
+            .where((Matbhed x) => x.key == 'panchang_panchak_kind')
+            .firstOrNull;
+        if (m == null) continue;
+        expect(m.isComplete, isTrue);
+        expect(
+          d.panchak,
+          isNotNull,
+          reason: 'a Panchak card only on a day with a Panchak',
+        );
+      }
+      expect(
+        detailsFor(
+          2026,
+          10,
+          14,
+        ).matbhed.any((Matbhed x) => x.key == 'panchang_panchak_kind'),
+        isFalse,
+      );
+    });
+
+    test(
+      'Chandra bala: the 2nd, 5th and 9th count in the bright half only',
+      () {
+        bool brightGain = false;
+        for (final PanchangDetails d in october) {
+          final Matbhed m = chandraBalaMatbhed(d, natalMoonRashi: 0);
+          expect(m.isComplete, isTrue);
+          expect(m.views.first.isDefault, isTrue);
+          expect(m.views[1].value!, greaterThanOrEqualTo(m.views[0].value!));
+          if (d.panchang.paksha == 'Shukla') {
+            if (m.views[1].value! > m.views[0].value!) {
+              brightGain = true;
+              expect(m.views[1].result.en, contains('vedha'));
+            }
+          } else {
+            expect(m.views[1].value, m.views[0].value);
+          }
+          // The default is the list the app’s own balas use.
+          final int good = chandraBalaForDay(d, natalMoonRashi: 0)
+              .where(
+                (BalaSegment<ChandraBala> s) =>
+                    s.value.tone == PanchangTone.auspicious,
+              )
+              .length;
+          expect(m.views[0].value, greaterThanOrEqualTo(0));
+          expect(good, lessThanOrEqualTo(d.moonSegments.length));
+        }
+        expect(brightGain, isTrue);
+      },
+    );
+
+    test(
+      'the Janma tara is neutral in one reading and graded in the other',
+      () {
+        bool sawJanma = false;
+        for (final PanchangDetails d in october) {
+          final int natal = d.moonSegments.first.nakshatra;
+          final Matbhed m = taraBalaMatbhed(d, natalNakshatra: natal);
+          expect(m.isComplete, isTrue);
+          expect(m.views[0].value, 0);
+          expect(m.views[0].result.en, contains('Janma tara, neutral'));
+          expect(m.views[1].value!, greaterThanOrEqualTo(1));
+          expect(
+            m.views[1].result.en,
+            contains('Janma tara, unfavourable in full'),
+          );
+          expect(m.differs, isTrue);
+          sawJanma = true;
+        }
+        expect(sawJanma, isTrue);
+        // The 10th from the birth star is half, the 19th negligible.
+        final PanchangDetails d = october[10];
+        final int moon = d.moonSegments.first.nakshatra;
+        final Matbhed tenth = taraBalaMatbhed(
+          d,
+          natalNakshatra: (moon - 9) % 27,
+        );
+        expect(tenth.views[1].result.en, contains('unfavourable by half'));
+        final Matbhed nineteenth = taraBalaMatbhed(
+          d,
+          natalNakshatra: (moon - 18) % 27,
+        );
+        expect(nineteenth.views[1].result.en, contains('negligible'));
+        expect(nineteenth.views[1].value, 0);
+      },
+    );
+
+    test('both languages, everywhere, and nothing is predicted', () {
+      for (final PanchangDetails d in october) {
+        final List<Matbhed> all = <Matbhed>[
+          ...d.matbhed,
+          chandraBalaMatbhed(d, natalMoonRashi: 3),
+          taraBalaMatbhed(d, natalNakshatra: 5),
+        ];
+        for (final Matbhed m in all) {
+          expect(m.isComplete, isTrue, reason: m.key);
+          for (final Mat v in m.views) {
+            expectBothLanguages(v.position.en, v.position.hi, '${m.key} rule');
+            expectBothLanguages(v.holder.en, v.holder.hi, '${m.key} holder');
+            expectBothLanguages(
+              v.reasoning.en,
+              v.reasoning.hi,
+              '${m.key} reasoning',
+            );
+            expectBothLanguages(v.result.en, v.result.hi, '${m.key} result');
+          }
+          expectBothLanguages(m.defaultReason.en, m.defaultReason.hi, m.key);
+          // The sources are named as they were read, never a verse invented.
+          for (final Mat v in m.views) {
+            expect(v.holder.en.toLowerCase(), isNot(contains('verse')));
+          }
+        }
+      }
+      for (final LeftOut l in panchangLeftOut) {
+        expect(l.isComplete, isTrue);
+      }
+      expect(panchangLeftOut.single.key, 'bhadra_loka');
     });
   });
 }

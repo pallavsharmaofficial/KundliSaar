@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kundlisaar/engine/astro/ayanamsa.dart';
 import 'package:kundlisaar/engine/astro/ephemeris.dart';
@@ -8,6 +10,7 @@ import 'package:kundlisaar/engine/jyotish/dasha.dart';
 import 'package:kundlisaar/engine/jyotish/graha_data.dart';
 import 'package:kundlisaar/engine/jyotish/phaladesh.dart';
 import 'package:kundlisaar/engine/jyotish/rashi.dart';
+import 'package:kundlisaar/engine/jyotish/remedies.dart';
 import 'package:kundlisaar/engine/jyotish/shadbala.dart';
 import 'package:kundlisaar/engine/jyotish/transits.dart';
 import 'package:kundlisaar/engine/jyotish/yogas.dart';
@@ -81,6 +84,132 @@ const List<String> refusedHindi = <String>[
 
 final RegExp devanagari = RegExp(r'[ऀ-ॿ]');
 final RegExp latin = RegExp(r'[A-Za-z]');
+
+/// Words that would turn the strength band into a chance of something
+/// happening. The band counts agreeing chart factors and nothing else.
+final RegExp chanceEnglish = RegExp(
+  r'(%|\bper ?cent\w*|probab\w*|likelihood|\blikely\b|\bunlikely\b|\bchances?\b|\b(the|good|long|better|even) odds\b|\bodds (of|are|that|on)\b)',
+  caseSensitive: false,
+);
+
+const List<String> chanceHindi = <String>[
+  '%',
+  'प्रतिशत',
+  'फ़ीसदी',
+  'फीसदी',
+  'प्रायिकता',
+  'संभावना',
+  'संभावित',
+  'प्रोबेबिलिटी',
+];
+
+/// Anything that must be bought, paid for or worn, or that sells fear.
+final RegExp buyingEnglish = RegExp(
+  r'\b(buy\w*|bought|purchas\w*|price\w*|cost\w*|pay|pays|paid|payment\w*|fees?|rupees?|rs|sell\w*|sold|shop\w*|vendors?|gems?|gemstones?|stones?|ruby|rubies|pearls?|corals?|emeralds?|sapphires?|diamonds?|hessonite|topaz|cat.s eye|amulets?|talismans?|pendants?|yantras?|rings?|priests?|pandits?|donat\w*|ratti)\b',
+  caseSensitive: false,
+);
+
+const List<String> buyingHindi = <String>[
+  'खरीद',
+  'कीमत',
+  'मूल्य',
+  'रुपय',
+  'रुपए',
+  '₹',
+  'शुल्क',
+  'बेचन',
+  'बेचें',
+  'बिक्री',
+  'रत्न',
+  'अंगूठी',
+  'यंत्र',
+  'ताबीज',
+  'पंडित',
+  'पुजारी',
+  'दक्षिणा',
+  'माणिक्य',
+  'पुखराज',
+  'नीलम',
+  'गोमेद',
+  'लहसुनिया',
+  'मूंगा',
+  'पन्ना',
+  'मोती',
+  'हीरा',
+];
+
+/// A remedy offered as the tradition's practice must not slip into promising
+/// that something will change.
+final RegExp promisesEnglish = RegExp(
+  r'\b(will|shall|cure[sd]?|heal\w*|remov\w*|ward\w*|guarantee\w*|ensure\w*|solve\w*|fix(es)?|certainly|definitely)\b',
+  caseSensitive: false,
+);
+
+const List<String> promisesHindi = <String>[
+  'होगा',
+  'होगी',
+  'होंगे',
+  'जाएगा',
+  'जाएगी',
+  'मिलेगा',
+  'मिलेगी',
+  'मिटेगा',
+  'पड़ेगा',
+  'गारंटी',
+  'पक्का फल',
+];
+
+final RegExp monthName = RegExp(
+  r'\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)\b|जनवरी|फ़रवरी|मार्च|अप्रैल|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर',
+  caseSensitive: false,
+);
+
+/// Every reading of a chart that carries a band, tends and remedies.
+List<IndicatedReading> indicatedReadings(Phaladesh p, [GocharPhala? gochar]) {
+  final List<IndicatedReading> out = <IndicatedReading>[
+    ...p.bhavas,
+    ...p.grahas,
+  ];
+  void walk(PeriodReading r) {
+    out.add(r);
+    r.children.forEach(walk);
+  }
+
+  p.dasha.mahadashas.forEach(walk);
+  out.addAll(p.timeline.windows);
+  if (gochar != null) out.addAll(gochar.readings);
+  return out;
+}
+
+/// A period is difficult when its tone asks for effort, or when its lord
+/// stands in the 6th, 8th or 12th from the lord of the period around it.
+bool isDifficultPeriod(PeriodReading p) =>
+    p.tone == Tone.demanding ||
+    (p.parentLord != null &&
+        p.lord != p.parentLord &&
+        const <int>[6, 8, 12].contains(p.placeFromParent));
+
+/// A finding the rules found strained or demanding, and so one that calls for
+/// a remedy.
+bool isAdverse(IndicatedReading r) => switch (r) {
+  BhavaReading b => b.relief != null || b.tone == Tone.demanding,
+  GrahaReading g => g.relief != null || g.tone == Tone.demanding,
+  PeriodReading p => isDifficultPeriod(p),
+  TimelineWindow w => isDifficultPeriod(w.period),
+  GocharReading c => !c.favourable || c.tone == Tone.demanding,
+  _ => false,
+};
+
+IndicatorFactor factor(bool eases, {bool firm = true}) => IndicatorFactor(
+  kind: FactorKind.placement,
+  text: Bi(
+    'factor ${eases ? 'for' : 'against'} $firm',
+    'कारक ${eases ? 'पक्ष' : 'विपक्ष'}',
+  ),
+  eases: eases,
+  firm: firm,
+  grahas: const <Graha>[Graha.sun],
+);
 
 int signOf(Kundli k, Graha g) => k.grahas[g]!.rashi.index;
 int houseFrom(int from, int to) => ((to - from + 12) % 12) + 1;
@@ -1032,6 +1161,988 @@ void main() {
         final bool dhaiya =
             saturn.houseFromMoon == 4 || saturn.houseFromMoon == 8;
         expect(saturn.reading.en.contains('dhaiya'), dhaiya);
+      },
+    );
+  });
+
+  group('strength of indication', () {
+    late GocharPhala gochar;
+    late List<IndicatedReading> all;
+    setUpAll(() {
+      gochar = sample.gochar(now: now);
+      all = <IndicatedReading>[
+        for (final Phaladesh p in every) ...indicatedReadings(p),
+        ...indicatedReadings(sample, gochar),
+        for (final Phaladesh p in every.take(6)) ...p.gochar(now: now).readings,
+      ];
+    });
+
+    test('every reading carries a band whose count is the factors listed', () {
+      expect(all.length, greaterThan(5000));
+      for (final IndicatedReading r in all) {
+        final Indication ind = r.indication;
+        final int a = ind.agreeing.length;
+        final int d = ind.disagreeing.length;
+        expect(ind.total, a + d, reason: r.headline.en);
+        expect(ind.label.isComplete, isTrue);
+        expect(ind.summary.en, startsWith(ind.label.en));
+        expect(ind.summary.hi, startsWith(ind.label.hi));
+        if (ind.band == IndicationBand.mixed) {
+          expect(ind.count.en, startsWith('$a '), reason: ind.count.en);
+          expect(ind.count.en, endsWith(', $d to effort'));
+          expect(ind.count.hi, contains('$a कारक सहारे की ओर'));
+          expect(ind.count.hi, contains('$d मेहनत की ओर'));
+        } else {
+          final int n = a + d;
+          expect(
+            ind.count.en,
+            '$a of $n ${n == 1 ? 'factor agrees' : 'factors agree'}',
+          );
+          expect(ind.count.hi, '$n में से $a कारक सहमत');
+        }
+        // The list on screen is exactly the list that was counted, and no
+        // fact is counted twice.
+        final List<IndicatorFactor> listed = <IndicatorFactor>[
+          ...ind.agreeing,
+          ...ind.disagreeing,
+        ];
+        expect(
+          listed.map((IndicatorFactor f) => f.text.en).toSet().length,
+          a + d,
+          reason: r.headline.en,
+        );
+        for (final IndicatorFactor f in listed) {
+          expect(f.text.isComplete, isTrue);
+          expect(f.grahas, isNotEmpty, reason: f.text.en);
+          expect(
+            ind.texts.any((Bi t) => identical(t, f.text)),
+            isTrue,
+            reason: 'a counted factor is shown',
+          );
+        }
+      }
+    });
+
+    test('agreeing factors point the way of the tone, the rest the other', () {
+      for (final IndicatedReading r in all) {
+        final Indication ind = r.indication;
+        final bool effort = ind.direction == Tone.demanding;
+        for (final IndicatorFactor f in ind.agreeing) {
+          expect(f.eases, !effort, reason: '${r.headline.en}: ${f.text.en}');
+        }
+        for (final IndicatorFactor f in ind.disagreeing) {
+          expect(f.eases, effort, reason: '${r.headline.en}: ${f.text.en}');
+        }
+      }
+    });
+
+    test('the scale is the one the docs name', () {
+      Indication of(Tone t, int agree, int disagree, {int firm = 99}) {
+        final bool eases = t != Tone.demanding;
+        return Indication(t, <IndicatorFactor>[
+          for (int i = 0; i < agree; i++) factor(eases, firm: i < firm),
+          for (int i = 0; i < disagree; i++) factor(!eases),
+        ]);
+      }
+
+      expect(of(Tone.supportive, 5, 0).band, IndicationBand.strong);
+      expect(of(Tone.supportive, 4, 1).band, IndicationBand.strong);
+      expect(of(Tone.demanding, 4, 1).band, IndicationBand.strong);
+      expect(of(Tone.supportive, 4, 1, firm: 1).band, IndicationBand.moderate);
+      expect(of(Tone.supportive, 4, 2).band, IndicationBand.moderate);
+      expect(of(Tone.supportive, 3, 0).band, IndicationBand.moderate);
+      expect(of(Tone.supportive, 3, 1).band, IndicationBand.moderate);
+      expect(of(Tone.supportive, 3, 2).band, IndicationBand.weak);
+      expect(of(Tone.supportive, 2, 0).band, IndicationBand.weak);
+      expect(of(Tone.demanding, 2, 2).band, IndicationBand.weak);
+      expect(of(Tone.supportive, 1, 0).band, IndicationBand.weak);
+      expect(of(Tone.supportive, 0, 0).band, IndicationBand.weak);
+      expect(of(Tone.mixed, 3, 3).band, IndicationBand.mixed);
+      expect(of(Tone.mixed, 6, 0).band, IndicationBand.mixed);
+      final Indication four = of(Tone.supportive, 4, 1);
+      expect(four.summary.en, 'Strong indication — 4 of 5 factors agree');
+      expect(four.summary.hi, 'प्रबल संकेत — 5 में से 4 कारक सहमत');
+    });
+
+    test('a reading resting on a single factor is never labelled strong', () {
+      final Indication firm = Indication(Tone.supportive, <IndicatorFactor>[
+        factor(true),
+      ]);
+      expect(firm.band, isNot(IndicationBand.strong));
+      expect(firm.band, IndicationBand.weak);
+      expect(firm.caution!.en, contains('single factor'));
+      expect(firm.caution!.en, isNot(contains('light')));
+      expect(firm.caution!.hi, contains('एक कारक'));
+      final Indication light = Indication(Tone.supportive, <IndicatorFactor>[
+        factor(true, firm: false),
+      ]);
+      expect(light.band, IndicationBand.weak);
+      expect(light.caution!.en, contains('single factor'));
+      expect(light.caution!.en, contains('a light one'));
+      expect(light.caution!.hi, contains('हल्का'));
+      // A mixed reading with one factor is not dressed up either, and a
+      // reading with none says that nothing but the app's weighing is behind it.
+      final Indication lone = Indication(Tone.mixed, <IndicatorFactor>[
+        factor(false),
+      ]);
+      expect(lone.caution!.en, contains('single factor'));
+      final Indication none = Indication(Tone.supportive, <IndicatorFactor>[]);
+      expect(none.caution!.en, contains('No chart factor'));
+
+      int single = 0;
+      for (final IndicatedReading r in all) {
+        final Indication ind = r.indication;
+        if (ind.band == IndicationBand.mixed) continue;
+        if (ind.agreeing.length <= 2) {
+          expect(ind.band, IndicationBand.weak, reason: r.headline.en);
+        }
+        if (ind.agreeing.length == 1) {
+          single++;
+          expect(ind.caution, isNotNull, reason: r.headline.en);
+          expect(ind.caution!.en, contains('single factor'));
+        }
+        if (ind.band == IndicationBand.strong) {
+          expect(ind.agreeing.length, greaterThanOrEqualTo(4));
+          expect(ind.disagreeing.length, lessThanOrEqualTo(1));
+          expect(ind.firmAgreeing, greaterThanOrEqualTo(2));
+        }
+        if (ind.band == IndicationBand.moderate) {
+          expect(ind.agreeing.length, greaterThanOrEqualTo(3));
+          expect(
+            ind.agreeing.length - ind.disagreeing.length,
+            greaterThanOrEqualTo(2),
+          );
+        }
+      }
+      expect(
+        single,
+        greaterThan(0),
+        reason: 'the sweep met readings that rest on one factor',
+      );
+    });
+
+    test('the sweep meets every band, so the scale tells readings apart', () {
+      final Set<IndicationBand> seen = <IndicationBand>{
+        for (final IndicatedReading r in all) r.indication.band,
+      };
+      expect(seen, containsAll(IndicationBand.values));
+    });
+
+    test('a divided reading shows the split as it stands', () {
+      final Indication split = Indication(Tone.mixed, <IndicatorFactor>[
+        factor(true),
+        factor(true),
+        factor(true),
+        factor(false),
+        factor(false),
+      ]);
+      expect(split.band, IndicationBand.mixed);
+      expect(split.count.en, '3 factors point to support, 2 to effort');
+      expect(split.count.hi, '3 कारक सहारे की ओर, 2 मेहनत की ओर');
+      expect(split.agreeHeading.en, 'Factors pointing to support');
+      expect(split.disagreeHeading.en, 'Factors pointing to effort');
+    });
+
+    test('the factors mirror the numbers the engine already holds', () {
+      for (final Phaladesh p in every) {
+        for (final GrahaReading r in p.grahas) {
+          final GrahaStanding st = p.context.of(r.graha);
+          final List<IndicatorFactor> listed = <IndicatorFactor>[
+            ...r.indication.agreeing,
+            ...r.indication.disagreeing,
+          ];
+          Iterable<IndicatorFactor> of(FactorKind k) =>
+              listed.where((IndicatorFactor f) => f.kind == k);
+          final bool isNode = r.graha == Graha.rahu || r.graha == Graha.ketu;
+
+          // Shadbala: present only where it is worked out, and on the side
+          // of the engine's own comparison with the minimum.
+          final BalaBreakdown? bala = st.bala;
+          if (bala == null) {
+            expect(of(FactorKind.shadbala), isEmpty, reason: r.graha.name);
+          } else {
+            expect(of(FactorKind.shadbala).length, 1, reason: r.graha.name);
+            expect(
+              of(FactorKind.shadbala).single.eases,
+              bala.isStrong,
+              reason: r.graha.name,
+            );
+            expect(
+              of(FactorKind.shadbala).single.text.en,
+              contains(bala.totalRupas.toStringAsFixed(1)),
+            );
+          }
+
+          // Ashtakavarga: five or more bindus eases, three or fewer presses.
+          final int? own = st.ownBindus;
+          final Iterable<IndicatorFactor> av = of(FactorKind.ashtakavarga);
+          expect(av.length, lessThanOrEqualTo(1), reason: r.graha.name);
+          if (own != null && own >= 5) {
+            expect(av.single.eases, isTrue);
+            expect(av.single.text.en, contains('$own bindus'));
+          }
+          if (own != null && own <= 3) {
+            expect(av.single.eases, isFalse);
+            expect(av.single.text.en, contains('$own bindus'));
+          }
+
+          // Dignity: the engine's own placement decides it.
+          final Dignity d = st.placed.dignity;
+          final Iterable<IndicatorFactor> dig = of(FactorKind.dignity);
+          if (d == Dignity.exalted ||
+              d == Dignity.own ||
+              d == Dignity.moolatrikona) {
+            expect(dig.single.eases, isTrue, reason: r.graha.name);
+          } else if (d == Dignity.debilitated) {
+            expect(dig.single.eases, isFalse, reason: r.graha.name);
+            // A cancelled fall is its own factor, pointing the other way.
+            expect(
+              of(
+                FactorKind.relief,
+              ).any((IndicatorFactor f) => f.text.en.contains('Neecha bhanga')),
+              st.neechaBhanga != null,
+            );
+          } else if (d == Dignity.neutral || isNode) {
+            expect(dig, isEmpty, reason: '${r.graha.name} ${d.name}');
+          }
+
+          // Combustion is a factor exactly when the engine says so.
+          expect(
+            of(FactorKind.condition).length,
+            st.placed.isCombust ? 1 : 0,
+            reason: r.graha.name,
+          );
+        }
+      }
+    });
+
+    test('a house reads its factors from its lord, occupants and aspects', () {
+      for (final Phaladesh p in every) {
+        for (final BhavaReading b in p.bhavas) {
+          final List<IndicatorFactor> fs = <IndicatorFactor>[
+            ...b.indication.agreeing,
+            ...b.indication.disagreeing,
+          ];
+          final bool kendraTrikona = const <int>[
+            1,
+            4,
+            5,
+            7,
+            9,
+            10,
+          ].contains(b.lordHouse);
+          final bool dusthana = const <int>[6, 8, 12].contains(b.lordHouse);
+          final IndicatorFactor? place = fs
+              .where(
+                (IndicatorFactor f) =>
+                    f.kind == FactorKind.placement &&
+                    f.text.en.contains('lord of'),
+              )
+              .firstOrNull;
+          if (kendraTrikona) {
+            expect(place?.eases, isTrue, reason: 'house ${b.house}');
+          } else if (dusthana) {
+            expect(place?.eases, isFalse, reason: 'house ${b.house}');
+          }
+          // The sarvashtakavarga count decides its factor.
+          final IndicatorFactor? av = fs
+              .where(
+                (IndicatorFactor f) =>
+                    f.kind == FactorKind.ashtakavarga &&
+                    f.text.en.contains('sarvashtakavarga'),
+              )
+              .firstOrNull;
+          if (b.signBindus >= 30) expect(av?.eases, isTrue);
+          if (b.signBindus <= 24) expect(av?.eases, isFalse);
+          if (b.signBindus > 24 && b.signBindus < 30) expect(av, isNull);
+          // A graha is only counted on a house it rules, sits in or looks at.
+          for (final IndicatorFactor f in fs) {
+            for (final Graha g in f.grahas) {
+              expect(
+                g == b.lord ||
+                    b.occupants.contains(g) ||
+                    b.aspectedBy.contains(g),
+                isTrue,
+                reason: 'house ${b.house}: ${g.name} in ${f.text.en}',
+              );
+            }
+          }
+        }
+      }
+    });
+
+    test('the scale is named plainly, in the docs and for the screen', () {
+      expect(indicationScaleNote.en, contains('not a classical measure'));
+      expect(indicationScaleNote.en, contains('not a probability'));
+      expect(indicationScaleNote.en, contains('own convention'));
+      expect(indicationScaleNote.hi, contains('शास्त्रीय माप नहीं'));
+      expect(indicationScaleNote.hi, contains('संभावना'));
+      expect(indicationScaleNote.isComplete, isTrue);
+      final String docs = File('docs/ENGINE.md').readAsStringSync();
+      expect(docs, contains('Strength of indication'));
+      expect(docs, contains('not a classical measure'));
+      expect(docs, contains('not a probability'));
+    });
+
+    test('no reading speaks of a percentage or of the chance of anything', () {
+      // The scanners must catch what they are meant to catch.
+      for (final String bad in <String>[
+        'a 65% chance of a job change',
+        'probability of a promotion',
+        'likely to move house',
+        'the odds are good',
+        'about 70 percent',
+        'an unlikely outcome',
+      ]) {
+        expect(chanceEnglish.hasMatch(bad), isTrue, reason: bad);
+      }
+      for (final String fine in <String>[
+        '4 of 5 factors agree',
+        'Strong indication',
+        'a single factor',
+        'Questions of home tend to come up',
+      ]) {
+        expect(chanceEnglish.hasMatch(fine), isFalse, reason: fine);
+      }
+      void scan(Iterable<Bi> texts) {
+        for (final Bi t in texts) {
+          expect(chanceEnglish.hasMatch(t.en), isFalse, reason: t.en);
+          for (final String stem in chanceHindi) {
+            expect(t.hi, isNot(contains(stem)), reason: t.hi);
+          }
+        }
+      }
+
+      for (final Phaladesh p in every) {
+        scan(p.texts);
+      }
+      scan(gochar.texts);
+      for (final IndicatedReading r in all) {
+        scan(r.indication.texts);
+      }
+    });
+
+    test('Phaladesh carries the bands, the tendencies and the remedies', () {
+      final Set<String> texts = sample.texts.map((Bi b) => b.en).toSet();
+      expect(texts, contains(sample.bhavas.first.indication.summary.en));
+      expect(texts, contains(sample.bhavas.first.tends.en));
+      expect(texts, contains(remedyStance.en));
+      for (final PeriodReading m in sample.dasha.mahadashas) {
+        expect(texts, contains(m.indication.summary.en));
+        expect(texts, contains(m.tends.en));
+      }
+    });
+  });
+
+  group('what tends to come up', () {
+    late GocharPhala gochar;
+    setUpAll(() => gochar = sample.gochar(now: now));
+
+    const List<String> houseWords = <String>[
+      'who you are',
+      'money',
+      'effort and initiative',
+      'home and peace of mind',
+      'learning, creative work and children',
+      'daily work',
+      'partnership',
+      'change, shared resources',
+      'purpose, guidance',
+      'work, responsibility and standing',
+      'income, friends',
+      'expense, rest',
+    ];
+
+    List<(IndicatedReading, int)> everyTendency() {
+      final List<(IndicatedReading, int)> out = <(IndicatedReading, int)>[];
+      for (final Phaladesh p in every) {
+        for (final BhavaReading b in p.bhavas) {
+          out.add((b, b.house));
+        }
+        void walk(PeriodReading r) {
+          out.add((r, r.area.house));
+          r.children.forEach(walk);
+        }
+
+        p.dasha.mahadashas.forEach(walk);
+      }
+      for (final GocharReading r in gochar.readings) {
+        out.add((r, r.houseFromLagna));
+      }
+      return out;
+    }
+
+    test('every house, every period and every transit carries it', () {
+      for (final (IndicatedReading r, int house) in everyTendency()) {
+        final Bi? tends = r.tends;
+        expect(tends, isNotNull, reason: r.headline.en);
+        expect(tends!.isComplete, isTrue);
+        // It names the area of life the house or period concentrates on.
+        expect(
+          tends.en,
+          contains(houseWords[house - 1]),
+          reason: '${r.headline.en} house $house',
+        );
+        // It is a tendency, not a statement of fact.
+        expect(tends.en, contains('tend'), reason: tends.en);
+        expect(tends.hi, contains('अक्सर'), reason: tends.hi);
+      }
+    });
+
+    test('a tendency is never an event, a forecast or a date', () {
+      for (final (IndicatedReading r, _) in everyTendency()) {
+        final Bi tends = r.tends!;
+        expect(tends.en, isNot(matches(RegExp(r'\d'))), reason: tends.en);
+        expect(tends.hi, isNot(matches(RegExp(r'\d'))), reason: tends.hi);
+        expect(monthName.hasMatch(tends.en), isFalse, reason: tends.en);
+        expect(monthName.hasMatch(tends.hi), isFalse, reason: tends.hi);
+        expect(promisesEnglish.hasMatch(tends.en), isFalse, reason: tends.en);
+        for (final String stem in promisesHindi) {
+          expect(tends.hi, isNot(contains(stem)), reason: tends.hi);
+        }
+        expect(refusedEnglish.hasMatch(tends.en), isFalse, reason: tends.en);
+        for (final String stem in refusedHindi) {
+          expect(tends.hi, isNot(contains(stem)), reason: tends.hi);
+        }
+      }
+    });
+
+    test('the tone of the reading colours the tendency', () {
+      int supportive = 0;
+      int demanding = 0;
+      for (final (IndicatedReading r, _) in everyTendency()) {
+        final Tone tone = switch (r) {
+          BhavaReading b => b.tone,
+          PeriodReading p => p.tone,
+          GocharReading g => g.tone,
+          _ => Tone.mixed,
+        };
+        switch (tone) {
+          case Tone.supportive:
+            supportive++;
+            expect(r.tends!.en, contains('less friction'));
+          case Tone.demanding:
+            demanding++;
+            expect(r.tends!.en, contains('more deliberate handling'));
+          case Tone.mixed:
+            expect(r.tends!.en, contains('some ease and some effort'));
+        }
+      }
+      expect(supportive, greaterThan(0));
+      expect(demanding, greaterThan(0));
+    });
+
+    test('a transit says how its graha tends to colour what it touches', () {
+      for (final GocharReading r in gochar.readings) {
+        final String name = grahaInfo(r.graha).english;
+        expect(r.tends.en, contains('A $name transit tends to'));
+        expect(r.tends.hi, contains('${grahaInfo(r.graha).hindi} का गोचर'));
+        expect(
+          r.tends.en,
+          contains(
+            r.landsOnDasha
+                ? 'already concern this area'
+                : 'concern other areas',
+          ),
+        );
+      }
+    });
+
+    test('a house with occupants says what they tend to bring', () {
+      for (final Phaladesh p in every) {
+        for (final BhavaReading b in p.bhavas) {
+          if (b.occupants.isEmpty) {
+            expect(b.tends.en, isNot(contains(' here, ')));
+          } else {
+            expect(
+              b.tends.en,
+              contains('With ${grahaInfo(b.occupants.first).english}'),
+              reason: 'house ${b.house}',
+            );
+          }
+        }
+      }
+    });
+
+    test('a child’s window says the home carries it', () {
+      final TimelineWindow first = sample.timeline.windows.first;
+      expect(first.tends.en, contains('childhood'));
+      expect(first.tends.en, contains('the family around the child'));
+      final TimelineWindow adult = sample.timeline.windows.firstWhere(
+        (TimelineWindow w) => w.ageStartYears > 30,
+      );
+      expect(adult.tends, adult.period.tends);
+    });
+  });
+
+  group('remedies for what is strained', () {
+    late GocharPhala gochar;
+    late List<IndicatedReading> all;
+    setUpAll(() {
+      gochar = sample.gochar(now: now);
+      all = <IndicatedReading>[
+        for (final Phaladesh p in every) ...indicatedReadings(p),
+        ...indicatedReadings(sample, gochar),
+        for (final Phaladesh p in every.take(6)) ...p.gochar(now: now).readings,
+      ];
+    });
+
+    test('every adverse finding carries at least one remedy', () {
+      int adverse = 0;
+      int calm = 0;
+      final Set<String> kinds = <String>{};
+      for (final IndicatedReading r in all) {
+        if (isAdverse(r)) {
+          adverse++;
+          kinds.add(r.runtimeType.toString());
+          expect(r.remedies, isNotEmpty, reason: r.headline.en);
+          expect(r.remedies.length, lessThanOrEqualTo(3));
+        } else {
+          // A remedy is for a finding that calls for one, not for everyone.
+          calm++;
+          expect(r.remedies, isEmpty, reason: r.headline.en);
+        }
+      }
+      expect(adverse, greaterThan(0));
+      expect(calm, greaterThan(0));
+      // Every kind of reading met something strained.
+      expect(
+        kinds,
+        containsAll(<String>[
+          'BhavaReading',
+          'GrahaReading',
+          'PeriodReading',
+          'TimelineWindow',
+          'GocharReading',
+        ]),
+      );
+    });
+
+    test(
+      'a remedy says which graha it is for and which affliction it meets',
+      () {
+        for (final IndicatedReading r in all) {
+          final List<IndicatorFactor> factors = <IndicatorFactor>[
+            ...r.indication.agreeing,
+            ...r.indication.disagreeing,
+          ];
+          for (final Remedy remedy in r.remedies) {
+            final GrahaInfo info = grahaInfo(remedy.graha);
+            expect(remedy.addresses.en, contains(info.english));
+            expect(remedy.addresses.hi, contains(info.hindi));
+            expect(remedy.addresses.en, startsWith('This remedy is for '));
+            // The affliction it names is one of the reading's own pressing
+            // factors about that graha, word for word.
+            final List<IndicatorFactor> pressing = factors
+                .where(
+                  (IndicatorFactor f) =>
+                      !f.eases && f.grahas.contains(remedy.graha),
+                )
+                .toList();
+            if (pressing.isEmpty) {
+              expect(
+                remedy.addresses.en,
+                contains('asking for effort'),
+                reason: remedy.addresses.en,
+              );
+            } else {
+              expect(
+                pressing.any(
+                  (IndicatorFactor f) =>
+                      remedy.addresses.en.contains(f.text.en),
+                ),
+                isTrue,
+                reason: remedy.addresses.en,
+              );
+              expect(
+                pressing.any(
+                  (IndicatorFactor f) =>
+                      remedy.addresses.hi.contains(f.text.hi),
+                ),
+                isTrue,
+                reason: remedy.addresses.hi,
+              );
+            }
+          }
+          // Never the same graha twice in one finding.
+          expect(
+            r.remedies.map((Remedy x) => x.graha).toSet().length,
+            r.remedies.length,
+          );
+        }
+      },
+    );
+
+    test(
+      'a strained house is remedied through its lord or what presses on it',
+      () {
+        for (final Phaladesh p in every) {
+          for (final BhavaReading b in p.bhavas) {
+            for (final Remedy r in b.remedies) {
+              expect(
+                r.graha == b.lord ||
+                    b.occupants.contains(r.graha) ||
+                    b.aspectedBy.contains(r.graha),
+                isTrue,
+                reason: 'house ${b.house}: ${r.graha.name}',
+              );
+            }
+          }
+          for (final GrahaReading g in p.grahas) {
+            for (final Remedy r in g.remedies) {
+              expect(r.graha, g.graha);
+            }
+          }
+        }
+      },
+    );
+
+    test('a difficult period is remedied through its own lord first', () {
+      int checked = 0;
+      for (final Phaladesh p in every) {
+        void walk(PeriodReading r) {
+          if (r.remedies.isNotEmpty) {
+            final bool lordPressed = r.indication.agreeing
+                .followedBy(r.indication.disagreeing)
+                .any(
+                  (IndicatorFactor f) => !f.eases && f.grahas.contains(r.lord),
+                );
+            if (lordPressed) {
+              expect(r.remedies.first.graha, r.lord);
+              checked++;
+            }
+            for (final Remedy x in r.remedies) {
+              expect(
+                x.graha == r.lord ||
+                    x.graha == r.parentLord ||
+                    x.graha == r.grandparentLord,
+                isTrue,
+              );
+            }
+          }
+          r.children.forEach(walk);
+        }
+
+        p.dasha.mahadashas.forEach(walk);
+      }
+      expect(checked, greaterThan(100));
+    });
+
+    test('a testing transit is remedied through the transiting graha', () {
+      int testing = 0;
+      for (final GocharReading g in all.whereType<GocharReading>()) {
+        if (!g.favourable) {
+          testing++;
+          expect(g.remedies.single.graha, g.graha);
+        }
+      }
+      expect(testing, greaterThan(0));
+    });
+
+    test('every adverse yoga carries a remedy, and no other does', () {
+      // A wide sweep of births, so that every dosha the chart can carry turns
+      // up. Only the yoga notes are needed, so the dasha tree is not built.
+      final Set<String> adverse = <String>{};
+      final Set<String> unmapped = <String>{};
+      for (int i = 0; i < 150; i++) {
+        final Kundli k = chartAt(
+          DateTime(1960, 1, 3).add(Duration(days: i * 97, hours: (i * 7) % 24)),
+        );
+        final PhalaContext ctx = PhalaContext(k);
+        final Map<String, List<YogaNote>> notes = <String, List<YogaNote>>{};
+        for (final GrahaReading g in grahaPhala(ctx)) {
+          for (final YogaNote n in g.yogaNotes) {
+            notes.putIfAbsent(n.key, () => <YogaNote>[]).add(n);
+          }
+        }
+        for (final YogaFinding y in ctx.yogas) {
+          if (!y.isDosha || y.isCancelled) continue;
+          // A Nabhasa mould describes the pattern of the whole chart; no
+          // graha is the one afflicted, so it has no graha to address.
+          if (y.family == YogaFamily.nabhasa) continue;
+          adverse.add(y.key);
+          if (!notes.containsKey(y.key)) unmapped.add(y.key);
+        }
+        for (final List<YogaNote> list in notes.values) {
+          for (final YogaNote n in list) {
+            final YogaFinding y = ctx.yogas.firstWhere(
+              (YogaFinding f) => f.key == n.key,
+            );
+            if (y.isDosha && !y.isCancelled) {
+              expect(n.isAdverse, isTrue, reason: n.key);
+              expect(n.remedies, isNotEmpty, reason: n.key);
+              expect(n.remedies.length, lessThanOrEqualTo(2));
+              for (final Remedy r in n.remedies) {
+                expect(r.addresses.en, contains(y.nameEnglish));
+                expect(r.addresses.hi, contains(y.nameHindi));
+                expect(r.addresses.en, contains('It works through'));
+              }
+            } else {
+              expect(n.isAdverse, isFalse, reason: n.key);
+              expect(n.remedies, isEmpty, reason: n.key);
+            }
+          }
+        }
+      }
+      expect(
+        unmapped,
+        isEmpty,
+        reason:
+            'These doshas are in the chart but in no graha reading, so they '
+            'carry no remedy. Map them in _yogaGrahas: $unmapped',
+      );
+      expect(
+        adverse,
+        containsAll(<String>[
+          'mangal_dosha',
+          'kaal_sarpa',
+          'kemadruma',
+          'grahan_surya',
+          'pitra_dosha',
+        ]),
+      );
+    });
+
+    test(
+      'Kaal Sarpa is remedied through both nodes and says it is practice',
+      () {
+        for (int i = 0; i < 150; i++) {
+          final Kundli k = chartAt(
+            DateTime(
+              1960,
+              1,
+              3,
+            ).add(Duration(days: i * 97, hours: (i * 7) % 24)),
+          );
+          final PhalaContext ctx = PhalaContext(k);
+          if (!ctx.yogas.any((YogaFinding y) => y.key == 'kaal_sarpa')) {
+            continue;
+          }
+          final GrahaReading rahu = grahaPhala(
+            ctx,
+          ).firstWhere((GrahaReading g) => g.graha == Graha.rahu);
+          final YogaNote note = rahu.yogaNotes.firstWhere(
+            (YogaNote n) => n.key == 'kaal_sarpa',
+          );
+          expect(note.remedies.map((Remedy r) => r.graha), <Graha>[
+            Graha.rahu,
+            Graha.ketu,
+          ]);
+          expect(note.text.en, contains('not a named yoga'));
+          return;
+        }
+        fail('the sweep never met Kaal Sarpa');
+      },
+    );
+
+    test(
+      'each remedy is the classical kit: mantra, count, fast, deity, daan, act',
+      () {
+        const Map<Graha, int> expected = <Graha, int>{
+          Graha.sun: 7000,
+          Graha.moon: 11000,
+          Graha.mars: 10000,
+          Graha.mercury: 9000,
+          Graha.jupiter: 19000,
+          Graha.venus: 16000,
+          Graha.saturn: 23000,
+          Graha.rahu: 18000,
+          Graha.ketu: 17000,
+        };
+        const List<String> daysEn = <String>[
+          'Sunday',
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+        ];
+        const List<String> daysHi = <String>[
+          'रविवार',
+          'सोमवार',
+          'मंगलवार',
+          'बुधवार',
+          'गुरुवार',
+          'शुक्रवार',
+          'शनिवार',
+        ];
+        expect(grahaRemedyKits.keys.toSet(), Graha.values.toSet());
+        for (final Graha g in Graha.values) {
+          final GrahaRemedyKit kit = grahaRemedyKits[g]!;
+          final GrahaInfo info = grahaInfo(g);
+          expect(kit.graha, g);
+          expect(kit.japaCount, expected[g], reason: g.name);
+          expect(japaCounts[g], expected[g], reason: g.name);
+          final String shown = expected[g].toString().replaceFirstMapped(
+            RegExp(r'^(\d+)(\d{3})$'),
+            (Match m) => '${m[1]},${m[2]}',
+          );
+          expect(kit.japa.en, contains(shown));
+          expect(kit.japa.hi, contains(shown));
+          expect(kit.japa.en, contains('108'));
+          expect(kit.mantra.en, info.mantra);
+          expect(kit.mantra.en, startsWith('Om '));
+          expect(kit.mantra.hi, startsWith('ॐ '));
+          expect(kit.mantra.hi, endsWith('नमः'));
+          expect(kit.fastDay, info.weekday);
+          expect(kit.fast.en, startsWith(daysEn[info.weekday]));
+          expect(kit.fast.hi, startsWith(daysHi[info.weekday]));
+          for (final Bi t in kit.texts) {
+            expect(t.isComplete, isTrue, reason: g.name);
+            expect(t.en, isNot(t.hi));
+          }
+          expect(kit.deity.en, isNotEmpty);
+          expect(kit.daan.en, startsWith('Traditionally: '));
+          expect(kit.daan.hi, startsWith('परंपरा में: '));
+          expect(kit.simpleAct.en, endsWith('.'));
+        }
+      },
+    );
+
+    test('the scanners themselves catch what they are meant to catch', () {
+      for (final String bad in <String>[
+        'buy a ruby',
+        'wear a gemstone of five ratti',
+        'pay the priest for a puja',
+        'a yantra from the shop',
+        'an amulet or a ring',
+        'purchase a pearl',
+        'at a price of nine thousand',
+        'make a donation',
+      ]) {
+        expect(buyingEnglish.hasMatch(bad), isTrue, reason: bad);
+      }
+      for (final String bad in <String>[
+        'अंगूठी पहनें',
+        'पुखराज खरीदें',
+        'पंडित को दक्षिणा दें',
+        'यंत्र की कीमत',
+      ]) {
+        expect(buyingHindi.any(bad.contains), isTrue, reason: bad);
+      }
+      for (final String bad in <String>[
+        'this will cure it',
+        'the trouble will pass',
+        'it removes the dosha',
+        'guaranteed relief',
+      ]) {
+        expect(promisesEnglish.hasMatch(bad), isTrue, reason: bad);
+      }
+      for (final String fine in <String>[
+        'Give what you already have at home',
+        'a light fast on Saturday',
+        'Offer water to the rising Sun',
+        'Feed a street dog',
+        'one mala of 108 a day',
+      ]) {
+        expect(buyingEnglish.hasMatch(fine), isFalse, reason: fine);
+        expect(promisesEnglish.hasMatch(fine), isFalse, reason: fine);
+      }
+    });
+
+    test('no remedy asks for anything to be bought, paid for or worn', () {
+      void scan(Iterable<Bi> texts, String where) {
+        for (final Bi t in texts) {
+          expect(
+            buyingEnglish.hasMatch(t.en),
+            isFalse,
+            reason:
+                '$where: ${buyingEnglish.firstMatch(t.en)?.group(0)} in ${t.en}',
+          );
+          for (final String stem in buyingHindi) {
+            expect(t.hi, isNot(contains(stem)), reason: '$where: ${t.hi}');
+          }
+        }
+      }
+
+      // All nine kits, the stance, and every remedy actually attached.
+      for (final GrahaRemedyKit kit in grahaRemedyKits.values) {
+        scan(kit.texts, kit.graha.name);
+      }
+      scan(<Bi>[remedyStance], 'stance');
+      int attached = 0;
+      for (final IndicatedReading r in all) {
+        for (final Remedy remedy in r.remedies) {
+          attached++;
+          scan(remedy.texts, r.headline.en);
+        }
+        if (r is GrahaReading) {
+          for (final YogaNote n in r.yogaNotes) {
+            for (final Remedy remedy in n.remedies) {
+              attached++;
+              scan(remedy.texts, n.key);
+            }
+          }
+        }
+      }
+      expect(attached, greaterThan(500));
+    });
+
+    test('a remedy is the tradition’s practice and promises nothing', () {
+      for (final GrahaRemedyKit kit in grahaRemedyKits.values) {
+        for (final Bi t in kit.texts) {
+          expect(promisesEnglish.hasMatch(t.en), isFalse, reason: t.en);
+          for (final String stem in promisesHindi) {
+            expect(t.hi, isNot(contains(stem)), reason: t.hi);
+          }
+          expect(refusedEnglish.hasMatch(t.en), isFalse, reason: t.en);
+          expect(doomEnglish.hasMatch(t.en), isFalse, reason: t.en);
+          for (final String stem in refusedHindi) {
+            expect(t.hi, isNot(contains(stem)), reason: t.hi);
+          }
+        }
+      }
+      for (final IndicatedReading r in all) {
+        for (final Remedy remedy in r.remedies) {
+          expect(promisesEnglish.hasMatch(remedy.addresses.en), isFalse);
+          for (final String stem in promisesHindi) {
+            expect(remedy.addresses.hi, isNot(contains(stem)));
+          }
+        }
+      }
+      // The stance is said whenever remedies are shown, and says what they are.
+      expect(remedyStance.en, contains('common practice'));
+      expect(remedyStance.en, contains('no verse is quoted'));
+      expect(remedyStance.en, contains('promise nothing'));
+      expect(remedyStance.hi, contains('कोई श्लोक नहीं'));
+      expect(remedyStance.hi, contains('कोई वादा नहीं'));
+      bool shows(IndicatedReading r) => switch (r) {
+        GrahaReading g =>
+          g.remedies.isNotEmpty ||
+              g.yogaNotes.any((YogaNote n) => n.remedies.isNotEmpty),
+        // A period's texts hold the texts of the periods inside it.
+        PeriodReading p => p.remedies.isNotEmpty || p.children.any(shows),
+        _ => r.remedies.isNotEmpty,
+      };
+      for (final IndicatedReading r in all) {
+        expect(
+          r.texts.any((Bi t) => identical(t, remedyStance)),
+          shows(r),
+          reason: r.headline.en,
+        );
+      }
+      // The fast is never forced and the giving is never fixed.
+      for (final GrahaRemedyKit kit in grahaRemedyKits.values) {
+        expect(kit.fast.en, contains('does not suit'));
+        expect(kit.daan.en, contains('are not fixed'));
+        expect(kit.daan.en, contains('already have'));
+      }
+    });
+
+    test(
+      'the remedies appear in the reading’s own texts, in both languages',
+      () {
+        for (final IndicatedReading r in all.take(400)) {
+          final Set<String> en = r.texts.map((Bi b) => b.en).toSet();
+          final Set<String> hi = r.texts.map((Bi b) => b.hi).toSet();
+          for (final Remedy remedy in r.remedies) {
+            for (final Bi t in remedy.texts) {
+              expect(en, contains(t.en));
+              expect(hi, contains(t.hi));
+            }
+          }
+        }
       },
     );
   });

@@ -76,7 +76,7 @@ void main() {
         'the panchang opens every section on a phone ($language, ${withChart ? 'with' : 'without'} a saved chart)',
         (WidgetTester tester) async {
           // A phone wide and tall enough that the whole list is built at once.
-          tester.view.physicalSize = const Size(380, 9000);
+          tester.view.physicalSize = const Size(380, 40000);
           tester.view.devicePixelRatio = 1.0;
           addTearDown(tester.view.reset);
           await tester.pumpWidget(
@@ -92,8 +92,9 @@ void main() {
             findsOneWidget,
           );
           // The new groups are present and shut.
-          final int sectionCount =
-              tester.widgetList(find.byType(ExpansionTile)).length;
+          final int sectionCount = tester
+              .widgetList(find.byType(ExpansionTile))
+              .length;
           expect(sectionCount, greaterThanOrEqualTo(5));
           expect(
             find.text(
@@ -131,6 +132,35 @@ void main() {
             find.text(hindi ? 'दिन की होरा' : 'Day horas'),
             findsOneWidget,
           );
+          // The name of the Vikram year is shown three ways, beside the year;
+          // the rules the traditions differ on are in their own section.
+          expect(
+            find.byKey(const ValueKey<String>('matbhed-samvatsara')),
+            findsOneWidget,
+          );
+          // The year’s name, Ravi Yoga and Tripushkar each carry three views.
+          expect(find.text(hindi ? 'तीन मत' : 'Three views'), findsNWidgets(3));
+          expect(
+            find.byKey(const ValueKey<String>('matbhed-panchang_ravi_yoga')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const ValueKey<String>('matbhed-panchang_tripushkar')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const ValueKey<String>('matbhed-panchang_chandra_bala')),
+            withChart ? findsOneWidget : findsNothing,
+          );
+          expect(
+            find.byKey(const ValueKey<String>('matbhed-panchang_janma_tara')),
+            withChart ? findsOneWidget : findsNothing,
+          );
+          expect(
+            find.textContaining(hindi ? 'सिद्धार्थी' : 'Siddharthi'),
+            findsWidgets,
+          );
+          expect(find.textContaining(hindi ? 'रौद्र' : 'Raudra'), findsWidgets);
           if (withChart) {
             expect(find.textContaining('Test person'), findsOneWidget);
           } else {

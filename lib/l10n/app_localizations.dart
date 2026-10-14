@@ -1481,7 +1481,7 @@ abstract class AppLocalizations {
   /// No description provided for @phScope.
   ///
   /// In en, this message translates to:
-  /// **'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.'**
+  /// **'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event. The bands count how many chart factors agree with a reading. That is the app’s own convention, not a classical measure and not a probability.'**
   String get phScope;
 
   /// No description provided for @phPromise.
@@ -1507,6 +1507,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'until {date}'**
   String phUntil(String date);
+
+  /// No description provided for @phStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength of indication'**
+  String get phStrength;
+
+  /// No description provided for @phTends.
+  ///
+  /// In en, this message translates to:
+  /// **'What tends to come up'**
+  String get phTends;
+
+  /// No description provided for @phDeity.
+  ///
+  /// In en, this message translates to:
+  /// **'Deity'**
+  String get phDeity;
+
+  /// No description provided for @phRemedies.
+  ///
+  /// In en, this message translates to:
+  /// **'What the tradition offers'**
+  String get phRemedies;
 }
 
 class _AppLocalizationsDelegate

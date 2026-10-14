@@ -724,7 +724,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phScope =>
-      'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.';
+      'These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event. The bands count how many chart factors agree with a reading. That is the app’s own convention, not a classical measure and not a probability.';
 
   @override
   String get phPromise => 'What this lord promises';
@@ -739,4 +739,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String phUntil(String date) {
     return 'until $date';
   }
+
+  @override
+  String get phStrength => 'Strength of indication';
+
+  @override
+  String get phTends => 'What tends to come up';
+
+  @override
+  String get phDeity => 'Deity';
+
+  @override
+  String get phRemedies => 'What the tradition offers';
 }

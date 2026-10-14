@@ -8,12 +8,14 @@ import 'package:kundlisaar/engine/astro/time.dart';
 import 'package:kundlisaar/engine/jyotish/chart.dart';
 import 'package:kundlisaar/engine/jyotish/dasha.dart';
 import 'package:kundlisaar/engine/jyotish/graha_data.dart';
+import 'package:kundlisaar/engine/jyotish/mat.dart';
 import 'package:kundlisaar/engine/jyotish/nakshatra.dart';
 import 'package:kundlisaar/engine/jyotish/rashi.dart';
 import 'package:kundlisaar/engine/jyotish/saham.dart';
 import 'package:kundlisaar/engine/jyotish/tajika_aspects.dart';
 import 'package:kundlisaar/engine/jyotish/tajika_bala.dart';
 import 'package:kundlisaar/engine/jyotish/tajika_common.dart';
+import 'package:kundlisaar/engine/jyotish/tajika_matbhed.dart';
 import 'package:kundlisaar/engine/jyotish/varshphal.dart';
 import 'package:kundlisaar/engine/jyotish/varshphal_dasha.dart';
 import 'package:kundlisaar/engine/jyotish/varshphal_months.dart';
@@ -1334,6 +1336,633 @@ void main() {
         expect(forbiddenTermIn(tajikaYogaIndicates(id)), isNull, reason: '$id');
       }
     });
+  });
+
+  group('two views, where the books differ (मतभेद)', () {
+    List<Matbhed> everyMatbhed(Varshphal v) => <Matbhed>[
+      for (final SahamMatbhed m in v.sahamMatbhed) m.matbhed,
+      ?v.extraSign,
+      ...v.tajikaMatbhed,
+      ...v.dashaMatbhed,
+    ];
+
+    SahamMatbhed saham(Varshphal v, String key) =>
+        v.sahamMatbhed.firstWhere((SahamMatbhed m) => m.key == key);
+
+    test(
+      'every disputed saham is back, with both positions in both languages',
+      () {
+        years.forEach((int age, Varshphal v) {
+          expect(
+            v.sahamMatbhed.map((SahamMatbhed m) => m.key).toList(),
+            <String>[
+              'mitra',
+              'vanik',
+              'vivaha',
+              'santapa',
+              'shraddha',
+              'preeti',
+              'bandhu',
+              'vyapara',
+              'putra',
+              'asha',
+              'mrityu',
+            ],
+            reason: 'age $age',
+          );
+          for (final SahamMatbhed m in v.sahamMatbhed) {
+            expect(m.matbhed.isComplete, isTrue, reason: '${m.key} age $age');
+            expect(m.matbhed.views.length, m.key == 'vivaha' ? 3 : 2);
+            for (final Mat view in m.matbhed.views) {
+              expect(view.position.en.trim(), isNotEmpty);
+              expect(view.position.hi.trim(), isNotEmpty);
+              expect(view.holder.en.trim(), isNotEmpty);
+              expect(view.holder.hi.trim(), isNotEmpty);
+              expect(view.reasoning.en.trim(), isNotEmpty);
+              expect(view.reasoning.hi.trim(), isNotEmpty);
+              expect(view.result.en.trim(), isNotEmpty);
+              expect(view.result.hi.trim(), isNotEmpty);
+              expect(view.value, inInclusiveRange(0, 360));
+            }
+            expect(m.matbhed.title.hi, m.key == 'vivaha' ? 'तीन मत' : 'दो मत');
+          }
+          expect(
+            v.leftOut.map((LeftOut l) => l.key),
+            contains('vishwasghata'),
+            reason: 'the saham with no formula is named, with the reason',
+          );
+          for (final LeftOut l in v.leftOut) {
+            expect(l.isComplete, isTrue, reason: l.key);
+          }
+        });
+      },
+    );
+
+    test('the default is marked once, and is the Hayanaratna reading', () {
+      years.forEach((int age, Varshphal v) {
+        for (final Matbhed m in everyMatbhed(v)) {
+          expect(
+            m.views.where((Mat x) => x.isDefault).length,
+            1,
+            reason: '${m.key} age $age',
+          );
+          expect(m.defaultReason.isComplete, isTrue, reason: m.key);
+        }
+        for (final SahamMatbhed m in v.sahamMatbhed) {
+          expect(m.matbhed.defaultView, same(m.matbhed.views.first));
+          expect(
+            m.matbhed.defaultView.holder.en,
+            contains('Hayanaratna'),
+            reason: m.key,
+          );
+        }
+      });
+    });
+
+    test(
+      'the positions give different longitudes where the formulas differ',
+      () {
+        years.forEach((int age, Varshphal v) {
+          // These differ in the term they subtract or add, so by day and night.
+          for (final String key in <String>[
+            'mitra',
+            'preeti',
+            'vyapara',
+            'asha',
+            'mrityu',
+          ]) {
+            final SahamMatbhed m = saham(v, key);
+            expect(m.matbhed.differs, isTrue, reason: '$key age $age');
+            expect(m.longitudes.toSet().length, m.longitudes.length);
+          }
+          // Vivaha's third form differs always; the other two only at night.
+          final List<double> vivaha = saham(v, 'vivaha').longitudes;
+          expect((vivaha[0] - vivaha[2]).abs(), greaterThan(1e-6));
+          expect((vivaha[1] - vivaha[2]).abs(), greaterThan(1e-6));
+          // These swap their two terms after sunset in one position only.
+          for (final String key in <String>[
+            'vanik',
+            'santapa',
+            'shraddha',
+            'bandhu',
+            'putra',
+          ]) {
+            final SahamMatbhed m = saham(v, key);
+            expect(m.matbhed.differs, !v.isDay, reason: '$key age $age');
+            if (v.isDay) {
+              expect(
+                m.matbhed.whyTheyDiffer!.en,
+                contains('cast by day'),
+                reason: 'the card says why the two agree today',
+              );
+            }
+          }
+          expect((vivaha[0] - vivaha[1]).abs() > 1e-6, !v.isDay);
+        });
+        expect(years.values.any((Varshphal v) => v.isDay), isTrue);
+        expect(years.values.any((Varshphal v) => !v.isDay), isTrue);
+      },
+    );
+
+    test(
+      'the default longitude of Asha, Mrityu and Putra is the one in the list',
+      () {
+        years.forEach((int age, Varshphal v) {
+          expect(
+            saham(v, 'asha').matbhed.defaultView.value,
+            closeTo(v.saham(SahamId.asha).longitude, 1e-9),
+          );
+          expect(
+            saham(v, 'mrityu').matbhed.defaultView.value,
+            closeTo(v.saham(SahamId.mrityu).longitude, 1e-9),
+          );
+          expect(
+            saham(v, 'putra').matbhed.defaultView.value,
+            closeTo(v.saham(SahamId.putra).longitude, 1e-9),
+          );
+          expect(saham(v, 'asha').inMainList, isTrue);
+          expect(saham(v, 'mitra').inMainList, isFalse);
+        });
+      },
+    );
+
+    test('hand-worked longitudes of both positions', () {
+      // The chart of the saham tests above: lagna Mesha, Sun 100, Moon 160,
+      // Mars 200, Mercury 220, Jupiter 250, Venus 280, Saturn 310.
+      final Kundli chart = synthetic(<Graha, double>{
+        Graha.sun: 100,
+        Graha.moon: 160,
+        Graha.mars: 200,
+        Graha.mercury: 220,
+        Graha.jupiter: 250,
+        Graha.venus: 280,
+        Graha.saturn: 310,
+      });
+      final Map<Graha, PanchaVargiyaBala> bala = computePanchaVargiyaBala(
+        chart,
+      );
+      final List<Saham> day = computeSahams(chart, bala, isDay: true);
+      final List<Saham> night = computeSahams(chart, bala, isDay: false);
+      List<double> by(List<Saham> list, bool isDay, String key) =>
+          computeSahamMatbhed(
+            chart,
+            list,
+            isDay: isDay,
+          ).firstWhere((SahamMatbhed m) => m.key == key).longitudes;
+
+      // Punya by day is 90 (60, and the lagna is not between Sun and Moon:
+      // +30); Vidya is 300.
+      // Mitra: Vidya - Punya + Venus = 300 - 90 + 280 = 130, lagna not
+      // between 90 and 300: +30 = 160. Jupiter form: 250 - 90 + 280 = 80, +30.
+      expect(by(day, true, 'mitra')[0], closeTo(160, 1e-9));
+      expect(by(day, true, 'mitra')[1], closeTo(110, 1e-9));
+      // Vanik: Moon - Mercury + Lagna = 300 both by day. At night Hayanaratna
+      // keeps 300 and the swap gives Mercury - Moon + Lagna = 60, +30 = 90.
+      expect(by(day, true, 'vanik')[0], closeTo(300, 1e-9));
+      expect(by(day, true, 'vanik')[1], closeTo(300, 1e-9));
+      expect(by(night, false, 'vanik')[0], closeTo(300, 1e-9));
+      expect(by(night, false, 'vanik')[1], closeTo(90, 1e-9));
+      // Vyapara: Mars - Mercury = 340; Mars - Saturn = 250.
+      expect(by(day, true, 'vyapara')[0], closeTo(340, 1e-9));
+      expect(by(day, true, 'vyapara')[1], closeTo(250, 1e-9));
+      // Mrityu: 8th house - Moon + Saturn is 30 (as above); with the lagna
+      // added it is 210 - 160 + 0 = 50, +30 = 80.
+      expect(by(day, true, 'mrityu')[0], closeTo(30, 1e-9));
+      expect(by(day, true, 'mrityu')[1], closeTo(80, 1e-9));
+      // Asha: Saturn - Venus = 30, +30 = 60; Saturn - Mars = 110, +30 = 140.
+      expect(by(day, true, 'asha')[0], closeTo(60, 1e-9));
+      expect(by(day, true, 'asha')[1], closeTo(140, 1e-9));
+      // Vivaha: Venus - Saturn = 330; Venus - Jupiter = 30, +30 = 60.
+      expect(by(day, true, 'vivaha')[0], closeTo(330, 1e-9));
+      expect(by(day, true, 'vivaha')[2], closeTo(60, 1e-9));
+      // Putra: Jupiter - Moon = 90, +30 = 120 in both by day.
+      expect(by(day, true, 'putra')[0], closeTo(120, 1e-9));
+    });
+
+    test('the two positions show their longitudes side by side', () {
+      final Varshphal v = years[8]!;
+      for (final SahamMatbhed m in v.sahamMatbhed) {
+        for (final Mat view in m.matbhed.views) {
+          final int sign = (view.value! / 30).floor() % 12;
+          expect(
+            view.result.en,
+            contains(rashiBi(sign).en),
+            reason: '${m.key} names the sign it falls in',
+          );
+          expect(view.result.hi, contains(rashiBi(sign).hi));
+        }
+      }
+    });
+
+    test('Mrityu stays computed but unread, even with a second formula', () {
+      years.forEach((int age, Varshphal v) {
+        final SahamMatbhed m = saham(v, 'mrityu');
+        expect(m.governs, isNull);
+        expect(v.saham(SahamId.mrityu).reading, isNull);
+        expect(v.saham(SahamId.mrityu).tone, isNull);
+        for (final Mat view in m.matbhed.views) {
+          expect(view.result.en, isNot(contains('reading')));
+          expect(forbiddenTermIn(view.reasoning), isNull);
+          expect(forbiddenTermIn(view.position), isNull);
+          expect(forbiddenTermIn(view.result), isNull);
+          expect(forbiddenTermIn(view.holder), isNull);
+        }
+      });
+      // Roga and Jeeva have no second formula in the books read, and stay as
+      // they were: computed, never read.
+      final Varshphal v = years[8]!;
+      expect(v.sahamMatbhed.any((SahamMatbhed m) => m.key == 'roga'), isFalse);
+      expect(v.sahamMatbhed.any((SahamMatbhed m) => m.key == 'jeeva'), isFalse);
+      expect(v.saham(SahamId.roga).reading, isNull);
+      expect(v.saham(SahamId.jeeva).reading, isNull);
+    });
+
+    test(
+      'the rule for the extra sign has three positions, worked on every saham',
+      () {
+        years.forEach((int age, Varshphal v) {
+          final Matbhed m = v.extraSign!;
+          expect(m.views.length, 3);
+          expect(m.title.en, 'Three views');
+          expect(m.isComplete, isTrue);
+          expect(m.defaultView.value, 0);
+          expect(m.views.first.isDefault, isTrue);
+        });
+        // On the hand-built chart Karyasiddhi (day) is 40 by the lagna test,
+        // 10 by the test at the term added, and 10 with no extra sign.
+        final Kundli chart = synthetic(<Graha, double>{
+          Graha.sun: 100,
+          Graha.moon: 160,
+          Graha.mars: 200,
+          Graha.mercury: 220,
+          Graha.jupiter: 250,
+          Graha.venus: 280,
+          Graha.saturn: 310,
+        });
+        final Matbhed m = extraSignMatbhed(chart, isDay: true);
+        expect(m.views[1].result.en, contains('Karyasiddhi'));
+        expect(m.views[2].result.en, contains('Karyasiddhi'));
+        expect(m.views[1].value, greaterThan(0));
+        expect(m.views[2].value, greaterThan(m.views[1].value!));
+        expect(m.differs, isTrue);
+        // The default's own count is the number it adds a sign to.
+        final Map<SahamId, double> byLagna = <SahamId, double>{
+          for (final Saham s in computeSahams(
+            chart,
+            computePanchaVargiyaBala(chart),
+            isDay: true,
+          ))
+            s.id: s.longitude,
+        };
+        expect(byLagna[SahamId.karyasiddhi], closeTo(40, 1e-9));
+      },
+    );
+
+    test('Ishrafa and the orb of a pair have their own positions', () {
+      years.forEach((int age, Varshphal v) {
+        final Matbhed orb = v.tajikaMatbhed.firstWhere(
+          (Matbhed m) => m.key == 'tajika_orb',
+        );
+        final Matbhed ishrafa = v.tajikaMatbhed.firstWhere(
+          (Matbhed m) => m.key == 'tajika_ishrafa',
+        );
+        expect(orb.views.length, 3);
+        expect(ishrafa.views.length, 2);
+        // The app's own aspects are the default orb's.
+        expect(orb.defaultView.value, v.tajika.aspects.length.toDouble());
+        expect(
+          ishrafa.defaultView.value,
+          v.tajika.aspects
+              .where((TajikaAspect a) => !a.isApplying)
+              .length
+              .toDouble(),
+        );
+        // The one-degree reading never finds more Ishrafa than the other.
+        expect(
+          ishrafa.views[1].value,
+          lessThanOrEqualTo(ishrafa.views[0].value!),
+        );
+        // And the pairs between zero and one degree past are exactly the gap.
+        final int shortOfADegree = v.tajika.aspects
+            .where((TajikaAspect a) => !a.isApplying && a.gap < 1.0)
+            .length;
+        expect(
+          ishrafa.views[0].value! - ishrafa.views[1].value!,
+          shortOfADegree.toDouble(),
+        );
+      });
+    });
+
+    test(
+      'a pair just past exactness is Ishrafa in one view and Itthasala in the other',
+      () {
+        // Moon 0.5 degrees past the Sun, both in Mesha; the rest stand where
+        // no Tajika relation joins them.
+        final Kundli chart = synthetic(<Graha, double>{
+          Graha.sun: 14.5,
+          Graha.moon: 15.0,
+          Graha.mars: 30 * 1 + 5,
+          Graha.mercury: 30 * 7 + 25,
+          Graha.jupiter: 30 * 1 + 25,
+          Graha.venus: 30 * 7 + 5,
+          Graha.saturn: 30 * 7 + 15,
+        });
+        final TajikaReport report = readTajika(chart);
+        final Matbhed m = computeTajikaMatbhed(
+          chart,
+          computePanchaVargiyaBala(chart),
+          report,
+        ).firstWhere((Matbhed x) => x.key == 'tajika_ishrafa');
+        final TajikaAspect? pair = report.aspectBetween(Graha.moon, Graha.sun);
+        expect(pair, isNotNull);
+        // Half a degree past exactness. The verse (Tajikabhushana 4.10, at
+        // Hayanaratna 3.4) keeps this joining until a full degree has gone
+        // by, and that is the reading the app uses; the other view would
+        // already call it Ishrafa. This is exactly where the two part.
+        expect(
+          pair!.isApplying,
+          isTrue,
+          reason: 'short of a full degree it is still Itthasala',
+        );
+        expect(pair.gap, closeTo(0.5, 1e-9));
+        expect(m.views[0].value! - m.views[1].value!, 1);
+        expect(m.differs, isTrue);
+        expect(m.views[1].result.en, contains('still count as Itthasala'));
+      },
+    );
+
+    test(
+      'the four yogas that were left out are computed under both definitions',
+      () {
+        years.forEach((int age, Varshphal v) {
+          for (final String key in <String>[
+            'tajika_gairi_kamboola',
+            'tajika_tambira',
+            'tajika_kuttha',
+            'tajika_durapha',
+          ]) {
+            final Matbhed m = v.tajikaMatbhed.firstWhere(
+              (Matbhed x) => x.key == key,
+            );
+            expect(m.views.length, 2, reason: key);
+            expect(m.isComplete, isTrue, reason: key);
+            expect(m.views.first.isDefault, isTrue);
+            expect(m.views.every((Mat x) => x.holds != null), isTrue);
+            expect(
+              m.views[1].holder.en,
+              contains('Charak'),
+              reason: 'the second view says whose it is, and how it was seen',
+            );
+            expect(m.views[1].holder.en, contains('not seen'));
+          }
+        });
+      },
+    );
+
+    test(
+      'Gairi-kamboola forms under Hayanaratna and not under Charak on a built chart',
+      () {
+        // Lagna Mesha, so Mars is the lagna lord. Mars (Karka 10) and Saturn
+        // (Karka 15) are in Itthasala, five degrees apart. The Moon stands at
+        // Simha 29.5, a sign neither of them aspects, and is about to enter
+        // Kanya, where Mercury, exalted, stands at 3 degrees.
+        final Kundli chart = synthetic(
+          <Graha, double>{
+            Graha.mars: 30 * 3 + 10,
+            Graha.saturn: 30 * 3 + 15,
+            Graha.moon: 30 * 4 + 29.5,
+            Graha.mercury: 30 * 5 + 3,
+            Graha.sun: 30 * 9 + 5,
+            Graha.venus: 30 * 11 + 20,
+            Graha.jupiter: 30 * 7 + 20,
+          },
+          dignity: <Graha, Dignity>{Graha.mercury: Dignity.exalted},
+        );
+        final Matbhed m = computeTajikaMatbhed(
+          chart,
+          computePanchaVargiyaBala(chart),
+          readTajika(chart),
+        ).firstWhere((Matbhed x) => x.key == 'tajika_gairi_kamboola');
+        expect(m.views[0].holds, isTrue);
+        expect(m.views[1].holds, isFalse);
+        expect(m.differs, isTrue);
+        expect(m.views[0].result.en, contains('Forms for'));
+        expect(m.views[0].result.en, contains('Kamboola'));
+        expect(m.views[1].result.en, contains('Does not form'));
+        expect(m.views[0].result.hi, isNot(equals(m.views[1].result.hi)));
+      },
+    );
+
+    test(
+      'Tambira forms under Hayanaratna and not under Charak on a built chart',
+      () {
+        // Saturn (lord of the 10th and 11th) in Kumbha 29.5, strong in its own
+        // sign; Jupiter strong in Meena 4. Mars, the lagna lord, is in Karka and
+        // stands in no Tajika relation with Saturn.
+        final Kundli chart = synthetic(
+          <Graha, double>{
+            Graha.saturn: 30 * 10 + 29.5,
+            Graha.jupiter: 30 * 11 + 4,
+            Graha.mars: 30 * 3 + 10,
+            Graha.sun: 30 * 9 + 5,
+            Graha.moon: 30 * 1 + 25,
+            Graha.mercury: 30 * 5 + 20,
+            Graha.venus: 30 * 5 + 5,
+          },
+          dignity: <Graha, Dignity>{
+            Graha.saturn: Dignity.own,
+            Graha.jupiter: Dignity.own,
+          },
+        );
+        final Matbhed m = computeTajikaMatbhed(
+          chart,
+          computePanchaVargiyaBala(chart),
+          readTajika(chart),
+        ).firstWhere((Matbhed x) => x.key == 'tajika_tambira');
+        expect(m.views[0].holds, isTrue);
+        expect(m.views[1].holds, isFalse);
+        expect(m.differs, isTrue);
+        expect(m.views[0].result.en, contains('Forms for'));
+      },
+    );
+
+    test('Kuttha and Durapha show their two definitions on a built chart', () {
+      // Tula lagna (Venus the lagna lord). Jupiter, exalted in Karka 5, is
+      // in the 10th, joined by Venus's friend the bright Moon ... the Sun is
+      // placed where no Tajika relation joins it to Jupiter.
+      final Kundli chart = synthetic(
+        <Graha, double>{
+          Graha.sun: 30 * 4 + 2,
+          Graha.moon: 30 * 6 + 20,
+          Graha.mars: 30 * 8 + 10,
+          Graha.mercury: 30 * 5 + 20,
+          Graha.jupiter: 30 * 3 + 5,
+          Graha.venus: 30 * 3 + 12,
+          Graha.saturn: 30 * 9 + 25,
+        },
+        asc: 30 * 6 + 5,
+        dignity: <Graha, Dignity>{Graha.jupiter: Dignity.exalted},
+      );
+      final TajikaReport report = readTajika(chart);
+      final List<Matbhed> all = computeTajikaMatbhed(
+        chart,
+        computePanchaVargiyaBala(chart),
+        report,
+      );
+      final Matbhed kuttha = all.firstWhere(
+        (Matbhed x) => x.key == 'tajika_kuttha',
+      );
+      expect(kuttha.views[0].holds, isTrue, reason: kuttha.views[0].result.en);
+      expect(kuttha.views[0].result.en, contains('Jupiter'));
+      final Matbhed durapha = all.firstWhere(
+        (Matbhed x) => x.key == 'tajika_durapha',
+      );
+      expect(durapha.views.length, 2);
+      expect(durapha.defaultView.holds, isTrue);
+      // A retrograde Mars is Durapha by Hayanaratna's list.
+      final Kundli retro = synthetic(
+        <Graha, double>{
+          Graha.sun: 30 * 4 + 2,
+          Graha.moon: 30 * 6 + 20,
+          Graha.mars: 30 * 8 + 10,
+          Graha.mercury: 30 * 5 + 20,
+          Graha.jupiter: 30 * 3 + 5,
+          Graha.venus: 30 * 3 + 12,
+          Graha.saturn: 30 * 9 + 25,
+        },
+        asc: 30 * 6 + 5,
+        retrograde: <Graha>{Graha.mars},
+      );
+      final Matbhed d2 = computeTajikaMatbhed(
+        retro,
+        computePanchaVargiyaBala(retro),
+        readTajika(retro),
+      ).firstWhere((Matbhed x) => x.key == 'tajika_durapha');
+      expect(d2.views[0].result.en, contains('Mars (retrograde'));
+    });
+
+    test('strength by time follows the measures Hayanaratna 2.6.3 gives', () {
+      // Moon and Mars: the distance from the Sun divided by three, at most 60.
+      final Kundli chart = synthetic(<Graha, double>{
+        Graha.sun: 0,
+        Graha.moon: 90,
+        Graha.mars: 200,
+        Graha.venus: 40,
+      }, asc: 90);
+      expect(kalaBala(chart, Graha.moon), closeTo(30, 1e-9));
+      // Mars is 160 degrees from the Sun: 53.33 by distance, but the lagna is
+      // three signs from the Sun, which gives a male graha the full 60.
+      expect(kalaBala(chart, Graha.mars), closeTo(60, 1e-9));
+      // Venus: 40 degrees x 6/5 = 48; the female measure is nil at 3 signs.
+      expect(kalaBala(chart, Graha.venus), closeTo(48, 1e-9));
+      // The Sun, a male graha: lagna 3 signs from the Sun gives 60.
+      expect(kalaBala(chart, Graha.sun), closeTo(60, 1e-9));
+      // With the lagna 8 signs from the Sun the male measure is nil, and Mars
+      // keeps only its distance: 160 / 3.
+      final Kundli late = synthetic(<Graha, double>{
+        Graha.sun: 0,
+        Graha.mars: 200,
+      }, asc: 240);
+      expect(kalaBala(late, Graha.mars), closeTo(160 / 3, 1e-9));
+      expect(kalaBala(late, Graha.sun), 0);
+      // Mercury has no measure at all.
+      expect(kalaBala(chart, Graha.mercury), 0);
+    });
+
+    test(
+      'Patyayini is shown in the app\'s reckoning and with the signs counted',
+      () {
+        years.forEach((int age, Varshphal v) {
+          final Matbhed m = v.dashaMatbhed.single;
+          expect(m.key, 'patyayini');
+          expect(m.views.length, 2);
+          expect(m.isComplete, isTrue);
+          expect(m.differs, isTrue);
+          // The first view is the Patyayini the app already computes.
+          for (final PatyayiniPeriod p in v.patyayini.periods) {
+            expect(
+              m.views[0].result.en,
+              contains('${p.name.en} ${p.days.toStringAsFixed(1)} d'),
+              reason: 'age $age',
+            );
+          }
+          // Five-fold strength is said not to size the periods.
+          expect(m.whyTheyDiffer!.en, contains('Five-fold strength'));
+        });
+        expect(
+          years[8]!.leftOut.map((LeftOut l) => l.key),
+          containsAll(<String>['patyayini_yadava', 'patyayini_samarasimha']),
+        );
+      },
+    );
+
+    test(
+      'the signs-counted Patyayini orders by longitude and sums to the year',
+      () {
+        final Varshphal v = years[8]!;
+        final Matbhed m = v.dashaMatbhed.single;
+        final RegExp days = RegExp(r'(\d+\.\d) d');
+        for (final Mat view in m.views) {
+          final double total = days
+              .allMatches(view.result.en)
+              .map((RegExpMatch x) => double.parse(x.group(1)!))
+              .fold(0.0, (double a, double b) => a + b);
+          expect(total, closeTo(v.yearDays, 0.5));
+        }
+        // The first period under the signs-counted view belongs to whichever of
+        // the lagna and the seven grahas has the smallest longitude.
+        final Map<String, double> lon = <String, double>{
+          'Lagna': v.chart.ascendant,
+          for (final Graha g in tajikaGrahas)
+            grahaBi(g).en: v.chart.grahas[g]!.siderealLongitude,
+        };
+        final String first = lon.entries
+            .reduce(
+              (MapEntry<String, double> a, MapEntry<String, double> b) =>
+                  a.value <= b.value ? a : b,
+            )
+            .key;
+        expect(m.views[1].result.en, startsWith('In order: $first '));
+      },
+    );
+
+    test(
+      'nothing in the two-view texts mentions what the app never speaks of',
+      () {
+        for (final Varshphal v in years.values) {
+          for (final Matbhed m in everyMatbhed(v)) {
+            final List<(String, Bi)> texts = <(String, Bi)>[
+              // The name of a point is only a name.
+              if (m.key != 'saham_mrityu') ('topic', m.topic),
+              ?(m.whyTheyDiffer == null ? null : ('why', m.whyTheyDiffer!)),
+              ('default', m.defaultReason),
+              for (final Mat view in m.views) ...<(String, Bi)>[
+                ('position', view.position),
+                ('holder', view.holder),
+                ('reasoning', view.reasoning),
+                ('result', view.result),
+              ],
+            ];
+            for (final (String where, Bi text) in texts) {
+              expect(
+                forbiddenTermIn(text),
+                isNull,
+                reason: '${m.key} $where: ${text.en} / ${text.hi}',
+              );
+              expect(
+                RegExp('[ऀ-ॿ]').hasMatch(text.hi),
+                isTrue,
+                reason: '${m.key} $where has no Devanagari',
+              );
+            }
+          }
+          for (final LeftOut l in v.leftOut) {
+            expect(forbiddenTermIn(l.name), isNull, reason: l.key);
+            expect(forbiddenTermIn(l.reason), isNull, reason: l.key);
+          }
+        }
+      },
+    );
   });
 
   group('the earlier varshphal behaviour is kept', () {

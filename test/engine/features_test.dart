@@ -465,6 +465,35 @@ void main() {
       }
     });
 
+    test('a question about studies is not mistaken for one about death', () {
+      // "die" sits inside "studies". As a bare substring it refused an
+      // honest question about schooling.
+      for (final String q in <String>[
+        'how are my studies',
+        'what about my studies and education',
+        'when will my studies improve',
+      ]) {
+        expect(
+          answerQuestion(kundli, q, hindi: false).isRefusal,
+          isFalse,
+          reason: q,
+        );
+      }
+    });
+
+    test('but the word itself is still refused', () {
+      for (final String q in <String>[
+        'when will i die',
+        'will i die soon',
+      ]) {
+        expect(
+          answerQuestion(kundli, q, hindi: false).isRefusal,
+          isTrue,
+          reason: q,
+        );
+      }
+    });
+
     test('education as a subject is still read', () {
       final Answer a = answerQuestion(
         kundli,

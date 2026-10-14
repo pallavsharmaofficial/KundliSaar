@@ -146,12 +146,58 @@ void main() {
         await tester.scrollUntilVisible(
           find.text(heading),
           300,
+          maxScrolls: 400,
           scrollable: scrollable,
         );
         expect(find.text(heading), findsWidgets, reason: heading);
         expect(tester.takeException(), isNull, reason: heading);
       }
     });
+
+    testWidgets(
+      'the two views appear in the dasha, tajika and saham sections ($language)',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(380, 820);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          await _wrap(const VarshphalScreen(), language: language),
+        );
+        await _advance(tester);
+        final bool hindi = language == 'hi';
+        final Finder scrollable = find.byType(Scrollable).first;
+        for (final String key in <String>[
+          'patyayini',
+          'tajika_orb',
+          'tajika_ishrafa',
+          'tajika_gairi_kamboola',
+          'tajika_tambira',
+          'tajika_kuttha',
+          'tajika_durapha',
+          'extra_sign',
+          'saham_mitra',
+          'saham_vivaha',
+          'saham_mrityu',
+        ]) {
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey<String>('matbhed-$key')),
+            300,
+            scrollable: scrollable,
+          );
+          expect(
+            find.byKey(ValueKey<String>('matbhed-$key')),
+            findsOneWidget,
+            reason: key,
+          );
+          expect(tester.takeException(), isNull, reason: key);
+        }
+        expect(find.text(hindi ? 'तीन मत' : 'Three views'), findsWidgets);
+        expect(
+          find.text(hindi ? 'ऐप इसी से गिनता है' : 'App computes this'),
+          findsWidgets,
+        );
+      },
+    );
 
     testWidgets('every card opens without a layout error ($language)', (
       WidgetTester tester,

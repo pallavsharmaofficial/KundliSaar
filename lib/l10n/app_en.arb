@@ -268,7 +268,7 @@
   "phToneDemanding": "Asks for effort",
   "phYogas": "Yogas it takes part in",
   "phApproxTime": "You marked the birth time as approximate. Dasha dates rest on the Moon’s exact position, so every date here can move by months. Trust the order of the periods more than the dates.",
-  "phScope": "These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event.",
+  "phScope": "These readings describe areas of life and the character of a time. They do not speak to death, illness, pregnancy, examinations, legal matters or investments, and nothing here forecasts an event. The bands count how many chart factors agree with a reading. That is the app’s own convention, not a classical measure and not a probability.",
   "phPromise": "What this lord promises",
   "phModifier": "Counted from the lord of the period above",
   "phContext": "The periods before and after",
@@ -279,5 +279,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "phStrength": "Strength of indication",
+  "phTends": "What tends to come up",
+  "phDeity": "Deity",
+  "phRemedies": "What the tradition offers"
 }

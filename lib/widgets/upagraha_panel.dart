@@ -6,6 +6,7 @@ import '../engine/jyotish/graha_data.dart';
 import '../engine/jyotish/rashi.dart';
 import '../engine/jyotish/upagrahas.dart';
 import 'common.dart';
+import 'matbhed_card.dart';
 
 /// The eleven upagrahas under the grahas on the planetary-positions screen:
 /// each its sign, degree and house, and, folded away, how its longitude is
@@ -43,6 +44,11 @@ class UpagrahaSection extends StatelessWidget {
         ),
         for (final PlacedUpagraha p in result.placed)
           _UpagrahaCard(placed: p, hindi: hindi),
+        MatbhedList(
+          withHeading: true,
+          items: upagrahaMatbhed(kundli),
+          hindi: hindi,
+        ),
         DisclaimerNote(
           hindi
               ? 'गुलिक शनि के भाग के आरंभ पर, मांदि उसके अंत पर, और काल, मृत्यु, अर्धप्रहर व यमघंटक अपने भाग के मध्य पर लिए गए हैं; पाठ-भेद की स्थिति में यही चुनाव किया गया है। जन्म ${result.isDayBirth ? 'दिन' : 'रात'} का है, इसलिए ${result.isDayBirth ? 'दिन' : 'रात'} को आठ भागों में बाँटा गया।'

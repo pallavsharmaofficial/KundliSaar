@@ -4,6 +4,7 @@ import '../astro/ephemeris.dart';
 import '../astro/time.dart';
 import 'chart.dart';
 import 'dasha.dart';
+import 'mat.dart';
 import 'nakshatra.dart';
 import 'rashi.dart';
 import 'tajika_bala.dart';
@@ -447,3 +448,208 @@ PatyayiniDasha computePatyayini(
     ],
   );
 }
+
+// ---------------------------------------------------------------------------
+// Where the books differ: मतभेद on the Patyayini reckoning
+// ---------------------------------------------------------------------------
+
+/// The length in days of each period, in order, for entries ordered by [key]
+/// (the degrees within the sign, or the full longitude) with each one's share
+/// the difference from the one before. The seven grahas and the lagna are the
+/// entries; the first has its own value. Ties go by the same order as
+/// [computePatyayini].
+List<({Bi name, double days})> _patyayiniShares(
+  Kundli chart,
+  Map<Graha, PanchaVargiyaBala> bala,
+  double yearDays,
+  double Function(double longitude) key,
+) {
+  final List<({Graha? graha, double value, int canon})> entries =
+      <({Graha? graha, double value, int canon})>[
+        (graha: null, value: key(chart.ascendant), canon: 0),
+        for (final Graha g in tajikaGrahas)
+          (
+            graha: g,
+            value: key(chart.grahas[g]!.siderealLongitude),
+            canon: 1 + tajikaGrahas.indexOf(g),
+          ),
+      ];
+  entries.sort((a, b) {
+    final double diff = a.value - b.value;
+    if (diff.abs() > 1e-9) return diff < 0 ? -1 : 1;
+    if (a.graha != null && b.graha != null) {
+      final int byBala = bala[b.graha!]!.vishwa.compareTo(
+        bala[a.graha!]!.vishwa,
+      );
+      if (byBala != 0) return byBala;
+    }
+    return a.canon.compareTo(b.canon);
+  });
+  final double span = entries.last.value;
+  final List<({Bi name, double days})> out = <({Bi name, double days})>[];
+  double previous = 0;
+  for (final entry in entries) {
+    final double share = entry.value - previous;
+    previous = entry.value;
+    if (share <= 0) continue;
+    out.add((
+      name: entry.graha == null
+          ? const Bi('Lagna', 'लग्न')
+          : grahaBi(entry.graha!),
+      days: span > 0 ? yearDays * share / span : yearDays / 8,
+    ));
+  }
+  return out;
+}
+
+Bi _sharesResult(List<({Bi name, double days})> shares) {
+  final String en = shares
+      .map((s) => '${s.name.en} ${s.days.toStringAsFixed(1)} d')
+      .join(', ');
+  final String hi = shares
+      .map((s) => '${s.name.hi} ${s.days.toStringAsFixed(1)} दिन')
+      .join(', ');
+  return Bi('In order: $en.', 'क्रम से: $hi।');
+}
+
+/// The Patyayini dasha of the year under each position that can be computed:
+/// the degrees within the sign (the app's reckoning) and the full longitude
+/// with the signs counted too. [yearDays] is the length of the year.
+Matbhed patyayiniMatbhed(
+  Kundli chart,
+  Map<Graha, PanchaVargiyaBala> bala,
+  double yearDays,
+) {
+  final List<({Bi name, double days})> inSign = _patyayiniShares(
+    chart,
+    bala,
+    yearDays,
+    (double lon) => degreesInRashi(lon),
+  );
+  final List<({Bi name, double days})> withSigns = _patyayiniShares(
+    chart,
+    bala,
+    yearDays,
+    (double lon) => lon,
+  );
+  return Matbhed(
+    key: 'patyayini',
+    topic: const Bi(
+      'How the Patyayini periods are reckoned',
+      'पात्यायिनी दशा कैसे गिनी जाए',
+    ),
+    whyTheyDiffer: const Bi(
+      'Both order the seven grahas and the lagna and share the year by the '
+          'gaps between them. They differ on whether the signs are left out. '
+          'Five-fold strength does not size the periods in either: in the '
+          'sources read it only decides the order between two that stand at '
+          'the same degree.',
+      'दोनों सात ग्रहों और लग्न को क्रम में रखकर वर्ष को उनके बीच के अंतर से बाँटते '
+          'हैं। फ़र्क यह है कि राशियाँ छोड़ी जाएँ या नहीं। पंचवर्गीय बल दोनों में '
+          'अवधि तय नहीं करता: पढ़े गए स्रोतों में वह केवल तब क्रम तय करता है जब दो '
+          'ग्रह एक ही अंश पर हों।',
+    ),
+    defaultReason: const Bi(
+      'Balabhadra sides with the degrees-only reckoning and answers the other, '
+          'and the app follows him; the sign-counting reading is shown so the '
+          'difference can be seen.',
+      'बलभद्र केवल अंशों वाली गणना का पक्ष लेते हैं और दूसरी का उत्तर देते हैं, '
+          'और ऐप उन्हीं का अनुसरण करता है; राशियाँ गिनने वाला पाठ इसलिए दिखाया है '
+          'कि फ़र्क दिखे।',
+    ),
+    views: <Mat>[
+      Mat(
+        isDefault: true,
+        position: const Bi(
+          'Order by the degrees within the sign, signs left out; each share is '
+              'the gap from the one before; the year is divided in that '
+              'proportion.',
+          'राशि के भीतर के अंशों से क्रम, राशियाँ छोड़ दी जाएँ; हर हिस्सा पिछले से '
+              'अंतर है; वर्ष उसी अनुपात में बाँटा जाए।',
+        ),
+        holder: const Bi(
+          'The Varshatantra (17.1-3), Nilakantha, Tejahsimha, Vamana, the '
+              'Tajikamuktavali and others, all as Balabhadra lists them in '
+              'Hayanaratna 7.1-7.2 and endorses; PyJHora’s code does the same',
+          'वर्षतंत्र (17.1-3), नीलकण्ठ, तेजःसिंह, वामन, ताजिकमुक्तावली और अन्य, जैसा '
+              'बलभद्र हायनरत्न 7.1-7.2 में गिनाते और मानते हैं; PyJHora का कोड भी यही '
+              'करता है',
+        ),
+        reasoning: const Bi(
+          'A graha gives its results best at the start of its sign and less as '
+              'its degree grows (Balabhadra cites the Kashyapa Samhita, the '
+              'Narada Purana and the Narada Samhita), so the graha with the '
+              'fewest degrees comes first.',
+          'ग्रह राशि के आरंभ में सबसे अच्छा फल देता है और अंश बढ़ने पर कम '
+              '(बलभद्र कश्यप संहिता, नारद पुराण और नारद संहिता का हवाला देते हैं), '
+              'इसलिए सबसे कम अंश वाला ग्रह पहले आता है।',
+        ),
+        result: _sharesResult(inSign),
+      ),
+      Mat(
+        position: const Bi(
+          'Order by the full longitude from Mesha, signs counted; each share is '
+              'the gap from the one before; the year is divided in that '
+              'proportion.',
+          'मेष से पूरे देशांतर से क्रम, राशियाँ गिनी जाएँ; हर हिस्सा पिछले से अंतर '
+              'है; वर्ष उसी अनुपात में बाँटा जाए।',
+        ),
+        holder: const Bi(
+          'An opinion that Balabhadra records and argues against in Hayanaratna '
+              '7.2, reading Samarasimha’s word “rashi” as signs; Tuka Jyotirvid '
+              'lists it among the three he knows',
+          'एक मत जिसे बलभद्र हायनरत्न 7.2 में लिखते हैं और जिसका खंडन करते '
+              'हैं, जो समरसिंह के शब्द “राशि” को राशियाँ पढ़ता है; तुक ज्योतिर्विद इसे '
+              'अपने जाने तीन मतों में गिनते हैं',
+        ),
+        reasoning: const Bi(
+          'It takes “rashi” in Samarasimha to mean the signs. Yadava’s '
+              'objection to the other order is that a graha with few degrees but '
+              'far along the zodiac should not come first. Balabhadra replies '
+              'that “rashi” can also mean a heap, and that “degree” already '
+              'means a thirtieth of a sign.',
+          'यह समरसिंह के “राशि” का अर्थ राशियाँ लेता है। दूसरे क्रम पर यादव की '
+              'आपत्ति है कि कम अंश पर, पर राशिचक्र में काफ़ी आगे बैठा ग्रह पहले क्यों आए। '
+              'बलभद्र उत्तर देते हैं कि “राशि” का अर्थ ढेर भी हो सकता है, और “अंश” '
+              'का अर्थ पहले से ही राशि का तीसवाँ भाग है।',
+        ),
+        result: _sharesResult(withSigns),
+      ),
+    ],
+  );
+}
+
+/// What the Patyayini part still does not compute, with the reason.
+const List<LeftOut> dashaLeftOut = <LeftOut>[
+  LeftOut(
+    key: 'patyayini_yadava',
+    name: Bi(
+      'Yadava’s Patyayini by distance from the lagna',
+      'यादव की लग्न से दूरी पर आधारित पात्यायिनी',
+    ),
+    reason: Bi(
+      'Hayanaratna 7.2 prints it with a working whose own sums do not close '
+          '(the distances should add up to 360° but the printed total is '
+          '404°), and Balabhadra says he does not know on whose authority it '
+          'rests and finds the calculation unclear. It cannot be computed '
+          'without guessing.',
+      'हायनरत्न 7.2 इसे ऐसी गणना के साथ छापता है जिसके अपने जोड़ नहीं मिलते '
+          '(दूरियाँ 360° होनी चाहिए पर छपा कुल 404° है), और बलभद्र कहते हैं कि उन्हें '
+          'नहीं पता यह किसके प्रमाण पर टिका है और गणना उन्हें अस्पष्ट लगती है। '
+          'अनुमान लगाए बिना इसे गिना नहीं जा सकता।',
+    ),
+  ),
+  LeftOut(
+    key: 'patyayini_samarasimha',
+    name: Bi(
+      'Samarasimha’s Patyayini by the degrees still to go',
+      'समरसिंह की बचे हुए अंशों पर आधारित पात्यायिनी',
+    ),
+    reason: Bi(
+      'Hayanaratna 7.1 only names it and says it is not in current use; the '
+          'description is too short to compute from.',
+      'हायनरत्न 7.1 बस इसका नाम लेता है और कहता है कि यह अब चलन में नहीं; '
+          'वर्णन इतना छोटा है कि उससे गिना नहीं जा सकता।',
+    ),
+  ),
+];

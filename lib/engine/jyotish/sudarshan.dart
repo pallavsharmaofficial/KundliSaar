@@ -30,7 +30,10 @@
 /// say so; the agreement count is then less independent than it looks.
 ///
 /// Rahu and Ketu are counted only as occupants (Ketu as an ordinary malefic).
-/// Their aspects are not used: the texts that give them disagree.
+/// Their aspects are not used by default: BPHS chapter 74 assigns them none
+/// (it names Rahu once, at 74.24, and Ketu not at all), and the books that do
+/// give them aspects disagree. [sudarshanMatbhed] works the chakra under each
+/// reading and shows what changes.
 ///
 /// What a reading says is an area of life and a disposition. It never says
 /// what will happen.
@@ -39,7 +42,9 @@ library;
 import '../astro/ephemeris.dart';
 import 'chart.dart';
 import 'graha_data.dart';
+import 'mat.dart';
 import 'rashi.dart';
+import 'tajika_common.dart' show Bi, housesBi;
 import 'yogas.dart';
 
 enum SudarshanReference { lagna, chandra, surya }
@@ -216,8 +221,9 @@ HouseStanding _judge(
   Kundli k,
   SudarshanReference reference,
   int referenceSign,
-  int house,
-) {
+  int house, {
+  List<int> nodeAspects = const <int>[],
+}) {
   final int sign = (referenceSign + house - 1) % 12;
   final Graha lord = rashiInfo(Rashi.values[sign]).lord;
   final List<String> en = <String>[];
@@ -246,7 +252,14 @@ HouseStanding _judge(
     if (g == lord) continue;
     final PlacedGraha p = k.grahas[g]!;
     final bool occupant = p.rashi.index == sign;
-    final bool aspect = !occupant && grahaAspectsSign(k, g, sign);
+    // Rahu and Ketu cast an aspect only when the caller says which houses
+    // they see (the second position of the dispute; see [nodeAspectViews]).
+    final bool isNode = g == Graha.rahu || g == Graha.ketu;
+    final bool aspect =
+        !occupant &&
+        (isNode
+            ? nodeAspects.contains(((sign - p.rashi.index + 12) % 12) + 1)
+            : grahaAspectsSign(k, g, sign));
     if (!occupant && !aspect) continue;
 
     final bool benefic = isNaturallyBenefic(k, g);
@@ -402,16 +415,41 @@ SudarshanAgreement _agreementOf(int strong) => switch (strong) {
 }
 
 /// Reads all twelve houses from the lagna, the Moon and the Sun.
-SudarshanChakra computeSudarshan(Kundli kundli) {
+///
+/// [nodeAspects] are the house distances (counted inclusively, 7 being the
+/// opposite sign) at which Rahu and Ketu are taken to aspect. Empty, as the
+/// app reads it by default, they aspect nothing and count only as occupants.
+SudarshanChakra computeSudarshan(
+  Kundli kundli, {
+  List<int> nodeAspects = const <int>[],
+}) {
   final int lagna = kundli.lagnaRashi.index;
   final int moon = kundli.grahas[Graha.moon]!.rashi.index;
   final int sun = kundli.grahas[Graha.sun]!.rashi.index;
 
   final List<SudarshanHouse> houses = <SudarshanHouse>[];
   for (int h = 1; h <= 12; h++) {
-    final HouseStanding a = _judge(kundli, SudarshanReference.lagna, lagna, h);
-    final HouseStanding b = _judge(kundli, SudarshanReference.chandra, moon, h);
-    final HouseStanding c = _judge(kundli, SudarshanReference.surya, sun, h);
+    final HouseStanding a = _judge(
+      kundli,
+      SudarshanReference.lagna,
+      lagna,
+      h,
+      nodeAspects: nodeAspects,
+    );
+    final HouseStanding b = _judge(
+      kundli,
+      SudarshanReference.chandra,
+      moon,
+      h,
+      nodeAspects: nodeAspects,
+    );
+    final HouseStanding c = _judge(
+      kundli,
+      SudarshanReference.surya,
+      sun,
+      h,
+      nodeAspects: nodeAspects,
+    );
     final List<HouseStanding> all = <HouseStanding>[a, b, c];
     final int strong = all
         .where((HouseStanding s) => s.verdict == HouseVerdict.strong)
@@ -443,5 +481,160 @@ SudarshanChakra computeSudarshan(Kundli kundli) {
     noteHindi: coincide
         ? 'तीन संदर्भों में से दो एक ही राशि में हैं, और बृहत्पाराशर 74.20 ऐसे में लग्न से फल कहने को कहता है। इसलिए तीनों चक्रों में दिखने वाली सहमति उतनी स्वतंत्र नहीं है जितनी दिखती है।'
         : 'लग्न, चंद्र और सूर्य तीन अलग राशियों में हैं, इसलिए तीनों चक्र हर भाव के तीन स्वतंत्र पाठ देते हैं (बृहत्पाराशर 74.20)।',
+  );
+}
+
+// =============================================================================
+// Where the books differ: मतभेद on whether Rahu and Ketu aspect.
+//
+// BPHS chapter 74, read in the Sanskrit on enjoylearningsanskrit.com, names Rahu
+// once (74.24, that he harms the house he sits in) and Ketu not at all, and it
+// gives no houses of aspect to any graha. The special aspects of Mars, Jupiter
+// and Saturn are given in chapter 26, which does not mention the nodes either.
+// So the question is answered outside the chapter, by the schools.
+// =============================================================================
+
+/// The chakra worked under each reading of the nodes' aspect: none (the
+/// app's), the 7th only, and the 5th, 7th and 9th like Jupiter. Each view's
+/// `value` is the number of verdicts (a house in one of the three rings) that
+/// differ from the first view.
+Matbhed sudarshanMatbhed(Kundli kundli) {
+  final SudarshanChakra none = computeSudarshan(kundli);
+  final SudarshanChakra seventh = computeSudarshan(
+    kundli,
+    nodeAspects: const <int>[7],
+  );
+  final SudarshanChakra jupiterLike = computeSudarshan(
+    kundli,
+    nodeAspects: const <int>[5, 7, 9],
+  );
+
+  int differing(SudarshanChakra other) {
+    int n = 0;
+    for (int i = 0; i < 12; i++) {
+      for (int r = 0; r < 3; r++) {
+        if (none.houses[i].standings[r].verdict !=
+            other.houses[i].standings[r].verdict) {
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
+  Bi summary(SudarshanChakra c, int differs) {
+    List<int> with_(SudarshanAgreement a) => <int>[
+      for (final SudarshanHouse h in c.houses)
+        if (h.agreement == a) h.house,
+    ];
+    final List<int> all = with_(SudarshanAgreement.all);
+    final List<int> noneAgree = with_(SudarshanAgreement.none);
+    final Bi allText = all.isEmpty
+        ? const Bi('none', 'कोई नहीं')
+        : housesBi(all);
+    final Bi noneText = noneAgree.isEmpty
+        ? const Bi('none', 'कोई नहीं')
+        : housesBi(noneAgree);
+    return Bi(
+      'Supported from all three references: ${allText.en}. From none of '
+          'them: ${noneText.en}. $differs of the 36 verdicts differ from the '
+          'first view.',
+      'तीनों संदर्भों से बल पाने वाले: ${allText.hi}। किसी से नहीं: ${noneText.hi}। '
+          '36 में से $differs निर्णय पहले मत से अलग हैं।',
+    );
+  }
+
+  return Matbhed(
+    key: 'sudarshan_nodes',
+    topic: const Bi(
+      'Do Rahu and Ketu aspect?',
+      'क्या राहु और केतु दृष्टि डालते हैं?',
+    ),
+    whyTheyDiffer: const Bi(
+      'The chapter itself gives them no aspect, so each school answers from '
+          'outside it. When a node aspects, it counts as a malefic looking at '
+          'that house.',
+      'अध्याय स्वयं उन्हें कोई दृष्टि नहीं देता, इसलिए हर परंपरा बाहर से उत्तर देती है। '
+          'जब कोई छाया-ग्रह देखता है तो वह उस भाव को देखता हुआ पाप ग्रह गिना जाता '
+          'है।',
+    ),
+    defaultReason: const Bi(
+      'The chapter being applied gives the nodes no aspect and names only '
+          'Rahu as an occupant, so the app counts them as occupants only; the '
+          'readings that add an aspect are worked out beside it.',
+      'जिस अध्याय को यहाँ लगाया गया है वह छाया-ग्रहों को कोई दृष्टि नहीं देता और '
+          'केवल राहु को बैठे हुए ग्रह की तरह गिनता है, इसलिए ऐप उन्हें केवल बैठे हुए '
+          'गिनता है; दृष्टि जोड़ने वाले पाठ उसके बगल में गिने गए हैं।',
+    ),
+    views: <Mat>[
+      Mat(
+        isDefault: true,
+        value: 0,
+        position: const Bi(
+          'Rahu and Ketu cast no aspect; they count only as occupants.',
+          'राहु और केतु कोई दृष्टि नहीं डालते; वे केवल बैठे हुए गिने जाते हैं।',
+        ),
+        holder: const Bi(
+          'BPHS chapter 74 as read (no aspect given to the nodes); Ernst '
+              'Wilhelm in Vault of the Heavens, as quoted on vedic-horo.com, '
+              'who says no rishi’s text gives them one; Wikipedia, citing G. K. '
+              'Ojha, says they neither aspect nor are aspected',
+          'बृहत्पाराशर अध्याय 74, जैसा पढ़ा (छाया-ग्रहों को कोई दृष्टि नहीं); अर्न्स्ट '
+              'विल्हेल्म, वॉल्ट ऑफ़ द हेवन्स में, जैसा vedic-horo.com पर उद्धृत है, जो '
+              'कहते हैं कि किसी ऋषि-ग्रंथ में उन्हें दृष्टि नहीं; विकिपीडिया, जी. के. ओझा '
+              'का हवाला देकर, कहता है कि वे न देखते हैं न देखे जाते हैं',
+        ),
+        reasoning: const Bi(
+          'No verse gives them houses of aspect; the fifth and ninth effects '
+              'some attribute to them are argala, not aspect.',
+          'किसी श्लोक में उन्हें दृष्टि के भाव नहीं दिए गए; कुछ लोग पाँचवें और नौवें के '
+              'जो फल उनसे जोड़ते हैं वे अर्गला हैं, दृष्टि नहीं।',
+        ),
+        result: summary(none, 0),
+      ),
+      Mat(
+        value: differing(seventh).toDouble(),
+        position: const Bi(
+          'Rahu and Ketu aspect the 7th house from where they stand.',
+          'राहु और केतु अपने स्थान से सातवें भाव को देखते हैं।',
+        ),
+        holder: const Bi(
+          'PyJHora’s code (its aspect table gives each node the 7th only)',
+          'PyJHora का कोड (इसकी दृष्टि-तालिका हर छाया-ग्रह को केवल सातवाँ देती है)',
+        ),
+        reasoning: const Bi(
+          'Every graha sees the 7th, and the code gives the nodes no more '
+              'than that. No reason is stated.',
+          'हर ग्रह सातवें को देखता है, और कोड छाया-ग्रहों को उससे अधिक कुछ नहीं '
+              'देता। कोई कारण नहीं बताया गया।',
+        ),
+        result: summary(seventh, differing(seventh)),
+      ),
+      Mat(
+        value: differing(jupiterLike).toDouble(),
+        position: const Bi(
+          'Rahu and Ketu aspect the 5th, 7th and 9th houses from where they '
+              'stand, like Jupiter.',
+          'राहु और केतु अपने स्थान से पाँचवें, सातवें और नौवें भाव को देखते हैं, गुरु '
+              'की तरह।',
+        ),
+        holder: const Bi(
+          'Several schools: the lesson pages of dekhopanchang.com and '
+              'onlinejyotish.com; Sanjay Rath’s writing treats Rahu as casting '
+              'graha drishti (srath.com), and a forum compilation names J. N. '
+              'Bhasin, James Braha and V. K. Choudhry too',
+          'कई परंपराएँ: dekhopanchang.com और onlinejyotish.com के पाठ; संजय रथ के '
+              'लेख राहु को ग्रह-दृष्टि डालने वाला मानते हैं (srath.com), और एक '
+              'फ़ोरम की एक सूची जे. एन. भसीन, जेम्स ब्राहा और वी. के. चौधरी के नाम भी गिनाता है',
+        ),
+        reasoning: const Bi(
+          'The nodes are treated like Jupiter in the trines and the opposite '
+              'house. The pages read state the rule and give no reason for it.',
+          'छाया-ग्रहों को त्रिकोण और सामने के भाव में गुरु की तरह माना जाता है। पढ़े '
+              'गए पन्ने नियम बताते हैं, उसका कोई कारण नहीं।',
+        ),
+        result: summary(jupiterLike, differing(jupiterLike)),
+      ),
+    ],
   );
 }

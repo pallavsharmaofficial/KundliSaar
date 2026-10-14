@@ -16,6 +16,10 @@ import 'tajika_common.dart';
 /// 11th sign from each other; never the 2nd, 6th, 8th or 12th), and the
 /// aspect is then judged by the DEGREES each stands at within its own sign:
 /// the swifter graha behind the slower one is applying (Ittasala, Arabic
+/// The gap past exactness at which an aspect stops joining and starts
+/// separating. Tajikabhushana 4.10, quoted at Hayanaratna 3.4.
+const double ishrafaOnsetDegrees = 1.0;
+
 /// muttasil), the swifter graha ahead of the slower is separating (Ishrafa,
 /// Arabic mushrif). The orb is the mean of the two grahas' deeptamsha.
 ///
@@ -659,7 +663,13 @@ List<TajikaAspect> _pairAspects(Kundli chart, YearGrid grid) {
       if (gap.abs() > orb) continue;
       // A retrograde swifter graha does not apply (Hayanaratna 3.3).
       if (f.isRetrograde) continue;
-      final TajikaYogaId kind = gap >= 0
+      // Ishrafa begins a full degree past exactness, not the instant the
+      // swifter graha goes by: Tajikabhushana 4.10 as quoted at Hayanaratna
+      // 3.4, where an older commentator adds that minutes of arc short of a
+      // degree are still Itthasala, and the Neelakanthi commentary agrees.
+      // Counting from any distance matches one software's code and no text.
+      // Both readings are shown side by side; this is the one used.
+      final TajikaYogaId kind = gap >= -ishrafaOnsetDegrees
           ? TajikaYogaId.ittasala
           : TajikaYogaId.ishrafa;
       final TajikaEvent? event = _projectEvent(

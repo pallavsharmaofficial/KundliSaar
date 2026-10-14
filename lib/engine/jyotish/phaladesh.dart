@@ -2,13 +2,17 @@ import '../astro/ayanamsa.dart';
 import '../astro/ephemeris.dart';
 import '../astro/time.dart';
 import 'ashtakavarga.dart';
+import 'bilingual.dart';
 import 'chart.dart';
 import 'dasha.dart';
 import 'graha_data.dart';
 import 'rashi.dart';
+import 'remedies.dart';
 import 'shadbala.dart';
 import 'transits.dart';
 import 'yogas.dart';
+
+export 'bilingual.dart' show Bi;
 
 /// Phaladesh: what the chart says a time of life is likely to be about.
 ///
@@ -36,26 +40,22 @@ import 'yogas.dart';
 ///    schools differ the text says so or hedges, the weights come from no
 ///    verse, and no verse is quoted for anything.
 ///
+/// Every house, graha, period and transit also says how strongly the chart
+/// itself points at the reading ([Indication]): a count of the chart factors
+/// that agree, with the ones that agree and the ones that do not listed. That
+/// is this app's own convention, not a classical measure and not a probability,
+/// and no reading carries a chance of any event. Every house, period and
+/// transit says what tends to come up in the areas of life it concerns, as a
+/// tendency and never as an event, and every finding that is strained carries
+/// the remedies the tradition commonly prescribes for the graha concerned
+/// (see remedies.dart): a mantra, a fast, giving, a deity and one plain act,
+/// never anything that has to be bought.
+///
 /// The app does not predict death, illness, pregnancy, examinations, legal
 /// outcomes or investment returns. Where a classical rule touches those
 /// houses, the reading speaks only of the area of life (daily work, change,
 /// partnership, expense) and never of an event. A difficult period is
 /// described by what it asks of the person.
-
-/// A string in both languages. Every sentence of a reading is one of these.
-class Bi {
-  const Bi(this.en, this.hi);
-
-  final String en;
-  final String hi;
-
-  String of(bool hindi) => hindi ? hi : en;
-
-  bool get isComplete => en.trim().isNotEmpty && hi.trim().isNotEmpty;
-
-  @override
-  String toString() => en;
-}
 
 /// What a reading looks like from outside: a headline, and the chart factors
 /// it was derived from, so the screen can always answer "why this".
@@ -76,6 +76,370 @@ enum Tone { supportive, mixed, demanding }
 /// A graha's character for one particular lagna, as opposed to its natural
 /// character: Saturn is a natural malefic but the yogakaraka of Taurus.
 enum FunctionalNature { yogakaraka, benefic, mixed, malefic }
+
+// ---------------------------------------------------------------------------
+// Strength of indication
+// ---------------------------------------------------------------------------
+//
+// Every reading says how strongly the chart itself points at it. This is NOT
+// the chance of anything happening: nobody can validate such a number and the
+// app does not pretend to one. What can be counted and checked is how many
+// separate facts of the chart point the same way as the reading, and which
+// ones point the other way. That count, with the facts listed, is the band.
+//
+// The scale is this app's own convention. It is not a classical measure and it
+// is not a probability. The factors are separate facts of the chart, not
+// statistically independent measurements (dignity feeds shadbala, and the
+// sarvashtakavarga is the sum of the other ashtakavargas), so even the
+// strongest band is a stronger pointer and never a promise.
+
+/// Which kind of chart fact a factor is read from.
+enum FactorKind {
+  placement,
+  dignity,
+  nature,
+  shadbala,
+  ashtakavarga,
+  aspects,
+  company,
+  occupants,
+  condition,
+  yoga,
+  relief,
+  period,
+  transit,
+}
+
+/// One fact of the chart that points to a matter going with support or to it
+/// asking effort.
+class IndicatorFactor {
+  const IndicatorFactor({
+    required this.kind,
+    required this.text,
+    required this.eases,
+    required this.firm,
+    this.grahas = const <Graha>[],
+  });
+
+  final FactorKind kind;
+  final Bi text;
+
+  /// True when the fact points to the matter going with support, false when
+  /// it points to the matter asking effort.
+  final bool eases;
+
+  /// A firm factor is a plainly measured, weighty fact: a sign of exaltation
+  /// or fall, a kendra or a difficult house, shadbala against its minimum,
+  /// five bindus or three. A light one is a mild nudge: a friend's sign, the
+  /// company a graha keeps. Whether a fact is firm or light is this app's own
+  /// convention.
+  final bool firm;
+
+  /// The grahas the fact is about. Remedies are made for these.
+  final List<Graha> grahas;
+}
+
+/// The bands of the scale. [mixed] is not a rung between the others: it is
+/// what a reading that says "support and effort go together" gets, because
+/// such a reading has no single direction to be strong in.
+enum IndicationBand { strong, moderate, weak, mixed }
+
+/// The scale, named honestly. Shown wherever a band is shown.
+const Bi indicationScaleNote = Bi(
+  'How to read the band: it counts how many separate chart factors agree with the reading. This is the app’s own convention. It is not a classical measure, and it is not a probability of anything happening. The factors overlap a little (dignity feeds shadbala, and the sarvashtakavarga sums the rest), so even a strong band is only a stronger pointer, never a promise.',
+  'इस पट्टी को कैसे पढ़ें: यह गिनती है कि कुंडली के कितने अलग-अलग कारक इस फल से सहमत हैं। यह इस ऐप की अपनी गिनती है। यह कोई शास्त्रीय माप नहीं है, और यह किसी बात के होने की संभावना भी नहीं है। कारक आपस में थोड़े जुड़े हुए हैं (स्थिति का असर षड्बल में भी गिना जाता है, और सर्वाष्टकवर्ग बाक़ी का जोड़ है), इसलिए प्रबल संकेत भी बस एक मज़बूत इशारा है, वादा नहीं।',
+);
+
+/// How strongly the chart points at one reading, with the factors behind it.
+///
+/// The scale (this app's own convention):
+///  * strong: at least four factors agree, at most one disagrees, and at least
+///    two of those that agree are firm;
+///  * moderate: at least three agree and they outnumber those that disagree
+///    by two or more;
+///  * weak: anything less, including every reading that rests on one or two
+///    factors;
+///  * mixed: for a reading that itself says support and effort go together,
+///    the split is shown as it stands.
+class Indication {
+  const Indication._({
+    required this.direction,
+    required this.band,
+    required this.agreeing,
+    required this.disagreeing,
+  });
+
+  /// Builds the indication for a reading whose tone is [tone] from the
+  /// factors the chart gives. A factor that takes no side is simply not in
+  /// the list, so every factor given counts.
+  factory Indication(Tone tone, List<IndicatorFactor> factors) {
+    final List<IndicatorFactor> ease = <IndicatorFactor>[
+      for (final IndicatorFactor f in factors)
+        if (f.eases) f,
+    ];
+    final List<IndicatorFactor> effort = <IndicatorFactor>[
+      for (final IndicatorFactor f in factors)
+        if (!f.eases) f,
+    ];
+    final List<IndicatorFactor> agree = tone == Tone.demanding ? effort : ease;
+    final List<IndicatorFactor> disagree = tone == Tone.demanding
+        ? ease
+        : effort;
+    final int a = agree.length;
+    final int d = disagree.length;
+    final int firmAgree = agree.where((IndicatorFactor f) => f.firm).length;
+    final IndicationBand band = tone == Tone.mixed
+        ? IndicationBand.mixed
+        : (a >= 4 && d <= 1 && firmAgree >= 2
+              ? IndicationBand.strong
+              : (a >= 3 && a - d >= 2
+                    ? IndicationBand.moderate
+                    : IndicationBand.weak));
+    return Indication._(
+      direction: tone,
+      band: band,
+      agreeing: List<IndicatorFactor>.unmodifiable(agree),
+      disagreeing: List<IndicatorFactor>.unmodifiable(disagree),
+    );
+  }
+
+  /// The tone of the reading the factors are weighed against.
+  final Tone direction;
+  final IndicationBand band;
+
+  /// The factors that agree with the reading. For a mixed reading, the ones
+  /// that point to support.
+  final List<IndicatorFactor> agreeing;
+
+  /// The factors that point the other way. For a mixed reading, the ones that
+  /// point to effort.
+  final List<IndicatorFactor> disagreeing;
+
+  /// How many factors took a side. The count is exactly the factors listed.
+  int get total => agreeing.length + disagreeing.length;
+
+  int get firmAgreeing => agreeing.where((IndicatorFactor f) => f.firm).length;
+
+  Bi get label => switch (band) {
+    IndicationBand.strong => const Bi('Strong indication', 'प्रबल संकेत'),
+    IndicationBand.moderate => const Bi('Moderate indication', 'मध्यम संकेत'),
+    IndicationBand.weak => const Bi('Weak indication', 'हल्का संकेत'),
+    IndicationBand.mixed => const Bi('Mixed indication', 'मिला-जुला संकेत'),
+  };
+
+  /// "4 of 5 factors agree".
+  Bi get count {
+    final int a = agreeing.length;
+    if (band == IndicationBand.mixed) {
+      final int d = disagreeing.length;
+      return Bi(
+        '$a ${a == 1 ? 'factor points' : 'factors point'} to support, $d to effort',
+        '$a कारक सहारे की ओर, $d मेहनत की ओर',
+      );
+    }
+    return Bi(
+      '$a of $total ${total == 1 ? 'factor agrees' : 'factors agree'}',
+      '$total में से $a कारक सहमत',
+    );
+  }
+
+  /// The band and the count together: "Strong indication — 4 of 5 factors
+  /// agree".
+  Bi get summary =>
+      Bi('${label.en} — ${count.en}', '${label.hi} — ${count.hi}');
+
+  /// A plain warning when the reading rests on too little, or null when it
+  /// does not.
+  Bi? get caution {
+    final int a = agreeing.length;
+    final int d = disagreeing.length;
+    if (total == 0) {
+      return const Bi(
+        'No chart factor takes a side here, so nothing but the app’s own weighing stands behind this reading.',
+        'यहाँ कुंडली का कोई कारक किसी तरफ़ नहीं झुकता, इसलिए इस फल के पीछे सिर्फ़ ऐप का अपना तौल है।',
+      );
+    }
+    final bool single = band == IndicationBand.mixed ? total == 1 : a == 1;
+    if (band == IndicationBand.mixed && !single) return null;
+    if (single) {
+      final bool firm =
+          (band == IndicationBand.mixed
+                  ? <IndicatorFactor>[...agreeing, ...disagreeing]
+                  : agreeing)
+              .first
+              .firm;
+      return Bi(
+        'This reading rests on a single factor${firm ? '' : ', and a light one'}. Treat it as a hint, not as something settled.',
+        'यह फल सिर्फ़ एक कारक पर टिका है${firm ? '' : ', और वह भी हल्का'}। इसे इशारा भर समझें, पक्की बात नहीं।',
+      );
+    }
+    if (a == 0) {
+      return const Bi(
+        'No factor agrees with this reading; it rests on the app’s own weighing alone.',
+        'कोई भी कारक इस फल से सहमत नहीं है; यह सिर्फ़ ऐप के अपने तौल पर टिका है।',
+      );
+    }
+    if (d >= a) {
+      return const Bi(
+        'As many factors disagree as agree, so the chart does not settle this one.',
+        'जितने कारक सहमत हैं उतने ही असहमत भी हैं, इसलिए कुंडली इस बात को तय नहीं करती।',
+      );
+    }
+    if (a == 2 && band == IndicationBand.weak) {
+      return const Bi(
+        'Only two factors agree, so hold this lightly.',
+        'सिर्फ़ दो कारक सहमत हैं, इसलिए इसे हल्के में लें।',
+      );
+    }
+    return null;
+  }
+
+  /// The heading over the factors that agree.
+  Bi get agreeHeading => switch (direction) {
+    Tone.supportive => const Bi(
+      'Factors that agree (pointing to support)',
+      'सहमत कारक (सहारे की ओर)',
+    ),
+    Tone.demanding => const Bi(
+      'Factors that agree (pointing to effort)',
+      'सहमत कारक (मेहनत की ओर)',
+    ),
+    Tone.mixed => const Bi(
+      'Factors pointing to support',
+      'सहारे की ओर इशारा करने वाले कारक',
+    ),
+  };
+
+  /// The heading over the factors that point the other way.
+  Bi get disagreeHeading => switch (direction) {
+    Tone.supportive => const Bi(
+      'Factors that disagree (pointing to effort)',
+      'असहमत कारक (मेहनत की ओर)',
+    ),
+    Tone.demanding => const Bi(
+      'Factors that disagree (pointing to support)',
+      'असहमत कारक (सहारे की ओर)',
+    ),
+    Tone.mixed => const Bi(
+      'Factors pointing to effort',
+      'मेहनत की ओर इशारा करने वाले कारक',
+    ),
+  };
+
+  /// Every text of the indication, for tests and read-aloud. The scale note
+  /// is not here: it is shown beside the band and tested on its own.
+  Iterable<Bi> get texts => <Bi>[
+    summary,
+    ?caution,
+    agreeHeading,
+    disagreeHeading,
+    for (final IndicatorFactor f in agreeing) f.text,
+    for (final IndicatorFactor f in disagreeing) f.text,
+  ];
+}
+
+/// A reading that carries a strength band, what tends to come up and the
+/// remedies for what it finds strained.
+abstract interface class IndicatedReading implements PhalaReading {
+  /// How strongly the chart points at the reading, with the factors behind it.
+  Indication get indication;
+
+  /// The areas of life and what tends to come up in them. Phrased as
+  /// tendencies and as what the time asks of the person, never as an event.
+  /// Null only for a reading of a single graha, which has its own wording.
+  Bi? get tends;
+
+  /// The remedies for what the reading finds strained. Empty when nothing is.
+  List<Remedy> get remedies;
+}
+
+/// Makes the remedies for the pressing factors of a reading: one for each
+/// graha they concern, the one with the most weight first, at most [limit].
+/// The remedy says which graha it is for and which facts press on it. When no
+/// pressing factor names a graha, the remedy goes to [fallback] with
+/// [fallbackReason], so a strained reading never goes without one.
+List<Remedy> _remediesFor(
+  List<IndicatorFactor> factors, {
+  required int limit,
+  required Graha fallback,
+  required Bi fallbackReason,
+  Graha? prefer,
+}) {
+  final Map<Graha, List<IndicatorFactor>> by = <Graha, List<IndicatorFactor>>{};
+  for (final IndicatorFactor f in factors) {
+    if (f.eases) continue;
+    for (final Graha g in f.grahas) {
+      by.putIfAbsent(g, () => <IndicatorFactor>[]).add(f);
+    }
+  }
+  if (by.isEmpty) {
+    return <Remedy>[
+      _remedy(fallback, <Bi>[fallbackReason]),
+    ];
+  }
+  double weight(List<IndicatorFactor> fs) => fs.fold<double>(
+    0,
+    (double sum, IndicatorFactor f) => sum + (f.firm ? 2 : 1),
+  );
+  final List<MapEntry<Graha, List<IndicatorFactor>>> order = by.entries
+      .toList();
+  final Map<Graha, int> seen = <Graha, int>{
+    for (int i = 0; i < order.length; i++) order[i].key: i,
+  };
+  order.sort((
+    MapEntry<Graha, List<IndicatorFactor>> a,
+    MapEntry<Graha, List<IndicatorFactor>> b,
+  ) {
+    if (prefer != null && (a.key == prefer) != (b.key == prefer)) {
+      return a.key == prefer ? -1 : 1;
+    }
+    final int byWeight = weight(b.value).compareTo(weight(a.value));
+    return byWeight != 0 ? byWeight : seen[a.key]!.compareTo(seen[b.key]!);
+  });
+  return <Remedy>[
+    for (final MapEntry<Graha, List<IndicatorFactor>> e in order.take(limit))
+      _remedy(
+        e.key,
+        (List<IndicatorFactor>.of(e.value)..sort(
+              (IndicatorFactor a, IndicatorFactor b) =>
+                  (b.firm ? 1 : 0).compareTo(a.firm ? 1 : 0),
+            ))
+            .take(3)
+            .map((IndicatorFactor f) => f.text)
+            .toList(),
+      ),
+  ];
+}
+
+Remedy _remedy(Graha g, List<Bi> reasons) {
+  final Bi me = _graha(g);
+  return Remedy(
+    graha: g,
+    addresses: Bi(
+      'This remedy is for ${me.en}. What presses on it: ${reasons.map((Bi r) => r.en).join('; ')}.',
+      'यह उपाय ${me.hi} के लिए है। कारण: ${reasons.map((Bi r) => r.hi).join('; ')}।',
+    ),
+  );
+}
+
+String _closed(String s, String stop) {
+  final String t = s.trim();
+  if (t.isEmpty) return t;
+  const String enders = '.।!?';
+  return enders.contains(t[t.length - 1]) ? t : '$t$stop';
+}
+
+/// The remedy for an adverse yoga, through one of the grahas that make it.
+Remedy _yogaRemedy(YogaFinding y, Graha through) {
+  final Bi me = _graha(through);
+  return Remedy(
+    graha: through,
+    addresses: Bi(
+      'This remedy is for ${y.nameEnglish}. ${_closed(y.ruleEnglish, '.')} It works through ${me.en}.',
+      'यह उपाय ${y.nameHindi} के लिए है। ${_closed(y.ruleHindi, '।')} यह ${me.hi} के ज़रिए किया जाता है।',
+    ),
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Small language helpers
@@ -844,6 +1208,22 @@ class PhalaContext {
   final List<YogaFinding> yogas;
   final Map<Graha, GrahaStanding> standing;
 
+  /// Each yoga of the chart with the grahas that make it, in the order the
+  /// remedies are made.
+  late final List<({YogaFinding yoga, Set<Graha> grahas})> yogaMembers =
+      <({YogaFinding yoga, Set<Graha> grahas})>[
+        for (final YogaFinding y in yogas)
+          (yoga: y, grahas: _yogaGrahas(kundli, y)),
+      ];
+
+  /// The chart factors each graha's own standing gives, worked out once and
+  /// shared by the graha reading and by every period that graha rules.
+  late final Map<Graha, List<IndicatorFactor>> grahaFactors =
+      <Graha, List<IndicatorFactor>>{
+        for (final Graha g in Graha.values)
+          g: _grahaFactors(this, standing[g]!),
+      };
+
   GrahaStanding of(Graha g) => standing[g]!;
   Duration get zone => kundli.birth.utcOffset;
   Bi get lagnaName => _sign(kundli.lagnaRashi);
@@ -1102,6 +1482,469 @@ Map<Graha, GrahaStanding> _buildStandings(
 }
 
 // ---------------------------------------------------------------------------
+// The chart factors behind a band
+// ---------------------------------------------------------------------------
+
+Bi _placeLabel(int house) => switch (house) {
+  1 => const Bi('a kendra and a trikona', 'केंद्र और त्रिकोण'),
+  4 || 7 || 10 => const Bi('a kendra', 'केंद्र'),
+  5 || 9 => const Bi('a trikona', 'त्रिकोण'),
+  2 || 11 => const Bi('a house of means', 'साधनों का भाव'),
+  3 => const Bi('a house of effort', 'प्रयास का भाव'),
+  _ => const Bi('a difficult place', 'कठिन स्थान'),
+};
+
+/// "Saturn is in its own sign, Capricorn".
+Bi _dignityFactor(Graha g, PlacedGraha p) {
+  final Bi me = _graha(g);
+  final Bi sign = _sign(p.rashi);
+  final (String, String) how = switch (p.dignity) {
+    Dignity.exalted => ('its exaltation sign', 'उच्च राशि'),
+    Dignity.moolatrikona => ('its moolatrikona sign', 'मूलत्रिकोण राशि'),
+    Dignity.own => ('its own sign', 'अपनी राशि'),
+    Dignity.friend => ('a friend’s sign', 'मित्र की राशि'),
+    Dignity.neutral => ('a neutral sign', 'सम राशि'),
+    Dignity.enemy => ('an enemy’s sign', 'शत्रु की राशि'),
+    Dignity.debilitated => ('its sign of fall', 'नीच राशि'),
+  };
+  return Bi(
+    '${me.en} is in ${how.$1}, ${sign.en}',
+    '${me.hi} ${how.$2} (${sign.hi}) में है',
+  );
+}
+
+/// The shadbala reading as a factor, or null when it takes no side (it is not
+/// worked out for the nodes). [possessiveEn] reads "Saturn’s" or "The lord’s".
+IndicatorFactor? _shadbalaFactor(
+  BalaBreakdown? b,
+  String possessiveEn,
+  String nameHi,
+  List<Graha> who, {
+  required bool allowFirm,
+}) {
+  if (b == null) return null;
+  final String rupas = b.totalRupas.toStringAsFixed(1);
+  if (b.ratio >= 1.0) {
+    return IndicatorFactor(
+      kind: FactorKind.shadbala,
+      eases: true,
+      firm: allowFirm,
+      grahas: who,
+      text: Bi(
+        '$possessiveEn shadbala is $rupas rupas, above the ${b.requiredRupas} it needs',
+        '$nameHi का षड्बल $rupas रूप है, जो ज़रूरी ${b.requiredRupas} से ऊपर है',
+      ),
+    );
+  }
+  return IndicatorFactor(
+    kind: FactorKind.shadbala,
+    eases: false,
+    firm: allowFirm && b.ratio < 0.8,
+    grahas: who,
+    text: Bi(
+      '$possessiveEn shadbala is $rupas rupas, under the ${b.requiredRupas} it needs',
+      '$nameHi का षड्बल $rupas रूप है, जो ज़रूरी ${b.requiredRupas} से कम है',
+    ),
+  );
+}
+
+/// Turns counts of kind and hard influences into a vote: null when they
+/// cancel, otherwise which way and how firmly.
+({bool eases, bool firm})? _netVote(int ease, int hard) {
+  final int net = ease - hard;
+  if (net == 0) return null;
+  return (eases: net > 0, firm: net.abs() >= 2);
+}
+
+/// A yoga by its name and the grahas that make it, so that the same fact
+/// found through two routes is counted once.
+String _yogaSignature(({YogaFinding yoga, Set<Graha> grahas}) m) =>
+    '${m.yoga.nameEnglish}:${(m.grahas.map((Graha g) => g.index).toList()..sort()).join(',')}';
+
+/// The factors a graha's own standing gives, shared by the graha reading and
+/// by the periods it rules. A fact that takes no side is not a factor, and a
+/// graha that is merely not afflicted is not counted as supported.
+List<IndicatorFactor> _grahaFactors(PhalaContext ctx, GrahaStanding st) {
+  final Kundli k = ctx.kundli;
+  final Graha g = st.graha;
+  final PlacedGraha p = st.placed;
+  final bool isNode = g == Graha.rahu || g == Graha.ketu;
+  final Bi me = _graha(g);
+  final Bi lagna = ctx.lagnaName;
+  final List<Graha> who = <Graha>[g];
+  final List<IndicatorFactor> out = <IndicatorFactor>[];
+  void add(FactorKind kind, bool eases, bool firm, Bi text) => out.add(
+    IndicatorFactor(
+      kind: kind,
+      text: text,
+      eases: eases,
+      firm: firm,
+      grahas: who,
+    ),
+  );
+
+  // Dignity. The friendships of the nodes are disputed between schools, so
+  // for them only exaltation and fall count.
+  switch (p.dignity) {
+    case Dignity.exalted:
+    case Dignity.moolatrikona:
+    case Dignity.own:
+      add(FactorKind.dignity, true, true, _dignityFactor(g, p));
+    case Dignity.friend:
+      if (!isNode) add(FactorKind.dignity, true, false, _dignityFactor(g, p));
+    case Dignity.neutral:
+      break;
+    case Dignity.enemy:
+      if (!isNode) add(FactorKind.dignity, false, false, _dignityFactor(g, p));
+    case Dignity.debilitated:
+      add(FactorKind.dignity, false, true, _dignityFactor(g, p));
+      if (st.neechaBhanga != null) {
+        add(
+          FactorKind.relief,
+          true,
+          true,
+          Bi(
+            'Neecha bhanga: the fall of ${me.en} is cancelled',
+            'नीच भंग: ${me.hi} का नीचत्व भंग हुआ है',
+          ),
+        );
+      }
+  }
+
+  // What the graha is worth for this lagna.
+  final Bi natureLabel = _natureLabel(st.nature);
+  final Bi natureText = isNode
+      ? Bi(
+          '${me.en} gives its results through ${_graha(st.reader).en}, which is ${natureLabel.en} for the ${lagna.en} lagna',
+          '${me.hi} का फल ${_graha(st.reader).hi} के अनुसार मिलता है, जो ${lagna.hi} लग्न के लिए ${natureLabel.hi} है',
+        )
+      : Bi(
+          'For the ${lagna.en} lagna ${me.en} is ${natureLabel.en}',
+          '${lagna.hi} लग्न के लिए ${me.hi} ${natureLabel.hi} है',
+        );
+  switch (st.nature) {
+    case FunctionalNature.yogakaraka:
+    case FunctionalNature.benefic:
+      add(FactorKind.nature, true, !isNode, natureText);
+    case FunctionalNature.malefic:
+      add(FactorKind.nature, false, !isNode, natureText);
+    case FunctionalNature.mixed:
+      break;
+  }
+
+  // The house it stands in.
+  final int h = p.house;
+  final bool naturalMalefic = !_isBenefic(k, g);
+  final bool easyPlace =
+      (naturalMalefic && (h == 6 || h == 3)) || (g == Graha.ketu && h == 12);
+  final Bi stands = Bi(
+    '${me.en} stands in ${_houseObl(h).en}, ${_placeLabel(h).en}',
+    '${me.hi} ${_houseObl(h).hi} में है, जो ${_placeLabel(h).hi} है',
+  );
+  if (easyPlace) {
+    if (h != 12) {
+      add(
+        FactorKind.placement,
+        true,
+        false,
+        Bi(
+          '${me.en}, a natural malefic, stands in ${_houseObl(h).en}, a house that grows with effort and where malefics do well',
+          '${me.hi}, स्वभाव से क्रूर ग्रह, ${_houseObl(h).hi} में है, जो परिश्रम से बढ़ने वाला भाव है और जहाँ क्रूर ग्रह अच्छा फल देते हैं',
+        ),
+      );
+    }
+  } else if (_kendras.contains(h) || _trikonas.contains(h)) {
+    add(FactorKind.placement, true, true, stands);
+  } else if (h == 2 || h == 11) {
+    add(FactorKind.placement, true, false, stands);
+  } else if (_dusthanas.contains(h)) {
+    add(FactorKind.placement, false, true, stands);
+  }
+  if (st.viparita != null) {
+    add(
+      FactorKind.relief,
+      true,
+      true,
+      Bi(
+        'Viparita raja yoga: ${me.en}, lord of a difficult house, stands in a difficult house',
+        'विपरीत राजयोग: कठिन भाव का स्वामी ${me.hi} कठिन भाव में है',
+      ),
+    );
+  }
+
+  // Strength, by shadbala and by ashtakavarga.
+  final IndicatorFactor? bala = _shadbalaFactor(
+    st.bala,
+    '${me.en}’s',
+    me.hi,
+    who,
+    allowFirm: true,
+  );
+  if (bala != null) out.add(bala);
+  final int? own = st.ownBindus;
+  final int sav = st.signBindus;
+  if (own != null && own >= 5) {
+    add(
+      FactorKind.ashtakavarga,
+      true,
+      true,
+      Bi(
+        '${me.en} holds $own bindus in its own ashtakavarga for this sign (five or more is a full count)',
+        'इस राशि में ${me.hi} के अपने अष्टकवर्ग के $own बिंदु हैं (पाँच या अधिक पूरी गिनती है)',
+      ),
+    );
+  } else if (own != null && own <= 3) {
+    add(
+      FactorKind.ashtakavarga,
+      false,
+      true,
+      Bi(
+        '${me.en} holds only $own bindus in its own ashtakavarga for this sign (three or fewer is thin)',
+        'इस राशि में ${me.hi} के अपने अष्टकवर्ग के सिर्फ़ $own बिंदु हैं (तीन या उससे कम हल्की गिनती है)',
+      ),
+    );
+  } else if (sav >= 30) {
+    add(
+      FactorKind.ashtakavarga,
+      true,
+      false,
+      Bi(
+        'The sign ${me.en} stands in holds $sav sarvashtakavarga bindus, a strong count',
+        'जिस राशि में ${me.hi} है उसमें सर्वाष्टकवर्ग के $sav बिंदु हैं, जो अच्छी गिनती है',
+      ),
+    );
+  } else if (sav <= 24) {
+    add(
+      FactorKind.ashtakavarga,
+      false,
+      false,
+      Bi(
+        'The sign ${me.en} stands in holds only $sav sarvashtakavarga bindus, a light count',
+        'जिस राशि में ${me.hi} है उसमें सर्वाष्टकवर्ग के सिर्फ़ $sav बिंदु हैं, जो कम गिनती है',
+      ),
+    );
+  }
+
+  if (p.isCombust) {
+    add(
+      FactorKind.condition,
+      false,
+      true,
+      Bi(
+        '${me.en} is combust, too near the Sun',
+        '${me.hi} सूर्य के बहुत पास होने से अस्त है',
+      ),
+    );
+  }
+
+  // Company and aspects, each netted into one factor.
+  final List<Graha> kindCompany = st.companions
+      .where((Graha c) => _isBenefic(k, c))
+      .toList();
+  final List<Graha> hardCompany = st.companions
+      .where((Graha c) => !_isBenefic(k, c))
+      .toList();
+  final ({bool eases, bool firm})? company = _netVote(
+    kindCompany.length,
+    hardCompany.length,
+  );
+  if (company != null) {
+    final List<Graha> side = company.eases ? kindCompany : hardCompany;
+    add(
+      FactorKind.company,
+      company.eases,
+      company.firm,
+      company.eases
+          ? Bi(
+              '${me.en} keeps the company of ${_grahas(side).en}, which supports it',
+              '${me.hi} के साथ ${_grahas(side).hi} हैं, जो इसे सहारा देते हैं',
+            )
+          : Bi(
+              '${me.en} keeps the company of ${_grahas(side).en}, which presses on it',
+              '${me.hi} के साथ ${_grahas(side).hi} हैं, जो इस पर दबाव डालते हैं',
+            ),
+    );
+  }
+  final bool jupiterGlance =
+      g != Graha.jupiter &&
+      st.aspectedBy.contains(Graha.jupiter) &&
+      _jupiterProtects(k);
+  final List<Graha> kindAspects = st.aspectedBy
+      .where((Graha a) => a != Graha.jupiter && _isBenefic(k, a))
+      .toList();
+  final List<Graha> hardAspects = st.aspectedBy
+      .where((Graha a) => !_isBenefic(k, a))
+      .toList();
+  final ({bool eases, bool firm})? glance = _netVote(
+    (jupiterGlance ? 2 : 0) + kindAspects.length,
+    hardAspects.length,
+  );
+  if (glance != null) {
+    final List<Graha> side = glance.eases
+        ? <Graha>[if (jupiterGlance) Graha.jupiter, ...kindAspects]
+        : hardAspects;
+    add(
+      FactorKind.aspects,
+      glance.eases,
+      glance.firm,
+      glance.eases
+          ? Bi(
+              '${me.en} is looked at by ${_grahas(side).en}, a kind glance',
+              '${me.hi} पर ${_grahas(side).hi} की शुभ दृष्टि है',
+            )
+          : Bi(
+              '${me.en} is looked at by ${_grahas(side).en}, a hard glance',
+              '${me.hi} पर ${_grahas(side).hi} की कठोर दृष्टि है',
+            ),
+    );
+  }
+
+  // The yogas it takes part in. A dosha that the chart itself cancels takes
+  // no side. Two findings of one name made by the same grahas (a raja yoga
+  // reached through two pairs of houses) are one fact of the chart.
+  final Set<String> seenYogas = <String>{};
+  for (final ({YogaFinding yoga, Set<Graha> grahas}) m in ctx.yogaMembers) {
+    if (!m.grahas.contains(g)) continue;
+    final YogaFinding y = m.yoga;
+    if (!seenYogas.add(_yogaSignature(m))) continue;
+    if (!y.isDosha) {
+      final bool major =
+          y.key.startsWith('mahapurusha_') ||
+          y.key.startsWith('raja_yoga_') ||
+          y.key == 'gaja_kesari';
+      add(
+        FactorKind.yoga,
+        true,
+        major,
+        Bi(
+          '${me.en} takes part in ${y.nameEnglish}',
+          '${me.hi} ${y.nameHindi} में शामिल है',
+        ),
+      );
+    } else if (!y.isCancelled) {
+      add(
+        FactorKind.yoga,
+        false,
+        false,
+        Bi(
+          '${me.en} takes part in ${y.nameEnglish}, which the tradition reads as asking for effort',
+          '${me.hi} ${y.nameHindi} में शामिल है, जिसे परंपरा मेहनत माँगने वाला मानती है',
+        ),
+      );
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// What tends to come up
+// ---------------------------------------------------------------------------
+
+/// What tends to come up when a house is the one in focus. Tendencies and the
+/// questions a time puts to the person, never an event.
+const List<Bi> _houseTends = <Bi>[
+  Bi(
+    'Questions of who you are and which way you are heading tend to come up: how you carry yourself, where you put your energy, and whether the path you are on feels like your own.',
+    'आप कौन हैं और किस ओर जा रहे हैं, इस तरह के सवाल अक्सर सामने आते हैं: आप खुद को कैसे पेश करते हैं, अपनी ऊर्जा कहाँ लगाते हैं, और जिस राह पर हैं वह अपनी लगती है या नहीं।',
+  ),
+  Bi(
+    'Questions of money kept and spent, of family and of how you speak tend to come up: the household accounts, what the family expects, and the weight your words carry at home.',
+    'पैसे की बचत और खर्च, परिवार और आपकी बोली से जुड़े सवाल अक्सर सामने आते हैं: घर का हिसाब, परिवार की उम्मीदें, और घर में आपकी बात का वज़न।',
+  ),
+  Bi(
+    'Questions of effort and initiative tend to come up: starting things yourself, building a skill, and dealings with brothers, sisters, neighbours and short trips.',
+    'मेहनत और पहल से जुड़े सवाल अक्सर सामने आते हैं: कोई काम खुद शुरू करना, कोई हुनर निखारना, और भाई-बहनों, पड़ोसियों और छोटी यात्राओं की बातें।',
+  ),
+  Bi(
+    'Questions of home and peace of mind tend to come up: where you live, how settled you feel, and your mother or the elders of the house.',
+    'घर और मन की शांति से जुड़े सवाल अक्सर सामने आते हैं: आप कहाँ रहते हैं, कितना ठहराव महसूस करते हैं, और माँ या घर के बड़े।',
+  ),
+  Bi(
+    'Questions of learning, creative work and children tend to come up: what you are studying or making, and whom you are teaching or guiding.',
+    'पढ़ाई, रचनात्मक काम और बच्चों से जुड़े सवाल अक्सर सामने आते हैं: आप क्या सीख या बना रहे हैं, और किसे सिखा या राह दिखा रहे हैं।',
+  ),
+  Bi(
+    'Questions of daily work, obligations and competition tend to come up: routines, the load of work, helping others, and keeping your dues in order.',
+    'रोज़ के काम, ज़िम्मेदारियों और होड़ से जुड़े सवाल अक्सर सामने आते हैं: दिनचर्या, काम का बोझ, दूसरों की मदद, और अपने लेन-देन का हिसाब।',
+  ),
+  Bi(
+    'Questions of partnership and close commitments tend to come up: how you and the people closest to you deal with each other, and the agreements between you.',
+    'साझेदारी और क़रीबी रिश्तों से जुड़े सवाल अक्सर सामने आते हैं: आप और आपके सबसे क़रीबी लोग एक-दूसरे से कैसे पेश आते हैं, और आपके बीच के वादे और समझौते।',
+  ),
+  Bi(
+    'Questions of change, shared resources and what is kept out of sight tend to come up: money held jointly, matters that need looking into, and things that are ready to be let go.',
+    'बदलाव, साझे संसाधनों और छिपी बातों से जुड़े सवाल अक्सर सामने आते हैं: साझा पैसा, जिन बातों की तह तक जाना है, और जो छोड़ने का वक़्त आ गया है।',
+  ),
+  Bi(
+    'Questions of purpose, guidance and long journeys tend to come up: what you believe in, the teachers and elders you turn to, and the father or father figures in your life.',
+    'जीवन के मक़सद, मार्गदर्शन और लंबी यात्राओं से जुड़े सवाल अक्सर सामने आते हैं: आप किस पर भरोसा करते हैं, किन गुरुओं और बड़ों की सुनते हैं, और पिता या पिता जैसे लोग।',
+  ),
+  Bi(
+    'Questions of work, responsibility and standing tend to come up: the role you hold, how others see your work, and what you are building over the years.',
+    'काम, ज़िम्मेदारी और साख से जुड़े सवाल अक्सर सामने आते हैं: आप किस भूमिका में हैं, लोग आपके काम को कैसे देखते हैं, और आप बरसों में क्या खड़ा कर रहे हैं।',
+  ),
+  Bi(
+    'Questions of income, friends and hopes tend to come up: who is in your circle, what you are working towards, and how steadily the fruit of your effort comes in.',
+    'आमदनी, दोस्तों और उम्मीदों से जुड़े सवाल अक्सर सामने आते हैं: आपके दायरे में कौन है, आप किस ओर बढ़ रहे हैं, और मेहनत का फल कितनी स्थिरता से आता है।',
+  ),
+  Bi(
+    'Questions of expense, rest and time alone tend to come up: where your money and energy go, the need for quiet, and places far from home.',
+    'ख़र्च, आराम और अकेले बिताए समय से जुड़े सवाल अक्सर सामने आते हैं: आपका पैसा और ऊर्जा कहाँ जाती है, शांति की ज़रूरत, और घर से दूर की जगहें।',
+  ),
+];
+
+/// How a slow transit tends to colour the area of life it passes through.
+const Map<Graha, Bi> _transitTends = <Graha, Bi>{
+  Graha.saturn: Bi(
+    'A Saturn transit tends to put the area it touches under slow, steady pressure to organise things and take responsibility.',
+    'शनि का गोचर जिस क्षेत्र को छूता है, वहाँ धीरे-धीरे व्यवस्था बनाने और ज़िम्मेदारी उठाने का दबाव अक्सर बना रहता है।',
+  ),
+  Graha.jupiter: Bi(
+    'A Jupiter transit tends to widen the area it touches: more room to learn and grow, and more help from teachers and elders, where effort is put in.',
+    'गुरु का गोचर जिस क्षेत्र को छूता है, उसे अक्सर फैलाता है: सीखने और बढ़ने की ज़्यादा जगह, और गुरुजनों व बड़ों की ज़्यादा मदद, बशर्ते मेहनत की जाए।',
+  ),
+  Graha.rahu: Bi(
+    'A Rahu transit tends to make the area it touches feel urgent and unfamiliar: a bigger appetite, a pull toward the new, and a need to check what is real before committing.',
+    'राहु का गोचर जिस क्षेत्र को छूता है, उसे अक्सर जल्दबाज़ी और अनजानेपन से भर देता है: ज़्यादा की भूख, नए की ओर खिंचाव, और वादा करने से पहले सच्चाई जाँचने की ज़रूरत।',
+  ),
+  Graha.ketu: Bi(
+    'A Ketu transit tends to loosen the hold of the area it touches: a pull to simplify, to go deeper rather than wider, and to let go of what has run its course.',
+    'केतु का गोचर जिस क्षेत्र को छूता है, उसकी पकड़ अक्सर ढीली करता है: सरल करने का मन, फैलाव से ज़्यादा गहराई चुनने का मन, और जो बात पूरी हो चुकी उसे छोड़ने का मन।',
+  ),
+};
+
+/// How the tone of a reading colours the tendency.
+Bi _toneTends(Tone tone) => switch (tone) {
+  Tone.supportive => const Bi(
+    'With the chart backing it, such matters tend to move with less friction.',
+    'कुंडली का साथ होने से ऐसी बातें अक्सर कम रुकावट के साथ आगे बढ़ती हैं।',
+  ),
+  Tone.mixed => const Bi(
+    'Such matters tend to bring some ease and some effort together.',
+    'ऐसी बातों में अक्सर थोड़ी आसानी और थोड़ी मेहनत साथ-साथ चलती है।',
+  ),
+  Tone.demanding => const Bi(
+    'Such matters tend to need more deliberate handling, taken one step at a time.',
+    'ऐसी बातों को अक्सर ज़्यादा सोच-समझकर, एक-एक क़दम करके सँभालना पड़ता है।',
+  ),
+};
+
+/// The sign a graha is in, as one of its own, its exaltation or its fall; null
+/// when it is none of these (and always null for the nodes, whose own signs
+/// the schools do not agree on).
+Dignity? _signDignity(Graha g, Rashi sign) {
+  if (g == Graha.rahu || g == Graha.ketu) return null;
+  final GrahaInfo info = grahaInfo(g);
+  if (info.ownSigns.contains(sign.index)) return Dignity.own;
+  final double? exalt = info.exaltationDegree;
+  if (exalt == null) return null;
+  final int exaltSign = (exalt / 30).floor() % 12;
+  if (sign.index == exaltSign) return Dignity.exalted;
+  if (sign.index == (exaltSign + 6) % 12) return Dignity.debilitated;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Sentences shared by the house, graha and period readings
 // ---------------------------------------------------------------------------
 
@@ -1305,12 +2148,35 @@ Bi _strengthSentence(GrahaStanding st) {
   return _cat(<Bi>[shadbala, bindus]);
 }
 
+/// A yoga or dosha a graha takes part in, as the graha reading shows it, with
+/// the remedies when the chart carries it uncancelled.
+class YogaNote {
+  const YogaNote({
+    required this.key,
+    required this.text,
+    required this.isAdverse,
+    required this.remedies,
+  });
+
+  final String key;
+  final Bi text;
+
+  /// A dosha the chart does not itself cancel.
+  final bool isAdverse;
+
+  /// At least one when [isAdverse], empty otherwise.
+  final List<Remedy> remedies;
+
+  Iterable<Bi> get texts => <Bi>[text, ...remedyTexts(remedies)];
+}
+
 /// The yogas of [yogas] this graha takes part in, each with its cancellation
-/// when the chart carries one.
-List<Bi> _yogaNotes(PhalaContext ctx, Graha g) {
-  final List<Bi> out = <Bi>[];
-  for (final YogaFinding y in ctx.yogas) {
-    if (!_yogaGrahas(ctx.kundli, y).contains(g)) continue;
+/// when the chart carries one, and its remedies when it carries none.
+List<YogaNote> _yogaNotes(PhalaContext ctx, Graha g) {
+  final List<YogaNote> out = <YogaNote>[];
+  for (final ({YogaFinding yoga, Set<Graha> grahas}) m in ctx.yogaMembers) {
+    if (!m.grahas.contains(g)) continue;
+    final YogaFinding y = m.yoga;
     final StringBuffer en = StringBuffer(
       '${y.nameEnglish}: ${y.meaningEnglish}',
     );
@@ -1333,18 +2199,64 @@ List<Bi> _yogaNotes(PhalaContext ctx, Graha g) {
         hi.write(' परंपरा इसके भंग होने के कई प्रकार भी बताती है।');
       }
     }
-    out.add(Bi(en.toString(), hi.toString()));
+    final bool adverse = y.isDosha && !y.isCancelled;
+    out.add(
+      YogaNote(
+        key: y.key,
+        text: Bi(en.toString(), hi.toString()),
+        isAdverse: adverse,
+        remedies: adverse
+            ? <Remedy>[
+                for (final Graha through in m.grahas.take(2))
+                  _yogaRemedy(y, through),
+              ]
+            : const <Remedy>[],
+      ),
+    );
   }
   return out;
 }
 
+/// The grahas that make a yoga, the one the remedy is about first. Only the
+/// yogas phaladesh shows in a graha's reading are listed.
 Set<Graha> _yogaGrahas(Kundli k, YogaFinding y) {
   final String key = y.key;
+  Graha lordOf(int house) => rashiInfo(Rashi.values[k.signOfHouse(house)]).lord;
+  bool together(Graha a, Graha b) => k.grahas[a]!.rashi == k.grahas[b]!.rashi;
+  Graha? nodeWith(Graha g) {
+    for (final Graha node in <Graha>[Graha.rahu, Graha.ketu]) {
+      if (together(g, node)) return node;
+    }
+    return null;
+  }
+
   if (key == 'mangal_dosha') return <Graha>{Graha.mars};
   if (key == 'kaal_sarpa') return <Graha>{Graha.rahu, Graha.ketu};
   if (key == 'gaja_kesari') return <Graha>{Graha.jupiter, Graha.moon};
   if (key == 'budhaditya') return <Graha>{Graha.sun, Graha.mercury};
   if (key == 'kemadruma') return <Graha>{Graha.moon};
+  if (key == 'shakata_chandra') return <Graha>{Graha.moon, Graha.jupiter};
+  if (key == 'daridra') return <Graha>{lordOf(2), lordOf(11)};
+  if (key == 'guru_chandal') return <Graha>{Graha.jupiter, Graha.rahu};
+  if (key == 'shrapit') return <Graha>{Graha.saturn, Graha.rahu};
+  if (key == 'angarak') return <Graha>{Graha.mars, Graha.rahu};
+  if (key == 'vish_yoga') return <Graha>{Graha.moon, Graha.saturn};
+  if (key == 'grahan_surya' || key == 'grahan_chandra') {
+    final Graha lum = key == 'grahan_surya' ? Graha.sun : Graha.moon;
+    final Graha? node = nodeWith(lum);
+    return <Graha>{lum, ?node};
+  }
+  if (key == 'pitra_dosha') {
+    final Graha ninth = lordOf(9);
+    return <Graha>{
+      Graha.sun,
+      for (final Graha node in <Graha>[Graha.rahu, Graha.ketu])
+        if (together(Graha.sun, node) ||
+            k.grahas[node]!.house == 9 ||
+            (ninth != node && together(ninth, node)))
+          node,
+    };
+  }
   if (key.startsWith('mahapurusha_')) {
     final String name = key.substring('mahapurusha_'.length);
     return Graha.values.where((Graha g) => g.name == name).toSet();
@@ -1353,10 +2265,7 @@ Set<Graha> _yogaGrahas(Kundli k, YogaFinding y) {
     final List<String> parts = key.split('_');
     final int kendra = int.parse(parts[2]);
     final int trikona = int.parse(parts[3]);
-    return <Graha>{
-      rashiInfo(Rashi.values[k.signOfHouse(kendra)]).lord,
-      rashiInfo(Rashi.values[k.signOfHouse(trikona)]).lord,
-    };
+    return <Graha>{lordOf(kendra), lordOf(trikona)};
   }
   return <Graha>{};
 }
@@ -1409,7 +2318,7 @@ Bi _asksSentence(Bi asks, Tone tone, _Subject subject) {
 
 /// One house of the chart, read from its sign, its lord, its occupants and the
 /// aspects it receives.
-class BhavaReading implements PhalaReading {
+class BhavaReading implements IndicatedReading {
   const BhavaReading({
     required this.house,
     required this.sign,
@@ -1429,6 +2338,9 @@ class BhavaReading implements PhalaReading {
     required this.reading,
     required this.asks,
     required this.relief,
+    required this.indication,
+    required this.tends,
+    required this.remedies,
     required this.basis,
   });
 
@@ -1459,11 +2371,32 @@ class BhavaReading implements PhalaReading {
   /// What eases any strain found in the house, or null if none was found.
   final Bi? relief;
 
+  /// How strongly the chart points at this house's tone, with the factors.
+  @override
+  final Indication indication;
+
+  /// What tends to come up when this house is the one in focus.
+  @override
+  final Bi tends;
+
+  /// The remedies for what strains the house. Empty when nothing does.
+  @override
+  final List<Remedy> remedies;
+
   @override
   final List<Bi> basis;
 
   @override
-  Iterable<Bi> get texts => <Bi>[headline, reading, asks, ?relief, ...basis];
+  Iterable<Bi> get texts => <Bi>[
+    headline,
+    reading,
+    tends,
+    asks,
+    ?relief,
+    ...indication.texts,
+    ...remedyTexts(remedies),
+    ...basis,
+  ];
 }
 
 double _lordHouseWeight(int house) {
@@ -1782,6 +2715,249 @@ BhavaReading _bhava(PhalaContext ctx, int h) {
           );
   }
 
+  // The chart factors behind the band. A fact that takes no side is not a
+  // factor; an empty house or an unaspected one is simply read from its lord.
+  final List<Graha> byLord = <Graha>[lord];
+  final List<IndicatorFactor> factors = <IndicatorFactor>[];
+  void note(
+    FactorKind kind,
+    bool eases,
+    bool firm,
+    Bi text, [
+    List<Graha>? who,
+  ]) => factors.add(
+    IndicatorFactor(
+      kind: kind,
+      text: text,
+      eases: eases,
+      firm: firm,
+      grahas: who ?? byLord,
+    ),
+  );
+  final Bi lordStands = lp.house == h
+      ? Bi(
+          '${me.en}, lord of ${_houseObl(h).en}, stands in the house itself, ${_placeLabel(lp.house).en}',
+          '${_houseObl(h).hi} का स्वामी ${me.hi} उसी भाव में है, जो ${_placeLabel(lp.house).hi} है',
+        )
+      : Bi(
+          '${me.en}, lord of ${_houseObl(h).en}, stands in ${_houseObl(lp.house).en}, ${_placeLabel(lp.house).en}',
+          '${_houseObl(h).hi} का स्वामी ${me.hi} ${_houseObl(lp.house).hi} में है, जो ${_placeLabel(lp.house).hi} है',
+        );
+  if (_kendras.contains(lp.house) || _trikonas.contains(lp.house)) {
+    note(FactorKind.placement, true, true, lordStands);
+  } else if (lp.house == 2 || lp.house == 11) {
+    note(FactorKind.placement, true, false, lordStands);
+  } else if (_dusthanas.contains(lp.house)) {
+    note(FactorKind.placement, false, true, lordStands);
+  }
+  if (lordInTwelfth) {
+    note(
+      FactorKind.placement,
+      false,
+      true,
+      Bi(
+        '${me.en} stands in the 12th from its own house, which many astrologers read as weakening the house',
+        '${me.hi} अपने भाव से बारहवें स्थान पर है, जिसे अनेक ज्योतिषी भाव को कमज़ोर करने वाला मानते हैं',
+      ),
+    );
+  }
+  switch (lp.dignity) {
+    case Dignity.exalted:
+    case Dignity.moolatrikona:
+    case Dignity.own:
+      note(FactorKind.dignity, true, true, _dignityFactor(lord, lp));
+    case Dignity.friend:
+      note(FactorKind.dignity, true, false, _dignityFactor(lord, lp));
+    case Dignity.neutral:
+      break;
+    case Dignity.enemy:
+      note(FactorKind.dignity, false, false, _dignityFactor(lord, lp));
+    case Dignity.debilitated:
+      note(FactorKind.dignity, false, true, _dignityFactor(lord, lp));
+      if (ls.neechaBhanga != null) {
+        note(
+          FactorKind.relief,
+          true,
+          true,
+          Bi(
+            'Neecha bhanga: the fall of ${me.en} is cancelled',
+            'नीच भंग: ${me.hi} का नीचत्व भंग हुआ है',
+          ),
+        );
+      }
+  }
+  if (lp.isCombust) {
+    note(
+      FactorKind.condition,
+      false,
+      true,
+      Bi(
+        '${me.en}, the lord, is combust, too near the Sun',
+        'स्वामी ${me.hi} सूर्य के बहुत पास होने से अस्त है',
+      ),
+    );
+  }
+  if (viparita) {
+    note(
+      FactorKind.relief,
+      true,
+      true,
+      Bi(
+        'Viparita raja yoga: the lord of ${_houseObl(h).en}, a difficult house, stands in a difficult house',
+        'विपरीत राजयोग: कठिन भाव (${_houseObl(h).hi}) का स्वामी कठिन भाव में है',
+      ),
+    );
+  }
+  final List<Graha> kindOcc = occupants
+      .where((Graha o) => _isBenefic(k, o) || upachaya)
+      .toList();
+  final List<Graha> hardOcc = occupants
+      .where((Graha o) => !_isBenefic(k, o) && !upachaya)
+      .toList();
+  final ({bool eases, bool firm})? occVote = _netVote(
+    kindOcc.length,
+    hardOcc.length,
+  );
+  if (occVote != null) {
+    note(
+      FactorKind.occupants,
+      occVote.eases,
+      occVote.firm,
+      occVote.eases
+          ? Bi(
+              '${_grahas(kindOcc).en} in the house ${kindOcc.length == 1 ? 'supports' : 'support'} its matters',
+              'भाव में बैठे ${_grahas(kindOcc).hi} इसके विषयों को सहारा देते हैं',
+            )
+          : Bi(
+              '${_grahas(hardOcc).en} in the house ${hardOcc.length == 1 ? 'presses' : 'press'} on its matters',
+              'भाव में बैठे ${_grahas(hardOcc).hi} इसके विषयों पर दबाव डालते हैं',
+            ),
+      occVote.eases ? byLord : hardOcc,
+    );
+  }
+  final bool jupiterGlance =
+      aspects.contains(Graha.jupiter) && _jupiterProtects(k);
+  final List<Graha> kindAsp = aspects
+      .where((Graha a) => a != Graha.jupiter && _isBenefic(k, a))
+      .toList();
+  final List<Graha> hardAsp = aspects
+      .where((Graha a) => !_isBenefic(k, a) && !upachaya)
+      .toList();
+  final ({bool eases, bool firm})? aspVote = _netVote(
+    (jupiterGlance ? 2 : 0) + kindAsp.length,
+    hardAsp.length,
+  );
+  if (aspVote != null) {
+    final List<Graha> side = aspVote.eases
+        ? <Graha>[if (jupiterGlance) Graha.jupiter, ...kindAsp]
+        : hardAsp;
+    note(
+      FactorKind.aspects,
+      aspVote.eases,
+      aspVote.firm,
+      aspVote.eases
+          ? Bi(
+              'The house is looked at by ${_grahas(side).en}, a kind glance',
+              'भाव पर ${_grahas(side).hi} की शुभ दृष्टि है',
+            )
+          : Bi(
+              'The house is looked at by ${_grahas(side).en}, a hard glance',
+              'भाव पर ${_grahas(side).hi} की कठोर दृष्टि है',
+            ),
+      aspVote.eases ? byLord : hardAsp,
+    );
+  }
+  if (sav >= 30) {
+    note(
+      FactorKind.ashtakavarga,
+      true,
+      true,
+      Bi(
+        'The sign carries $sav sarvashtakavarga bindus, ${_sarvaWords(sav).en}',
+        'राशि में सर्वाष्टकवर्ग के $sav बिंदु हैं: ${_sarvaWords(sav).hi}',
+      ),
+    );
+  } else if (sav <= 24) {
+    note(
+      FactorKind.ashtakavarga,
+      false,
+      true,
+      Bi(
+        'The sign carries only $sav sarvashtakavarga bindus, ${_sarvaWords(sav).en}',
+        'राशि में सर्वाष्टकवर्ग के सिर्फ़ $sav बिंदु हैं: ${_sarvaWords(sav).hi}',
+      ),
+    );
+  }
+  final IndicatorFactor? lordBala = _shadbalaFactor(
+    lb,
+    'The lord’s',
+    'स्वामी',
+    byLord,
+    allowFirm: true,
+  );
+  if (lordBala != null) factors.add(lordBala);
+  final Set<String> seenYogas = <String>{};
+  for (final ({YogaFinding yoga, Set<Graha> grahas}) m in ctx.yogaMembers) {
+    if (!m.grahas.contains(lord)) continue;
+    final YogaFinding y = m.yoga;
+    if (!seenYogas.add(_yogaSignature(m))) continue;
+    if (!y.isDosha) {
+      note(
+        FactorKind.yoga,
+        true,
+        false,
+        Bi(
+          'The lord ${me.en} takes part in ${y.nameEnglish}',
+          'स्वामी ${me.hi} ${y.nameHindi} में शामिल है',
+        ),
+      );
+    } else if (!y.isCancelled) {
+      note(
+        FactorKind.yoga,
+        false,
+        false,
+        Bi(
+          'The lord ${me.en} takes part in ${y.nameEnglish}, which the tradition reads as asking for effort',
+          'स्वामी ${me.hi} ${y.nameHindi} में शामिल है, जिसे परंपरा मेहनत माँगने वाला मानती है',
+        ),
+      );
+    }
+  }
+  final Indication indication = Indication(tone, factors);
+  final List<Remedy> remedies = relief != null || tone == Tone.demanding
+      ? _remediesFor(
+          factors,
+          limit: 3,
+          prefer: lord,
+          fallback: lord,
+          fallbackReason: Bi(
+            'The rules weigh ${_houseObl(h).en} as asking for effort, and ${me.en} is its lord',
+            'नियम ${_houseObl(h).hi} को मेहनत माँगने वाला तौलते हैं, और ${me.hi} इसका स्वामी है',
+          ),
+        )
+      : const <Remedy>[];
+
+  // What tends to come up in this house, as a tendency and never an event.
+  final List<Graha> voices = occupants.take(2).toList();
+  final Bi tends = _cat(<Bi>[
+    _houseTends[h - 1],
+    if (voices.isNotEmpty)
+      Bi(
+        'With ${_grahas(occupants).en} here, ${_items(voices.map((Graha o) => _grahaThemes[o]!).toList()).en} tend to colour these matters.',
+        'यहाँ ${_grahas(occupants).hi} के होने से ${_items(voices.map((Graha o) => _grahaThemes[o]!).toList()).hi} की बातें इन मामलों पर रंग चढ़ाती हैं।',
+      ),
+    lp.house == h
+        ? const Bi(
+            'With its lord in the house itself, these matters tend to stay close at hand.',
+            'स्वामी उसी भाव में होने से ये मामले अक्सर पास ही रहते हैं।',
+          )
+        : Bi(
+            'With its lord in ${_lower(lordArea.periodTitle.en)}, these matters tend to be tied up with that part of life.',
+            'स्वामी ${lordArea.periodTitle.hi} में होने से ये मामले अक्सर जीवन के उस हिस्से से जुड़े रहते हैं।',
+          ),
+    _toneTends(tone),
+  ]);
+
   final Bi lagna = ctx.lagnaName;
   return BhavaReading(
     house: h,
@@ -1805,6 +2981,9 @@ BhavaReading _bhava(PhalaContext ctx, int h) {
     reading: _cat(parts),
     asks: _asksSentence(area.asks, tone, _Subject.house),
     relief: relief,
+    indication: indication,
+    tends: tends,
+    remedies: remedies,
     basis: <Bi>[
       Bi(
         '${_ordEn[h]} house: ${_sign(sign).en}, lord ${me.en} (lagna ${lagna.en})',
@@ -1846,7 +3025,7 @@ List<BhavaReading> bhavaPhala(PhalaContext ctx) => <BhavaReading>[
 
 /// One graha in its sign and house, modulated by dignity, combustion,
 /// retrogression and the company it keeps.
-class GrahaReading implements PhalaReading {
+class GrahaReading implements IndicatedReading {
   const GrahaReading({
     required this.graha,
     required this.house,
@@ -1859,12 +3038,15 @@ class GrahaReading implements PhalaReading {
     required this.companions,
     required this.aspectedBy,
     required this.yogas,
+    required this.yogaNotes,
     required this.tone,
     required this.score,
     required this.headline,
     required this.reading,
     required this.asks,
     required this.relief,
+    required this.indication,
+    required this.remedies,
     required this.basis,
   });
 
@@ -1881,6 +3063,9 @@ class GrahaReading implements PhalaReading {
 
   /// The yogas and doshas this graha takes part in, with their cancellations.
   final List<Bi> yogas;
+
+  /// The same, with the remedies for each dosha the chart does not cancel.
+  final List<YogaNote> yogaNotes;
   final Tone tone;
   final double score;
 
@@ -1889,6 +3074,20 @@ class GrahaReading implements PhalaReading {
   final Bi reading;
   final Bi asks;
   final Bi? relief;
+
+  /// How strongly the chart points at this graha's tone, with the factors.
+  @override
+  final Indication indication;
+
+  /// The graha's own reading carries no separate "what tends to come up": it
+  /// signifies what it signifies, and the houses and periods say where that
+  /// shows.
+  @override
+  Bi? get tends => null;
+
+  /// The remedies for what strains this graha. Empty when nothing does.
+  @override
+  final List<Remedy> remedies;
 
   @override
   final List<Bi> basis;
@@ -1899,7 +3098,9 @@ class GrahaReading implements PhalaReading {
     reading,
     asks,
     ?relief,
-    ...yogas,
+    ...indication.texts,
+    ...remedyTexts(remedies),
+    for (final YogaNote y in yogaNotes) ...y.texts,
     ...basis,
   ];
 }
@@ -1911,6 +3112,8 @@ GrahaReading _grahaReading(PhalaContext ctx, Graha g) {
   final LifeArea area = LifeArea.values[p.house - 1];
   final Bi sign = _sign(p.rashi);
 
+  final List<IndicatorFactor> factors = ctx.grahaFactors[g]!;
+  final List<YogaNote> notes = _yogaNotes(ctx, g);
   final Bi placed = _placementSentence(st);
   final List<Bi> parts = <Bi>[
     Bi(
@@ -1940,7 +3143,8 @@ GrahaReading _grahaReading(PhalaContext ctx, Graha g) {
     nature: st.nature,
     companions: st.companions,
     aspectedBy: st.aspectedBy,
-    yogas: _yogaNotes(ctx, g),
+    yogas: <Bi>[for (final YogaNote y in notes) y.text],
+    yogaNotes: notes,
     tone: st.tone,
     score: st.score,
     headline: Bi(
@@ -1950,6 +3154,18 @@ GrahaReading _grahaReading(PhalaContext ctx, Graha g) {
     reading: _cat(parts),
     asks: _asksSentence(_grahaAsks[g]!, st.tone, _Subject.graha),
     relief: st.relief,
+    indication: Indication(st.tone, factors),
+    remedies: st.relief != null || st.tone == Tone.demanding
+        ? _remediesFor(
+            factors,
+            limit: 1,
+            fallback: g,
+            fallbackReason: Bi(
+              'The rules weigh ${me.en} as asking for effort in this chart',
+              'नियम इस कुंडली में ${me.hi} को मेहनत माँगने वाला तौलते हैं',
+            ),
+          )
+        : const <Remedy>[],
     basis: st.basis,
   );
 }
@@ -2039,7 +3255,7 @@ double _bandWeight(_Band b) => switch (b) {
 };
 
 /// One mahadasha, antardasha or pratyantardasha with its dates and its reading.
-class PeriodReading implements PhalaReading {
+class PeriodReading implements IndicatedReading {
   const PeriodReading({
     required this.level,
     required this.lord,
@@ -2061,6 +3277,9 @@ class PeriodReading implements PhalaReading {
     required this.context,
     required this.asks,
     required this.relief,
+    required this.indication,
+    required this.tends,
+    required this.remedies,
     required this.basis,
     required this.children,
   });
@@ -2111,6 +3330,20 @@ class PeriodReading implements PhalaReading {
   final Bi asks;
   final Bi? relief;
 
+  /// How strongly the chart points at this period's tone, with the factors:
+  /// the lord's own standing, and for a sub-period the place of the lord from
+  /// the period around it, their friendship and how that period fares.
+  @override
+  final Indication indication;
+
+  /// What tends to come up in the areas of life this period concentrates on.
+  @override
+  final Bi tends;
+
+  /// The remedies for a difficult period. Empty when nothing is strained.
+  @override
+  final List<Remedy> remedies;
+
   @override
   final List<Bi> basis;
   final List<PeriodReading> children;
@@ -2133,8 +3366,11 @@ class PeriodReading implements PhalaReading {
     promise,
     ?modifier,
     context,
+    tends,
     asks,
     ?relief,
+    ...indication.texts,
+    ...remedyTexts(remedies),
     ...basis,
     for (final PeriodReading c in children) ...c.texts,
   ];
@@ -2628,6 +3864,138 @@ PeriodReading _period(
       ),
   ];
 
+  // The chart factors behind the band: the lord's own standing, then, for a
+  // sub-period, where it stands from the period around it, how the two get on,
+  // and how the period around it fares. Each of those is one fact.
+  final List<IndicatorFactor> factors = <IndicatorFactor>[
+    ...ctx.grahaFactors[lord]!,
+  ];
+  if (parent != null && !sameLord) {
+    final Bi up = _graha(parent);
+    final Bi from = _placeFrom(place!, parent);
+    final List<Graha> pair = <Graha>[lord, parent];
+    switch (mod!.band) {
+      case _Band.easy:
+        factors.add(
+          IndicatorFactor(
+            kind: FactorKind.period,
+            eases: true,
+            firm: true,
+            grahas: pair,
+            text: Bi(
+              '${me.en} stands in ${from.en}, a position the tradition counts as easy',
+              '${me.hi} ${from.hi} है, जिसे परंपरा सहज स्थिति मानती है',
+            ),
+          ),
+        );
+      case _Band.gain:
+        factors.add(
+          IndicatorFactor(
+            kind: FactorKind.period,
+            eases: true,
+            firm: false,
+            grahas: pair,
+            text: Bi(
+              '${me.en} stands in ${from.en}, a place of gain',
+              '${me.hi} ${from.hi} है, जो लाभ का स्थान है',
+            ),
+          ),
+        );
+      case _Band.effort:
+        break;
+      case _Band.hard:
+        factors.add(
+          IndicatorFactor(
+            kind: FactorKind.period,
+            eases: false,
+            firm: true,
+            grahas: pair,
+            text: Bi(
+              '${me.en} stands in ${from.en}, a difficult position',
+              '${me.hi} ${from.hi} है, जो कठिन स्थिति है',
+            ),
+          ),
+        );
+    }
+    if (mod.relation != Relation.neutral) {
+      final bool friends = mod.relation == Relation.friend;
+      factors.add(
+        IndicatorFactor(
+          kind: FactorKind.period,
+          eases: friends,
+          firm: false,
+          grahas: pair,
+          text: Bi(
+            '${me.en} and ${up.en} are ${_relationBasis(mod.relation).en}',
+            '${me.hi} और ${up.hi} ${_relationBasis(mod.relation).hi} हैं',
+          ),
+        ),
+      );
+    }
+  }
+  void aroundIt(Graha around, GrahaStanding of, int aroundLevel, bool firm) {
+    if (of.tone == Tone.mixed || around == lord) return;
+    final bool well = of.tone == Tone.supportive;
+    final Bi who = _graha(around);
+    final Bi word = _levelWord(aroundLevel);
+    factors.add(
+      IndicatorFactor(
+        kind: FactorKind.period,
+        eases: well,
+        firm: firm,
+        grahas: <Graha>[around],
+        text: well
+            ? Bi(
+                '${who.en}, whose ${word.en} this sits inside, is well placed in this chart',
+                '${who.hi}, जिसकी ${word.hi} के भीतर यह है, इस कुंडली में अच्छी स्थिति में है',
+              )
+            : Bi(
+                '${who.en}, whose ${word.en} this sits inside, is under strain in this chart',
+                '${who.hi}, जिसकी ${word.hi} के भीतर यह है, इस कुंडली में दबाव में है',
+              ),
+      ),
+    );
+  }
+
+  if (parent != null) aroundIt(parent, pst!, level - 1, true);
+  if (grand != null && grand != parent) aroundIt(grand, gst!, level - 2, false);
+  final Indication indication = Indication(tone, factors);
+  final Bi? relief = _combineRelief(st.relief, mod?.relief);
+  // A difficult period is one whose tone asks for effort, or one that rubs
+  // against the period around it (the lord stands in the 6th, 8th or 12th
+  // from that period's lord). A lord that is merely strained in its own right
+  // has its remedies in the graha reading.
+  final bool difficult =
+      tone == Tone.demanding || (mod != null && mod.band == _Band.hard);
+  final List<Remedy> remedies = difficult
+      ? _remediesFor(
+          factors,
+          limit: 2,
+          prefer: lord,
+          fallback: lord,
+          fallbackReason: Bi(
+            'The rules weigh this ${_levelWord(level).en} as asking for effort, and ${me.en} is its lord',
+            'नियम इस ${_levelWord(level).hi} को मेहनत माँगने वाला तौलते हैं, और ${me.hi} इसका स्वामी है',
+          ),
+        )
+      : const <Remedy>[];
+
+  // What tends to come up, as a tendency and never as an event.
+  final Bi tends = _cat(<Bi>[
+    _houseTends[areas.first.house - 1],
+    if (level < 3 && areas.length > 1)
+      Bi(
+        'Alongside, matters of ${_lower(areas[1].periodTitle.en)} tend to stay in view.',
+        'साथ ही ${areas[1].periodTitle.hi} की बातें नज़र में रहती हैं।',
+      ),
+    if (level < 3)
+      Bi(
+        '${me.en}’s own concerns, ${_grahaThemes[lord]!.en}, tend to colour all of it.',
+        '${me.hi} के अपने विषय, यानी ${_grahaThemes[lord]!.hi}, इस सब पर रंग चढ़ाते हैं।',
+      ),
+    _toneTends(tone),
+  ]);
+
   final List<PeriodReading> kids = <PeriodReading>[
     for (final DashaPeriod c in p.children)
       _period(ctx, c, <DashaPeriod>[...ancestors, p], neighbours),
@@ -2659,7 +4027,10 @@ PeriodReading _period(
       grand: grand,
     ),
     asks: asks,
-    relief: _combineRelief(st.relief, mod?.relief),
+    relief: relief,
+    indication: indication,
+    tends: tends,
+    remedies: remedies,
     basis: basis,
     children: kids,
   );
@@ -2728,7 +4099,7 @@ const double lifeHorizonYears = 90;
 
 /// One antardasha of one mahadasha: the dated window the person actually
 /// lives in, read against the chapter it belongs to.
-class TimelineWindow implements PhalaReading {
+class TimelineWindow implements IndicatedReading {
   const TimelineWindow({
     required this.index,
     required this.maha,
@@ -2737,6 +4108,7 @@ class TimelineWindow implements PhalaReading {
     required this.ageEndYears,
     required this.startsChapter,
     required this.expect,
+    required this.tends,
     required this.asks,
   });
 
@@ -2756,6 +4128,11 @@ class TimelineWindow implements PhalaReading {
   /// What the tradition says to expect in this window.
   final Bi expect;
 
+  /// What tends to come up. For the childhood years it is what the home and
+  /// the family around the child carry, not the child's own choices.
+  @override
+  final Bi tends;
+
   /// What the window asks of the person. For the childhood years it is what
   /// the family around the child may carry, not a list of adult tasks.
   final Bi asks;
@@ -2772,6 +4149,12 @@ class TimelineWindow implements PhalaReading {
   Bi? get relief => period.relief;
 
   @override
+  Indication get indication => period.indication;
+
+  @override
+  List<Remedy> get remedies => period.remedies;
+
+  @override
   Bi get headline => period.headline;
 
   @override
@@ -2780,7 +4163,16 @@ class TimelineWindow implements PhalaReading {
   bool contains(DateTime moment) => period.contains(moment);
 
   @override
-  Iterable<Bi> get texts => <Bi>[headline, expect, asks, ?relief, ...basis];
+  Iterable<Bi> get texts => <Bi>[
+    headline,
+    expect,
+    tends,
+    asks,
+    ?relief,
+    ...indication.texts,
+    ...remedyTexts(remedies),
+    ...basis,
+  ];
 }
 
 /// A mahadasha as a chapter of the timeline, with its windows.
@@ -2860,6 +4252,12 @@ LifeTimeline lifeTimeline(PhalaContext ctx, DashaPhala dasha) {
               'बचपन में इस विषय को अधिकतर आसपास का परिवार निभाता है; इसमें स्थिर देखभाल और नियमित दिनचर्या की ज़रूरत रहती है।',
             )
           : antar.asks;
+      final Bi tends = childhood
+          ? Bi(
+              'In these childhood years, matters of ${_lower(antar.area.periodTitle.en)} tend to show up through the home and the family around the child rather than through the child’s own choices. ${_toneTends(antar.tone).en}',
+              'बचपन के इन वर्षों में ${antar.area.periodTitle.hi} की बातें बच्चे के अपने चुनावों से ज़्यादा घर और आसपास के परिवार के ज़रिए सामने आती हैं। ${_toneTends(antar.tone).hi}',
+            )
+          : antar.tends;
       final TimelineWindow window = TimelineWindow(
         index: windows.length,
         maha: maha,
@@ -2868,6 +4266,7 @@ LifeTimeline lifeTimeline(PhalaContext ctx, DashaPhala dasha) {
         ageEndYears: to,
         startsChapter: mine.isEmpty,
         expect: expect,
+        tends: tends,
         asks: asks,
       );
       mine.add(window);
@@ -2906,7 +4305,7 @@ const List<Graha> gocharGrahas = <Graha>[
 
 /// One heavy transit read against the natal chart, with the dates it entered
 /// the sign and leaves it.
-class GocharReading implements PhalaReading {
+class GocharReading implements IndicatedReading {
   const GocharReading({
     required this.graha,
     required this.sign,
@@ -2925,6 +4324,9 @@ class GocharReading implements PhalaReading {
     required this.reading,
     required this.asks,
     required this.relief,
+    required this.indication,
+    required this.tends,
+    required this.remedies,
     required this.basis,
   });
 
@@ -2960,11 +4362,34 @@ class GocharReading implements PhalaReading {
   final Bi asks;
   final Bi? relief;
 
+  /// How strongly the chart points at this transit's tone, with the factors:
+  /// the house from the Moon, the bindus, the sign it passes through and what
+  /// the graha is in the natal chart.
+  @override
+  final Indication indication;
+
+  /// What tends to come up in the area of life the transit touches.
+  @override
+  final Bi tends;
+
+  /// The remedies for a testing transit. Empty when the transit is not one.
+  @override
+  final List<Remedy> remedies;
+
   @override
   final List<Bi> basis;
 
   @override
-  Iterable<Bi> get texts => <Bi>[headline, reading, asks, ?relief, ...basis];
+  Iterable<Bi> get texts => <Bi>[
+    headline,
+    reading,
+    tends,
+    asks,
+    ?relief,
+    ...indication.texts,
+    ...remedyTexts(remedies),
+    ...basis,
+  ];
 }
 
 class GocharPhala implements PhalaReading {
@@ -3165,6 +4590,146 @@ GocharPhala gocharPhala(PhalaContext ctx, DashaPhala dasha, {DateTime? now}) {
             ),
     );
 
+    // The chart factors behind the band, one fact each.
+    final GrahaStanding natal = ctx.of(g);
+    final List<Graha> byGraha = <Graha>[g];
+    final List<IndicatorFactor> factors = <IndicatorFactor>[];
+    void note(FactorKind kind, bool eases, bool firm, Bi text) => factors.add(
+      IndicatorFactor(
+        kind: kind,
+        text: text,
+        eases: eases,
+        firm: firm,
+        grahas: byGraha,
+      ),
+    );
+    note(
+      FactorKind.transit,
+      favourable,
+      true,
+      Bi(
+        '${me.en} is in the ${_ordEn[hm]} house from the natal Moon, which the usual table ${favourable ? 'counts favourable' : 'does not count among the favourable houses'}',
+        '${me.hi} जन्म चंद्र से ${_ordHiOblique[hm]} भाव में है, जिसे प्रचलित तालिका ${favourable ? 'अनुकूल मानती है' : 'अनुकूल भावों में नहीं गिनती'}',
+      ),
+    );
+    if (own != null) {
+      if (own >= 4) {
+        note(
+          FactorKind.ashtakavarga,
+          true,
+          true,
+          Bi(
+            '${me.en} holds $own bindus in its own ashtakavarga for this sign (four or more supports a transit)',
+            'इस राशि में ${me.hi} के अपने अष्टकवर्ग के $own बिंदु हैं (चार या अधिक बिंदु गोचर को सहारा देते हैं)',
+          ),
+        );
+      } else {
+        note(
+          FactorKind.ashtakavarga,
+          false,
+          true,
+          Bi(
+            '${me.en} holds only $own bindus in its own ashtakavarga for this sign (three or fewer is thin)',
+            'इस राशि में ${me.hi} के अपने अष्टकवर्ग के सिर्फ़ $own बिंदु हैं (तीन या उससे कम हल्की गिनती है)',
+          ),
+        );
+      }
+    }
+    if (t.bindusInSign >= 30) {
+      note(
+        FactorKind.ashtakavarga,
+        true,
+        own == null,
+        Bi(
+          'The sign carries ${t.bindusInSign} sarvashtakavarga bindus, a strong count',
+          'इस राशि में सर्वाष्टकवर्ग के ${t.bindusInSign} बिंदु हैं, जो अच्छी गिनती है',
+        ),
+      );
+    } else if (t.bindusInSign <= 24) {
+      note(
+        FactorKind.ashtakavarga,
+        false,
+        own == null,
+        Bi(
+          'The sign carries only ${t.bindusInSign} sarvashtakavarga bindus, a light count',
+          'इस राशि में सर्वाष्टकवर्ग के सिर्फ़ ${t.bindusInSign} बिंदु हैं, जो कम गिनती है',
+        ),
+      );
+    }
+    final Dignity? passing = _signDignity(g, t.rashi);
+    if (passing != null) {
+      note(
+        FactorKind.dignity,
+        passing != Dignity.debilitated,
+        true,
+        Bi(
+          'In transit ${me.en} passes through ${sign.en}, ${_dignityPhrase(passing).en}',
+          'गोचर में ${me.hi} ${sign.hi} से गुज़र रहा है, जो ${_dignityPhrase(passing).hi} है',
+        ),
+      );
+    }
+    switch (natal.nature) {
+      case FunctionalNature.yogakaraka:
+      case FunctionalNature.benefic:
+        note(
+          FactorKind.nature,
+          true,
+          false,
+          Bi(
+            'In the natal chart ${me.en} is ${_natureLabel(natal.nature).en} for the ${lagna.en} lagna',
+            'जन्म कुंडली में ${me.hi} ${lagna.hi} लग्न के लिए ${_natureLabel(natal.nature).hi} है',
+          ),
+        );
+      case FunctionalNature.malefic:
+        note(
+          FactorKind.nature,
+          false,
+          false,
+          Bi(
+            'In the natal chart ${me.en} is ${_natureLabel(natal.nature).en} for the ${lagna.en} lagna',
+            'जन्म कुंडली में ${me.hi} ${lagna.hi} लग्न के लिए ${_natureLabel(natal.nature).hi} है',
+          ),
+        );
+      case FunctionalNature.mixed:
+        break;
+    }
+    final IndicatorFactor? natalBala = _shadbalaFactor(
+      natal.bala,
+      '${me.en}’s natal',
+      'जन्म कुंडली में ${me.hi}',
+      byGraha,
+      allowFirm: false,
+    );
+    if (natalBala != null && (natalBala.eases || natal.bala!.ratio < 0.8)) {
+      factors.add(natalBala);
+    }
+    final Indication indication = Indication(tone, factors);
+    final List<Remedy> remedies = !favourable || tone == Tone.demanding
+        ? _remediesFor(
+            factors,
+            limit: 1,
+            fallback: g,
+            fallbackReason: Bi(
+              'The rules weigh this ${me.en} transit as asking for effort',
+              'नियम ${me.hi} के इस गोचर को मेहनत माँगने वाला तौलते हैं',
+            ),
+          )
+        : const <Remedy>[];
+    final Bi tends = _cat(<Bi>[
+      _houseTends[hl - 1],
+      _transitTends[g]!,
+      _toneTends(tone),
+      lands
+          ? const Bi(
+              'Because the running periods already concern this area, it tends to be at the front rather than in the background.',
+              'चल रही अवधियाँ पहले से इसी क्षेत्र से जुड़ी हैं, इसलिए यह क्षेत्र अक्सर पृष्ठभूमि में नहीं, सामने रहता है।',
+            )
+          : const Bi(
+              'Because the running periods concern other areas, this one tends to stay in the background.',
+              'चल रही अवधियाँ दूसरे क्षेत्रों से जुड़ी हैं, इसलिए यह क्षेत्र अक्सर पृष्ठभूमि में रहता है।',
+            ),
+    ]);
+
     readings.add(
       GocharReading(
         graha: g,
@@ -3187,6 +4752,9 @@ GocharPhala gocharPhala(PhalaContext ctx, DashaPhala dasha, {DateTime? now}) {
         reading: _cat(parts),
         asks: _asksSentence(_grahaAsks[g]!, tone, _Subject.transit),
         relief: reliefText,
+        indication: indication,
+        tends: tends,
+        remedies: remedies,
         basis: <Bi>[
           Bi(
             '${me.en} today: ${sign.en}${t.isRetrograde ? ' (retrograde)' : ''}',

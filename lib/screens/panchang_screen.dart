@@ -6,6 +6,7 @@ import '../data/places_repository.dart';
 import '../data/time_zones.dart';
 import '../engine/astro/houses.dart';
 import '../engine/astro/time.dart';
+import '../engine/jyotish/mat.dart';
 import '../engine/jyotish/nakshatra.dart';
 import '../engine/jyotish/panchang.dart';
 import '../engine/jyotish/panchang_calendar.dart';
@@ -17,6 +18,7 @@ import '../models/saved_profile.dart';
 import '../state/profiles_cubit.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
+import '../widgets/matbhed_card.dart';
 
 class PanchangScreen extends StatefulWidget {
   const PanchangScreen({super.key, this.initialDate});
@@ -189,7 +191,13 @@ class _PanchangScreenState extends State<PanchangScreen> {
               ],
             ),
           ),
-          _CalendarSection(calendar: details.calendar, hindi: hindi),
+          _CalendarSection(
+            calendar: details.calendar,
+            hindi: hindi,
+            samvatsaraCard: details.matbhed.firstWhere(
+              (Matbhed m) => m.key == 'samvatsara',
+            ),
+          ),
           Panel(
             title: hindi ? 'सूर्य और चंद्र' : 'Sun and Moon',
             child: Column(
@@ -274,6 +282,7 @@ class _PanchangScreenState extends State<PanchangScreen> {
             profileName: profile?.name,
             clock: clockOf,
           ),
+          _MatbhedSection(details: details, natal: natal, clock: clockOf),
           _AnandadiSection(details: details, clock: clockOf),
           Panel(
             title: l.choghadiyaDay,
@@ -595,10 +604,17 @@ class _WindowSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CalendarSection extends StatelessWidget {
-  const _CalendarSection({required this.calendar, required this.hindi});
+  const _CalendarSection({
+    required this.calendar,
+    required this.hindi,
+    required this.samvatsaraCard,
+  });
 
   final PanchangCalendar calendar;
   final bool hindi;
+
+  /// The three names of the Vikram year, side by side.
+  final Matbhed samvatsaraCard;
 
   String _degrees(double d) {
     final int whole = d.floor();
@@ -687,6 +703,8 @@ class _CalendarSection extends StatelessWidget {
           '${pick(c.sayanaSun.name, c.sayanaSun.nameHindi)} · ${_degrees(c.sayanaSun.degrees)}',
         ),
         _Caption(note(solarMonthNote)),
+        const Divider(),
+        MatbhedCard(matbhed: samvatsaraCard, hindi: hindi),
       ],
     );
   }
@@ -868,6 +886,53 @@ class _BalaSection extends StatelessWidget {
       summary: summary,
       icon: Icons.explore_outlined,
       children: children,
+    );
+  }
+}
+
+/// Where the panchang traditions differ: Ravi Yoga, Tripushkar, the kind of
+/// Panchak, and, with a chart, Chandra bala and the Janma tara, each as a "Two
+/// views" card worked out for this day.
+class _MatbhedSection extends StatelessWidget {
+  const _MatbhedSection({
+    required this.details,
+    required this.natal,
+    required this.clock,
+  });
+
+  final PanchangDetails details;
+  final NatalMoon? natal;
+  final _Clock clock;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hindi = clock.hindi;
+    final NatalMoon? n = natal;
+    final List<Matbhed> items = <Matbhed>[
+      for (final Matbhed m in details.matbhed)
+        if (m.key != 'samvatsara') m,
+      if (n != null) ...<Matbhed>[
+        chandraBalaMatbhed(details, natalMoonRashi: n.rashi),
+        taraBalaMatbhed(details, natalNakshatra: n.nakshatra),
+      ],
+    ];
+    return _Section(
+      storageKey: 'matbhed',
+      title: hindi
+          ? 'जहाँ पंचांग एक राय नहीं रखते'
+          : 'Where the panchangs differ',
+      summary: hindi
+          ? 'रवि योग, त्रिपुष्कर, पंचक का प्रकार${n != null ? ', चंद्र बल, जन्म तारा' : ''}'
+          : 'Ravi Yoga, Tripushkar, the kind of Panchak${n != null ? ', Chandra bala, Janma tara' : ''}',
+      icon: Icons.balance_outlined,
+      children: <Widget>[
+        _Caption(
+          hindi
+              ? 'यहाँ परंपराएँ अलग-अलग कहती हैं, इसलिए हर मत अपने तर्क और आज के दिन की गणना के साथ दिया है। ऐप जिससे गिनता है वह चिह्नित है।'
+              : 'The traditions say different things here, so each view is given with its reasoning and its working for today. The one the app counts by is marked.',
+        ),
+        MatbhedList(items: items, leftOut: panchangLeftOut, hindi: hindi),
+      ],
     );
   }
 }

@@ -3,7 +3,9 @@ import '../astro/ephemeris.dart';
 import '../astro/time.dart';
 import 'chart.dart';
 import 'graha_data.dart';
+import 'mat.dart';
 import 'rashi.dart';
+import 'tajika_common.dart' show Bi;
 
 // =============================================================================
 // Yogas and doshas.
@@ -373,6 +375,51 @@ YogaFinding _make({
   mitigationHindi: mitigation?.hi,
 );
 
+/// A yoga on which the books differ, worked out under each position.
+///
+/// It is listed when at least one position finds the yoga in the chart, and
+/// it says, for each position, whether it does. [formsByDefault] is the answer
+/// under the position the app uses (and so whether the same yoga also stands
+/// in [findYogas]); the other positions are what the other books would add or
+/// take away. The card reads "Two views" / "दो मत".
+class YogaMatbhed {
+  const YogaMatbhed({
+    required this.key,
+    required this.name,
+    required this.family,
+    required this.matbhed,
+  });
+
+  /// The yoga's key; the same as the finding's when the app finds it too.
+  final String key;
+  final Bi name;
+  final YogaFamily family;
+  final Matbhed matbhed;
+
+  bool get formsByDefault => matbhed.defaultView.holds ?? false;
+  bool get formsInAnyView => matbhed.views.any((Mat m) => m.holds == true);
+}
+
+Bi _bi(_T t) => Bi(t.en, t.hi);
+
+/// One position on a yoga: the rule, who holds it, why, and what it finds.
+Mat _yogaView({
+  required _T rule,
+  required _T holder,
+  required _T reasoning,
+  required bool holds,
+  required _T found,
+  required _T notFound,
+  bool isDefault = false,
+}) => Mat(
+  position: _bi(rule),
+  holder: _bi(holder),
+  reasoning: _bi(reasoning),
+  result: _bi(holds ? found : notFound),
+  isDefault: isDefault,
+  holds: holds,
+);
+
 const _T _fromPopular = _T(
   'A later, popular combination. It is not one of the yogas I could find in Parashara’s own yoga chapters, so it is given here as practice, not as a verse.',
   'यह बाद की परंपरा में प्रचलित योग है। पराशर के अपने योग-अध्यायों में मुझे यह नहीं मिला, इसलिए इसे श्लोक नहीं, परंपरागत व्यवहार के रूप में दिया गया है।',
@@ -409,6 +456,11 @@ List<YogaFinding> findYogas(Kundli kundli) {
     ..._doshas(c),
   ];
 }
+
+/// The yogas on which the books disagree, each worked out under every
+/// position for this chart. See [YogaMatbhed].
+List<YogaMatbhed> findYogaMatbhed(Kundli kundli) =>
+    _allYogaMatbhed(_Ctx(kundli));
 
 // -----------------------------------------------------------------------------
 // The original eleven kinds.
@@ -1117,13 +1169,14 @@ List<YogaFinding> _shakataYoga(_Ctx c) {
 
 /// Dhana yoga, in the plain Parashari form: the lords of the 2nd (what is kept)
 /// and the 11th (what comes in) are joined in one sign, in mutual aspect, or in
-/// exchange of signs. BPHS chapter 41 lists many wealth yogas; this 2nd-11th
-/// formulation is the standard one of later Parashari manuals and is not a
-/// single BPHS verse I could verify, so it is credited to the school, not a
-/// verse. Daridra yoga is read here in its strict form: the lords of both the
-/// 2nd and the 11th stand in the 6th, 8th or 12th (many manuals need only the
-/// 11th lord there; BPHS chapter 42 gives different, longer combinations that
-/// involve the maraka lords and are not used).
+/// exchange of signs. This 2nd-11th formulation is the standard one of later
+/// Parashari manuals (BPHS 13.4 gives only its exchange form), so it is
+/// credited to the school, not to a verse; the combinations of BPHS chapter 41
+/// are worked out beside it by [findYogaMatbhed]. Daridra yoga is read here in
+/// its strict form: the lords of both the 2nd and the 11th stand in the 6th,
+/// 8th or 12th (Raman needs only the 11th lord there, and BPHS chapter 42 gives
+/// longer combinations built on the maraka lords; both are in
+/// [findYogaMatbhed]).
 List<YogaFinding> _dhanaYogas(_Ctx c) {
   final List<YogaFinding> out = <YogaFinding>[];
   final Graha l2 = c.lordOfHouse(2);
@@ -1370,8 +1423,9 @@ List<YogaFinding> _greaterYogas(_Ctx c) {
 
   // --- Lakshmi (BPHS 36.27) --------------------------------------------------
   // Condition: the 9th lord stands in a kendra in its own, exaltation or
-  // moolatrikona sign, and the lagna lord is strong. Phaladeepika says "kendra";
-  // Raman says "kendra or trikona". The narrower kendra reading is used.
+  // moolatrikona sign, and the lagna lord is strong (the BPHS verse as
+  // Santhanam reads it). Raman says "kendra or trikona", and Phaladeepika asks
+  // for Venus as well instead of the lagna lord; both are in [findYogaMatbhed].
   final Graha ninth = c.lordOfHouse(9);
   if (ninth != lagnaLord &&
       c.inOwnOrExalted(ninth) &&
@@ -1573,9 +1627,10 @@ List<YogaFinding> _greaterYogas(_Ctx c) {
 // Dala (benefics or malefics in three kendras), twenty Akriti (by the shape the
 // grahas make in the houses) and seven Sankhya (by how many signs they occupy).
 // All of them are stated for the seven grahas from the Sun to Saturn; Rahu and
-// Ketu are not counted. Thirty-one are implemented. Ardha Chandra is not: it is
-// listed in 35.5, but the verse that defines it is missing from the text I
-// checked, and the books that give it disagree.
+// Ketu are not counted. Thirty-one are implemented in [findYogas]. Ardha
+// Chandra is listed in 35.5 and its effect given in 35.40, but no verse of the
+// BPHS texts read defines it; Varahamihira does, and the readings differ, so it
+// is worked out under each in [findYogaMatbhed] instead.
 //
 // Readings, exactly as the checked verses give them:
 //
@@ -2701,6 +2756,1362 @@ List<YogaFinding> _doshas(_Ctx c) {
   }
 
   return out;
+}
+
+// =============================================================================
+// Where the books differ: मतभेद on the yogas.
+//
+// A yoga on which the books disagree is listed here when at least one reading
+// finds it in the chart, and each reading says whether it does. The app's own
+// reading (the one [findYogas] uses) is marked. Nothing here changes
+// [findYogas]: a yoga that only the other reading finds is shown here and not
+// there.
+//
+// What was read, and how. The BPHS verses were read in the Sanskrit on
+// enjoylearningsanskrit.com and in R. Santhanam's English (archive.org); the
+// Brihat Jataka in V. Subrahmanya Sastri's, Vijnananda's and the Rao/Raman
+// translations; Mantreswara's Phaladeepika in Sastri's translation and on
+// wisdomlib; B. V. Raman's Three Hundred Important Combinations on archive.org;
+// and PyJHora's yoga code. The English on enjoylearningsanskrit.com is
+// machine-made and sometimes wrong, so the Sanskrit lines and Santhanam are
+// what a position is credited to. Sarvartha Chintamani and the Saravali could
+// not be read; they are not credited with anything.
+// =============================================================================
+
+const _T _nobodyStates = _T(
+  'No text read states this reading; it is the plainer reading of the words',
+  'पढ़े गए किसी ग्रंथ में यह पाठ नहीं मिला; यह शब्दों का सीधा पाठ है',
+);
+
+const _T _followsBphs = _T(
+  'The app follows Parashara’s own verse where the verse is clear, so that '
+      'reading is the one computed here; the others are shown beside it.',
+  'ऐप जहाँ पराशर का अपना श्लोक साफ़ है वहाँ उसी का अनुसरण करता है, इसलिए यहाँ वही '
+      'पाठ गिना गया है; बाकी उसके बगल में दिखाए हैं।',
+);
+
+YogaMatbhed _matbhedOf({
+  required String key,
+  required YogaFamily family,
+  required _T name,
+  required _T topic,
+  required _T defaultReason,
+  required List<Mat> views,
+  _T? why,
+}) => YogaMatbhed(
+  key: key,
+  name: _bi(name),
+  family: family,
+  matbhed: Matbhed(
+    key: 'yoga_$key',
+    topic: _bi(topic),
+    views: views,
+    defaultReason: _bi(defaultReason),
+    whyTheyDiffer: why == null ? null : _bi(why),
+  ),
+);
+
+List<YogaMatbhed> _allYogaMatbhed(_Ctx c) {
+  final List<YogaMatbhed> out = <YogaMatbhed>[];
+  void add(YogaMatbhed m) {
+    if (m.formsInAnyView) out.add(m);
+  }
+
+  add(_ardhaChandraMatbhed(c));
+  add(_punarphooMatbhed(c));
+  add(_adhiMatbhed(c));
+  add(_lakshmiMatbhed(c));
+  add(_kahalaMatbhed(c));
+  add(_parvataMatbhed(c));
+  add(_dhanaMatbhed(c));
+  add(_daridraMatbhed(c));
+  for (final YogaMatbhed m in _nabhasaMoonMatbhed(c)) {
+    add(m);
+  }
+  return out;
+}
+
+// --- Ardha Chandra ----------------------------------------------------------
+
+YogaMatbhed _ardhaChandraMatbhed(_Ctx c) {
+  const List<int> starts = <int>[2, 3, 5, 6, 8, 9, 11, 12];
+  final _NbState state = _NbState(c);
+  int? loose;
+  int? strict;
+  for (final int s in starts) {
+    final List<int> window = _run(s, 7);
+    if (_seven.every((Graha x) => window.contains(c.house(x)))) {
+      loose ??= s;
+      if (window.every((int h) => state.byHouse.containsKey(h))) strict ??= s;
+    }
+  }
+  _T found(int s) {
+    final List<int> w = _run(s, 7);
+    return _T(
+      'Forms: the seven grahas stand in the seven houses from the ${_enOrd(s)} '
+          'to the ${_enOrd(w.last)}. ${_spread(state).en}.',
+      'बनता है: सातों ग्रह ${_hiOrdinal[s]} से ${_hiOrdinal[w.last]} तक के सात भावों '
+          'में हैं। ${_spread(state).hi}।',
+    );
+  }
+
+  const _T notAll = _T(
+    'Does not form: the seven grahas do not all fall within seven houses '
+        'counted from a succedent or cadent house (2, 3, 5, 6, 8, 9, 11, 12).',
+    'नहीं बनता: सातों ग्रह किसी ऐसे भाव से गिने सात भावों के भीतर नहीं हैं जो केंद्र '
+        'नहीं है (2, 3, 5, 6, 8, 9, 11, 12)।',
+  );
+  return _matbhedOf(
+    key: 'ardha_chandra',
+    family: YogaFamily.nabhasa,
+    name: const _T('Ardha Chandra yoga', 'अर्धचंद्र योग'),
+    topic: const _T('Ardha Chandra', 'अर्धचंद्र'),
+    why: const _T(
+      'BPHS 35.5 only lists the name and 35.40 gives its effect; no verse of '
+          'the BPHS texts read defines it. Varahamihira does, and the two '
+          'readings differ on whether every house of the seven must be '
+          'occupied. Where it holds, BPHS 35.17 sets the Sankhya yoga '
+          'Vallaki aside.',
+      'बृहत्पाराशर 35.5 केवल नाम गिनाता है और 35.40 उसका फल बताता है; पढ़े गए '
+          'पाठों में कोई श्लोक इसे परिभाषित नहीं करता। वराहमिहिर करते हैं, और दोनों '
+          'पाठ इस पर अलग हैं कि सातों भाव भरे हुए हों या नहीं। जहाँ यह बनता है वहाँ '
+          'बृहत्पाराशर 35.17 सांख्य योग वल्लकी को किनारे कर देता है।',
+    ),
+    defaultReason: const _T(
+      'Every other Nabhasa yoga in this app that names a span of houses is read '
+          'strictly, with each house of the span occupied, so a wrong yoga is '
+          'never called; the same is done here.',
+      'इस ऐप का हर दूसरा नाभस योग जो भावों का विस्तार बताता है, कठोरता से पढ़ा '
+          'जाता है, विस्तार का हर भाव भरा हुआ, ताकि गलत योग कभी न कहा जाए; यहाँ भी '
+          'वही किया गया है।',
+    ),
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The seven grahas (Sun to Saturn) fill seven consecutive houses, '
+              'counted from a house that is not a kendra, each house holding at '
+              'least one.',
+          'सातों ग्रह (सूर्य से शनि) सात क्रमागत भावों को भरते हैं, जिन्हें केंद्र न '
+              'होने वाले भाव से गिना गया है, हर भाव में कम से कम एक।',
+        ),
+        holder: const _T(
+          'Varahamihira’s Brihat Jataka (chapter on the Nabhasa yogas, in the '
+              'Sastri, Vijnananda and Rao/Raman translations), Jataka Parijata '
+              '7.171 and Raman #83; PyJHora’s code requires every house '
+              'occupied, and so does the Rao/Raman note on the Brihat Jataka',
+          'वराहमिहिर की बृहज्जातक (नाभस योगों का अध्याय, शास्त्री, विज्ञानानंद और राव/रमन '
+              'के अनुवादों में), जातक पारिजात 7.171 और रमन #83; PyJHora का कोड हर '
+              'भाव का भरा होना माँगता है, और बृहज्जातक पर राव/रमन की टिप्पणी भी',
+        ),
+        reasoning: const _T(
+          'The Nauka-type arrangements run through seven houses from a kendra; '
+              'Ardha Chandra is the same arrangement begun from any other house. '
+              'The commentary says these yogas want the grahas in all the houses '
+              'one after another.',
+          'नौका जैसी रचनाएँ केंद्र से सात भावों तक चलती हैं; अर्धचंद्र वही रचना है जो '
+              'किसी दूसरे भाव से शुरू हो। टिप्पणी कहती है कि इन योगों में ग्रह सभी भावों '
+              'में एक के बाद एक चाहिए।',
+        ),
+        holds: strict != null,
+        found: found(strict ?? 2),
+        notFound: loose != null
+            ? const _T(
+                'Does not form on this reading: the seven grahas fall within '
+                    'seven houses from a non-kendra, but not every house holds '
+                    'one.',
+                'इस पाठ में नहीं बनता: सातों ग्रह केंद्र-भिन्न भाव से गिने सात भावों के '
+                    'भीतर हैं, पर हर भाव में एक नहीं है।',
+              )
+            : notAll,
+      ),
+      _yogaView(
+        rule: const _T(
+          'The seven grahas all fall somewhere within seven consecutive houses '
+              'counted from a house that is not a kendra; some of the houses '
+              'may be empty.',
+          'सातों ग्रह किसी ऐसे भाव से गिने सात क्रमागत भावों के भीतर कहीं भी हों '
+              'जो केंद्र नहीं है; कुछ भाव खाली हो सकते हैं।',
+        ),
+        holder: _nobodyStates,
+        reasoning: const _T(
+          'The verse says the grahas are “in” the seven houses, which can be '
+              'read as lying somewhere inside them. The strict reading was '
+              'preferred elsewhere in this app because it never over-calls.',
+          'श्लोक कहता है कि ग्रह सात भावों में हैं, जिसे उनके भीतर कहीं भी होना पढ़ा जा '
+              'सकता है। इस ऐप में बाकी जगह कठोर पाठ इसलिए चुना गया कि वह कभी ज़रूरत '
+              'से ज़्यादा नहीं कहता।',
+        ),
+        holds: loose != null,
+        found: found(loose ?? 2),
+        notFound: notAll,
+      ),
+    ],
+  );
+}
+
+// --- Punarphoo --------------------------------------------------------------
+
+YogaMatbhed _punarphooMatbhed(_Ctx c) {
+  final bool together = c.together(Graha.moon, Graha.saturn);
+  final bool opposite = c.houseFromGraha(Graha.moon, Graha.saturn) == 7;
+  return _matbhedOf(
+    key: 'vish_yoga',
+    family: YogaFamily.dosha,
+    name: const _T('Vish yoga (Punarphoo)', 'विष योग (पुनर्फू)'),
+    topic: const _T(
+      'Punarphoo: the Moon with Saturn',
+      'पुनर्फू: चंद्र के साथ शनि',
+    ),
+    why: const _T(
+      'The classical root is the Moon joined with Saturn (Brihat Jataka 14.2 '
+          'and Phaladeepika chapter 18, in Sastri’s and Neely’s translations). '
+          'The “Vish yoga” and “Punarphoo dosha” of today’s practice are not '
+          'defined in any classical verse found; teachers differ on whether the '
+          'opposition counts.',
+      'शास्त्रीय जड़ चंद्र का शनि से युत होना है (बृहज्जातक 14.2 और फलदीपिका '
+          'अध्याय 18, शास्त्री और नीली के अनुवादों में)। आज की परिपाटी का “विष योग” '
+          'और “पुनर्फू दोष” किसी शास्त्रीय श्लोक में परिभाषित नहीं मिला; आचार्य इस पर '
+          'अलग हैं कि सामने की दृष्टि गिनी जाए या नहीं।',
+    ),
+    defaultReason: const _T(
+      'The conjunction is the part every source agrees on, so only that is '
+          'called a yoga; the opposition is shown as the milder form some '
+          'teachers add.',
+      'युति पर सब स्रोत एकमत हैं, इसलिए केवल उसे योग कहा गया है; सामने की दृष्टि को वह '
+          'हल्का रूप माना गया है जो कुछ आचार्य जोड़ते हैं।',
+    ),
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The Moon and Saturn stand in the same sign.',
+          'चंद्र और शनि एक ही राशि में हैं।',
+        ),
+        holder: const _T(
+          'Brihat Jataka 14.2 and Phaladeepika chapter 18, which speak of the '
+              'Moon in conjunction with Saturn; the lesson pages of '
+              'onlinejyotish.com treat Visha yoga and Punarphoo as the same',
+          'बृहज्जातक 14.2 और फलदीपिका अध्याय 18, जो चंद्र की शनि से युति की बात '
+              'करते हैं; onlinejyotish.com के पाठ विष योग और पुनर्फू को एक ही मानते हैं',
+        ),
+        reasoning: const _T(
+          'The old verses name only the joining of the two; no orb is given.',
+          'पुराने श्लोक केवल दोनों की युति का नाम लेते हैं; अंशों की कोई हद नहीं दी गई।',
+        ),
+        holds: together,
+        found: _T(
+          'Forms: the Moon and Saturn stand together in ${_sEn(c.moonSign)}, '
+              '${_enOrd(c.house(Graha.moon))} house.',
+          'बनता है: चंद्र और शनि ${_sHi(c.moonSign)} राशि में, '
+              '${_hiOrdinal[c.house(Graha.moon)]} भाव में साथ हैं।',
+        ),
+        notFound: const _T(
+          'Does not form: the Moon and Saturn are not in one sign.',
+          'नहीं बनता: चंद्र और शनि एक राशि में नहीं हैं।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'The Moon and Saturn stand in the same sign, or in opposite signs '
+              '(each in the 7th from the other), the opposition being the '
+              'milder form.',
+          'चंद्र और शनि एक ही राशि में हों, या सामने की राशियों में (एक-दूसरे से '
+              'सातवें), सामने की दृष्टि को हल्का रूप माना गया है।',
+        ),
+        holder: const _T(
+          'Practitioners’ pages: jagannathhora.com and shreekundli.com call the '
+              'mutual 7th aspect a milder form, and astromedha.in counts '
+              'Saturn’s aspect on the Moon; none is a classical verse',
+          'अभ्यासियों के पन्ने: jagannathhora.com और shreekundli.com परस्पर सातवीं '
+              'दृष्टि को हल्का रूप कहते हैं, और astromedha.in शनि की चंद्र पर दृष्टि '
+              'गिनता है; इनमें कोई शास्त्रीय श्लोक नहीं',
+        ),
+        reasoning: const _T(
+          'Saturn’s weight reaches the Moon by aspect as well as by joining, '
+              'though less strongly. The pages that say so give no verse for '
+              'it.',
+          'शनि का भार चंद्र तक युति के साथ दृष्टि से भी पहुँचता है, पर कम तीव्रता से। '
+              'ऐसा कहने वाले पन्ने इसके लिए कोई श्लोक नहीं देते।',
+        ),
+        holds: together || opposite,
+        found: _T(
+          together
+              ? 'Forms: the Moon and Saturn stand together in ${_sEn(c.moonSign)}.'
+              : 'Forms, in the milder form: the Moon in ${_sEn(c.moonSign)} and '
+                    'Saturn in ${_sEn(c.sign(Graha.saturn))} face each other.',
+          together
+              ? 'बनता है: चंद्र और शनि ${_sHi(c.moonSign)} में साथ हैं।'
+              : 'हल्के रूप में बनता है: ${_sHi(c.moonSign)} का चंद्र और '
+                    '${_sHi(c.sign(Graha.saturn))} का शनि आमने-सामने हैं।',
+        ),
+        notFound: const _T(
+          'Does not form: the Moon and Saturn are neither together nor '
+              'opposite.',
+          'नहीं बनता: चंद्र और शनि न साथ हैं न आमने-सामने।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Adhi -------------------------------------------------------------------
+
+YogaMatbhed _adhiMatbhed(_Ctx c) {
+  final List<Graha> set = <Graha>[
+    Graha.jupiter,
+    Graha.venus,
+    if (!c.mercuryAfflicted()) Graha.mercury,
+  ];
+  final List<Graha> inPlace = set
+      .where(
+        (Graha x) => <int>[6, 7, 8].contains(c.houseFromGraha(Graha.moon, x)),
+      )
+      .toList(growable: false);
+  final int n = inPlace.length;
+  final bool full = n == set.length;
+  final String names = _listEn(inPlace.map(_gEn).toList());
+  final String namesHi = _listHi(inPlace.map(_gHi).toList());
+  final (String, String) grade = switch ((n, set.length)) {
+    (3, 3) => ('the highest of the three ranks', 'तीनों में सबसे ऊँचा स्तर'),
+    (2, _) => ('the middle rank', 'बीच का स्तर'),
+    (1, _) => ('the lowest rank', 'सबसे नीचे का स्तर'),
+    _ => ('the highest rank', 'सबसे ऊँचा स्तर'),
+  };
+  return _matbhedOf(
+    key: 'adhi',
+    family: YogaFamily.rajaDhana,
+    name: const _T('Adhi yoga', 'अधि योग'),
+    topic: const _T('Adhi: whole or in part', 'अधि: पूरा या अंश में'),
+    why: const _T(
+      'BPHS 37.5 says benefics in the 6th, 7th and 8th from the Moon give Adhi, '
+          'and that a leader, a minister or a commander results by order of '
+          'strength; it does not grade by how many benefics are there. The '
+          'grading by number comes from the later books.',
+      'बृहत्पाराशर 37.5 कहता है कि चंद्र से 6, 7, 8वें में शुभ ग्रह अधि योग देते हैं, '
+          'और नेता, मंत्री या सेनापति बल के क्रम से मिलता है; वह शुभ ग्रहों की गिनती '
+          'से दर्जे नहीं बाँटता। गिनती से दर्जे बाद की पुस्तकों से आती है।',
+    ),
+    defaultReason: _followsBphs,
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'Jupiter, Venus and an unafflicted Mercury all stand in the 6th, 7th '
+              'or 8th from the Moon.',
+          'गुरु, शुक्र और अपीड़ित बुध सभी चंद्र से छठे, सातवें या आठवें में हैं।',
+        ),
+        holder: const _T(
+          'Parashara, BPHS 37.5 (Sanskrit and Santhanam); PyJHora’s code works '
+              'the full form only',
+          'पराशर, बृहत्पाराशर 37.5 (संस्कृत और संथानम); PyJHora का कोड केवल पूरा रूप '
+              'गिनता है',
+        ),
+        reasoning: const _T(
+          'The verse speaks of the benefics together in those houses and ranks '
+              'the outcome by strength, so the whole group is asked for.',
+          'श्लोक उन भावों में शुभ ग्रहों के एक साथ होने की बात करता है और फल को बल '
+              'से आँकता है, इसलिए पूरा समूह माँगा गया है।',
+        ),
+        holds: full,
+        found: _T(
+          'Forms: $names stand in the 6th, 7th or 8th from the Moon.',
+          'बनता है: $namesHi चंद्र से छठे, सातवें या आठवें में हैं।',
+        ),
+        notFound: _T(
+          '${n == 0 ? 'None of the benefics stands' : 'Only $names '
+                        '${inPlace.length == 1 ? 'stands' : 'stand'}'} in the 6th, '
+              '7th or 8th from the Moon, so the whole group is not there.',
+          '${n == 0 ? 'कोई शुभ ग्रह' : 'केवल $namesHi'} चंद्र से छठे, सातवें या आठवें '
+              'में ${n == 0 ? 'नहीं है' : 'है'}, इसलिए पूरा समूह नहीं है।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'Any one, two or three of the benefics (Mercury, Jupiter, Venus) in the '
+              '6th, 7th or 8th from the Moon; the more there are, the higher the '
+              'rank.',
+          'बुध, गुरु, शुक्र में से एक, दो या तीन चंद्र से छठे, सातवें या आठवें में हों; '
+              'जितने अधिक, उतना ऊँचा स्तर।',
+        ),
+        holder: const _T(
+          'B. V. Raman, Three Hundred Important Combinations #7; Mantreswara’s '
+              'Phaladeepika 6.42 (which counts from the lagna as well as the '
+              'Moon); Bhattotpala’s note on Brihat Jataka 13.2, citing '
+              'Srutakirti for seven kinds of Adhi',
+          'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #7; मंत्रेश्वर की फलदीपिका '
+              '6.42 (जो चंद्र के साथ लग्न से भी गिनती है); बृहज्जातक 13.2 पर भट्टोत्पल की '
+              'टिप्पणी, जो अधि के सात भेदों के लिए श्रुतकीर्ति का हवाला देती है',
+        ),
+        reasoning: const _T(
+          'One benefic in place gives a leader, two a minister, three a higher '
+              'station; fewer grahas give a lesser Adhi. This app reads it from '
+              'the Moon only.',
+          'एक शुभ ग्रह नेता देता है, दो मंत्री, तीन उससे ऊँचा पद; कम ग्रह छोटा अधि '
+              'देते हैं। यह ऐप इसे केवल चंद्र से पढ़ता है।',
+        ),
+        holds: n >= 1,
+        found: _T(
+          'Forms in part: $names ${inPlace.length == 1 ? 'stands' : 'stand'} in '
+              'the 6th, 7th or 8th from the Moon (${grade.$1}).',
+          'अंश में बनता है: $namesHi चंद्र से छठे, सातवें या आठवें में '
+              '${inPlace.length == 1 ? 'है' : 'हैं'} (${grade.$2})।',
+        ),
+        notFound: const _T(
+          'Does not form: none of the benefics stands in the 6th, 7th or 8th '
+              'from the Moon.',
+          'नहीं बनता: कोई शुभ ग्रह चंद्र से छठे, सातवें या आठवें में नहीं है।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Lakshmi ----------------------------------------------------------------
+
+YogaMatbhed _lakshmiMatbhed(_Ctx c) {
+  final Graha lagnaLord = c.lordOfHouse(1);
+  final Graha ninth = c.lordOfHouse(9);
+  final bool dignified = c.inOwnOrExalted(ninth);
+  final bool kendra = _kendras.contains(c.house(ninth));
+  final bool kendraOrTrikona = kendra || <int>[5, 9].contains(c.house(ninth));
+  final bool strongLagnaLord = c.strong(lagnaLord);
+  final bool a = ninth != lagnaLord && dignified && kendra && strongLagnaLord;
+  final bool b =
+      ninth != lagnaLord && dignified && kendraOrTrikona && strongLagnaLord;
+  final bool venusPlaced =
+      c.inOwnOrExalted(Graha.venus) &&
+      (_kendras.contains(c.house(Graha.venus)) ||
+          <int>[5, 9].contains(c.house(Graha.venus)));
+  final bool cc = dignified && kendraOrTrikona && venusPlaced;
+  _T where() => _T(
+    'the lord of the 9th, ${_gEn(ninth)}, in ${_sEn(c.sign(ninth))}, house '
+        '${c.house(ninth)}',
+    'नवम भाव के स्वामी ${_gHi(ninth)} ${_sHi(c.sign(ninth))} में, '
+        '${_hiOrdinal[c.house(ninth)]} भाव में',
+  );
+  _T yes(String how) =>
+      _T('Forms: ${where().en}$how.', 'बनता है: ${where().hi}$how।');
+  return _matbhedOf(
+    key: 'lakshmi',
+    family: YogaFamily.rajaDhana,
+    name: const _T('Lakshmi yoga', 'लक्ष्मी योग'),
+    topic: const _T(
+      'Lakshmi: kendra, or kendra and trikona',
+      'लक्ष्मी: केंद्र, या केंद्र और त्रिकोण',
+    ),
+    why: const _T(
+      'The verse (BPHS 36.27) puts the 9th lord in a kendra, in its own or '
+          'exaltation sign, with a strong lagna lord. Later books widen the '
+          'house to kendra or trikona, and Phaladeepika asks for Venus as well '
+          'instead of the lagna lord.',
+      'श्लोक (बृहत्पाराशर 36.27) नवमेश को केंद्र में, अपनी या उच्च राशि में, बली लग्नेश '
+          'के साथ रखता है। बाद की पुस्तकें भाव को केंद्र या त्रिकोण तक बढ़ाती हैं, और '
+          'फलदीपिका लग्नेश की जगह शुक्र भी माँगती है।',
+    ),
+    defaultReason: _followsBphs,
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The 9th lord is in a kendra, in its own, moolatrikona or exaltation '
+              'sign, and the lagna lord is strong.',
+          'नवमेश केंद्र में है, अपनी, मूलत्रिकोण या उच्च राशि में, और लग्नेश बली है।',
+        ),
+        holder: const _T(
+          'BPHS 36.27 (the Sanskrit on enjoylearningsanskrit.com and '
+              'Santhanam’s English); PyJHora’s first method',
+          'बृहत्पाराशर 36.27 (enjoylearningsanskrit.com की संस्कृत और संथानम का '
+              'अंग्रेज़ी); PyJHora की पहली विधि',
+        ),
+        reasoning: const _T(
+          'The verse names a kendra only. Its “moolatrikona” is a sign '
+              'dignity, not the trikona houses; the English on the website '
+              'that reads it as “kendra or trikona” looks like that mistake.',
+          'श्लोक केवल केंद्र का नाम लेता है। उसका “मूलत्रिकोण” राशि का बल है, त्रिकोण '
+              'भाव नहीं; जिस वेबसाइट का अंग्रेज़ी इसे “केंद्र या त्रिकोण” पढ़ता है वह इसी '
+              'भूल जैसा दिखता है।',
+        ),
+        holds: a,
+        found: yes(', with the lagna lord strong'),
+        notFound: const _T(
+          'Does not form: the 9th lord is not in a kendra in its own, '
+              'moolatrikona or exaltation sign with a strong lagna lord.',
+          'नहीं बनता: नवमेश केंद्र में अपनी, मूलत्रिकोण या उच्च राशि में बली लग्नेश के '
+              'साथ नहीं है।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'The 9th lord is in its own or exaltation sign in a kendra or a '
+              'trikona (1, 4, 5, 7, 9, 10), and the lagna lord is strong.',
+          'नवमेश अपनी या उच्च राशि में केंद्र या त्रिकोण (1, 4, 5, 7, 9, 10) में है, '
+              'और लग्नेश बली है।',
+        ),
+        holder: const _T(
+          'B. V. Raman, Three Hundred Important Combinations #27; PyJHora’s '
+              'second method',
+          'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #27; PyJHora की दूसरी विधि',
+        ),
+        reasoning: const _T(
+          'Raman reads the lord of fortune as well seated in any kendra or '
+              'trikona. “Powerful” for the lagna lord is read here as strong in '
+              'sign, which is our reading.',
+          'रमन भाग्येश को किसी भी केंद्र या त्रिकोण में सुस्थित पढ़ते हैं। लग्नेश के '
+              'लिए “बली” का अर्थ यहाँ राशि में बली लिया गया है, जो हमारा पाठ है।',
+        ),
+        holds: b,
+        found: yes(', with the lagna lord strong'),
+        notFound: const _T(
+          'Does not form: the 9th lord is not in its own or exaltation sign in '
+              'a kendra or trikona with a strong lagna lord.',
+          'नहीं बनता: नवमेश अपनी या उच्च राशि में केंद्र या त्रिकोण में बली लग्नेश के '
+              'साथ नहीं है।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'The 9th lord and Venus are both in their own or exaltation signs, '
+              'each in a kendra or a trikona; the lagna lord is not asked for.',
+          'नवमेश और शुक्र दोनों अपनी या उच्च राशि में हैं, हर एक केंद्र या त्रिकोण में; '
+              'लग्नेश नहीं माँगा गया।',
+        ),
+        holder: const _T(
+          'Mantreswara’s Phaladeepika 6.21 (Sanskrit and Sastri’s translation); '
+              'Raman lists it as the third and strongest form',
+          'मंत्रेश्वर की फलदीपिका 6.21 (संस्कृत और शास्त्री का अनुवाद); रमन इसे तीसरा '
+              'और सबसे प्रबल रूप गिनाते हैं',
+        ),
+        reasoning: const _T(
+          'Lakshmi is the goddess of fortune and of beauty, so the lord of '
+              'fortune and Venus, her planet, are both asked to be well placed.',
+          'लक्ष्मी भाग्य और सौंदर्य की देवी हैं, इसलिए भाग्य के स्वामी और उनके ग्रह '
+              'शुक्र, दोनों से सुस्थित होना माँगा गया है।',
+        ),
+        holds: cc,
+        found: yes(
+          ', and Venus in ${_sEn(c.sign(Graha.venus))}, house ${c.house(Graha.venus)}',
+        ),
+        notFound: const _T(
+          'Does not form: the 9th lord and Venus are not both in their own or '
+              'exaltation signs in a kendra or trikona.',
+          'नहीं बनता: नवमेश और शुक्र दोनों अपनी या उच्च राशि में केंद्र या त्रिकोण में '
+              'नहीं हैं।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Kahala -----------------------------------------------------------------
+
+YogaMatbhed _kahalaMatbhed(_Ctx c) {
+  final Graha lagnaLord = c.lordOfHouse(1);
+  final Graha fourth = c.lordOfHouse(4);
+  final Graha ninth = c.lordOfHouse(9);
+  final Graha tenth = c.lordOfHouse(10);
+  final bool bphs =
+      (fourth != Graha.jupiter &&
+          <int>[4, 7, 10].contains(c.houseFromGraha(fourth, Graha.jupiter)) &&
+          c.strong(lagnaLord)) ||
+      (c.inOwnOrExalted(fourth) && c.together(fourth, tenth));
+  final bool ninthKendra =
+      fourth != ninth &&
+      <int>[4, 7, 10].contains(c.houseFromGraha(fourth, ninth)) &&
+      c.strong(lagnaLord);
+  final bool raman =
+      ninthKendra ||
+      (c.inOwnOrExalted(fourth) &&
+          (c.together(fourth, tenth) || c.aspects(tenth, fourth)));
+  final Graha d1 = c.lordOfSign(c.sign(lagnaLord));
+  final Graha d2 = c.lordOfSign(c.sign(d1));
+  bool kendraOrKona(Graha x) => <int>[1, 4, 5, 7, 9, 10].contains(c.house(x));
+  final bool d2Placed = c.inOwnOrExalted(d2) && kendraOrKona(d2);
+  final bool d1Placed = c.inOwnOrExalted(d1) && kendraOrKona(d1);
+  final bool chain = d2Placed && !d1Placed;
+  return _matbhedOf(
+    key: 'kahala',
+    family: YogaFamily.general,
+    name: const _T('Kahala yoga', 'काहल योग'),
+    topic: const _T('Kahala: the lords involved', 'काहल: कौन-से स्वामी'),
+    why: const _T(
+      'BPHS 36.9 joins the 4th lord with Jupiter, or the 4th lord with the 10th. '
+          'Other books put the 9th lord where Jupiter stands, and Phaladeepika '
+          'follows the dispositors of the lagna lord instead.',
+      'बृहत्पाराशर 36.9 चतुर्थेश को गुरु से जोड़ता है, या चतुर्थेश को दशमेश से। '
+          'दूसरी पुस्तकें गुरु की जगह नवमेश रखती हैं, और फलदीपिका लग्नेश के '
+          'आश्रय-स्वामियों से चलती है।',
+    ),
+    defaultReason: _followsBphs,
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The 4th lord and Jupiter stand in kendras from each other with a '
+              'strong lagna lord, or the 4th lord is in its own or exaltation '
+              'sign together with the 10th lord.',
+          'चतुर्थेश और गुरु एक-दूसरे से केंद्र में हैं और लग्नेश बली है, या चतुर्थेश '
+              'अपनी या उच्च राशि में दशमेश के साथ है।',
+        ),
+        holder: const _T(
+          'BPHS 36.9 (Sanskrit and Santhanam, who notes the Venkateswara, '
+              'Chaukhamba and Thakur Prasad editions agree)',
+          'बृहत्पाराशर 36.9 (संस्कृत और संथानम, जो बताते हैं कि वेंकटेश्वर, चौखंबा और '
+              'ठाकुर प्रसाद संस्करण एक हैं)',
+        ),
+        reasoning: const _T(
+          'The lord of home and the guru-planet, or the lords of home and of '
+              'work, joined in strength, make a bold and leading temperament.',
+          'घर का स्वामी और गुरु-ग्रह, या घर और कर्म के स्वामी, बल के साथ जुड़कर साहसी '
+              'और अग्रणी स्वभाव बनाते हैं।',
+        ),
+        holds: bphs,
+        found: _T(
+          'Forms by the verse: the 4th lord ${_gEn(fourth)} is in '
+              '${_sEn(c.sign(fourth))}, house ${c.house(fourth)}.',
+          'श्लोक से बनता है: चतुर्थेश ${_gHi(fourth)} ${_sHi(c.sign(fourth))} में, '
+              '${_hiOrdinal[c.house(fourth)]} भाव में है।',
+        ),
+        notFound: const _T(
+          'Does not form by the verse.',
+          'श्लोक के अनुसार नहीं बनता।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'The 4th lord and the 9th lord stand in kendras from each other with '
+              'a strong lagna lord, or the 4th lord is in its own or exaltation '
+              'sign joined or aspected by the 10th lord.',
+          'चतुर्थेश और नवमेश एक-दूसरे से केंद्र में हैं और लग्नेश बली है, या चतुर्थेश '
+              'अपनी या उच्च राशि में दशमेश से युत या दृष्ट है।',
+        ),
+        holder: const _T(
+          'B. V. Raman, Three Hundred Important Combinations #15; Jataka '
+              'Parijata 7.130; a Tamil edition of the BPHS (C. G. Rajan), as '
+              'Santhanam’s note reports it',
+          'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #15; जातक पारिजात 7.130; '
+              'बृहत्पाराशर का एक तमिल संस्करण (सी. जी. राजन), जैसा संथानम की टिप्पणी '
+              'बताती है',
+        ),
+        reasoning: const _T(
+          'The lord of home joined with the lord of fortune makes the yoga; '
+              'this form is the one widely repeated in later manuals.',
+          'घर का स्वामी भाग्य के स्वामी से जुड़कर योग बनाता है; यही रूप बाद की '
+              'पुस्तकों में बहुत दोहराया जाता है।',
+        ),
+        holds: raman,
+        found: _T(
+          'Forms: the 4th lord ${_gEn(fourth)} (house ${c.house(fourth)}) and the '
+              '9th lord ${_gEn(ninth)} (house ${c.house(ninth)}) meet the '
+              'condition.',
+          'बनता है: चतुर्थेश ${_gHi(fourth)} (${_hiOrdinal[c.house(fourth)]} भाव) और '
+              'नवमेश ${_gHi(ninth)} (${_hiOrdinal[c.house(ninth)]} भाव) शर्त पूरी करते हैं।',
+        ),
+        notFound: const _T(
+          'Does not form on this reading.',
+          'इस पाठ में नहीं बनता।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'Take the lord of the sign the lagna lord stands in, and then the '
+              'lord of the sign that one stands in; if that second lord is in '
+              'its own or exaltation sign in a kendra or trikona (and the first '
+              'is not, which would be Parvata), it is Kahala.',
+          'लग्नेश जिस राशि में है उसका स्वामी लें, फिर वह जिस राशि में है उसका स्वामी; '
+              'यदि वह दूसरा स्वामी अपनी या उच्च राशि में केंद्र या त्रिकोण में है (और '
+              'पहला नहीं, नहीं तो वह पर्वत होता), तो काहल है।',
+        ),
+        holder: const _T(
+          'Mantreswara’s Phaladeepika 6.35 (Sanskrit and Sastri’s '
+              'translation); Santhanam’s note describes it the same way',
+          'मंत्रेश्वर की फलदीपिका 6.35 (संस्कृत और शास्त्री का अनुवाद); संथानम की '
+              'टिप्पणी भी इसे ऐसे ही बताती है',
+        ),
+        reasoning: const _T(
+          'It follows who the lagna lord leans on, and who that one leans on, '
+              'rather than the lords of particular houses.',
+          'यह देखता है कि लग्नेश किस पर टिका है, और वह किस पर, न कि किन्हीं विशेष '
+              'भावों के स्वामियों को।',
+        ),
+        holds: chain,
+        found: _T(
+          'Forms: the lagna lord ${_gEn(lagnaLord)} leans on ${_gEn(d1)}, which '
+              'leans on ${_gEn(d2)}, in its own or exaltation sign, house '
+              '${c.house(d2)}.',
+          'बनता है: लग्नेश ${_gHi(lagnaLord)} ${_gHi(d1)} पर टिका है, जो ${_gHi(d2)} '
+              'पर, जो अपनी या उच्च राशि में, ${_hiOrdinal[c.house(d2)]} भाव में है।',
+        ),
+        notFound: const _T(
+          'Does not form on this reading.',
+          'इस पाठ में नहीं बनता।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Parvata ----------------------------------------------------------------
+
+YogaMatbhed _parvataMatbhed(_Ctx c) {
+  List<Graha> there(int h) =>
+      Graha.values.where((Graha x) => c.house(x) == h).toList(growable: false);
+  bool benefic(int h) => there(h).any(c.benefic);
+  bool clean(int h) => !there(h).any(c.malefic);
+  final bool kendrasBenefic = _kendras.every(benefic);
+  final bool strict =
+      _kendras.every((int h) => benefic(h) && clean(h)) && clean(8);
+  final bool bphs = kendrasBenefic && clean(7) && clean(8);
+  final bool raman = kendrasBenefic && clean(6) && clean(8);
+  return _matbhedOf(
+    key: 'parvata',
+    family: YogaFamily.general,
+    name: const _T('Parvata yoga', 'पर्वत योग'),
+    topic: const _T(
+      'Parvata: which houses must be clean',
+      'पर्वत: कौन-से भाव शुद्ध हों',
+    ),
+    why: const _T(
+      'The verse (BPHS 36.7) asks for benefics in the kendras and for the 7th '
+          'and 8th to be clean or benefic-held. The app asked more, and later '
+          'books name the 6th and 8th instead; PyJHora also lets kendras stand '
+          'empty.',
+      'श्लोक (बृहत्पाराशर 36.7) केंद्रों में शुभ ग्रह और सातवें-आठवें के शुद्ध या '
+          'शुभ-युक्त होने को कहता है। ऐप ने इससे अधिक माँगा, और बाद की पुस्तकें '
+          'सातवें-आठवें की जगह छठा-आठवाँ गिनती हैं; PyJHora केंद्रों को खाली भी '
+          'रहने देता है।',
+    ),
+    defaultReason: const _T(
+      'The app has always asked for the strictest form, every kendra held by '
+          'benefics alone and the 8th clean, so that a wrong Parvata is never '
+          'called; the verse’s own looser wording is shown beside it.',
+      'ऐप हमेशा सबसे कठोर रूप माँगता आया है, हर केंद्र केवल शुभ ग्रहों के हाथ में और '
+          'आठवाँ शुद्ध, ताकि गलत पर्वत कभी न कहा जाए; श्लोक के अपने ढीले शब्द उसके बगल '
+          'में दिखाए हैं।',
+    ),
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'Every kendra holds a benefic and no malefic, and the 8th house is '
+              'free of malefics.',
+          'हर केंद्र में शुभ ग्रह है और कोई पाप ग्रह नहीं, तथा आठवाँ भाव पाप ग्रहों से '
+              'मुक्त है।',
+        ),
+        holder: const _T(
+          'The app’s own tightening of BPHS 36.7; no text read asks for all four '
+              'kendras to be free of malefics',
+          'बृहत्पाराशर 36.7 को ऐप का अपना कसा हुआ रूप; पढ़े गए किसी ग्रंथ में चारों '
+              'केंद्रों का पाप-मुक्त होना नहीं माँगा गया',
+        ),
+        reasoning: const _T(
+          'A mountain has four firm pillars, so each of the four is asked to be '
+              'held by benefics alone.',
+          'पर्वत के चार दृढ़ स्तंभ होते हैं, इसलिए चारों से केवल शुभ ग्रहों के हाथ में होना '
+              'माँगा गया।',
+        ),
+        holds: strict,
+        found: _T(
+          'Forms in the strict form: ${_kendras.map((int h) => '${_enOrd(h)}: ${_listEn(there(h).map(_gEn).toList())}').join('; ')}.',
+          'कठोर रूप में बनता है: ${_kendras.map((int h) => '${_hiOrdinal[h]} भाव में ${_listHi(there(h).map(_gHi).toList())}').join('; ')}।',
+        ),
+        notFound: const _T(
+          'Does not form in the strict form.',
+          'कठोर रूप में नहीं बनता।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'Every kendra holds a benefic, and the 7th and 8th houses are free of '
+              'malefics (empty or held by benefics).',
+          'हर केंद्र में शुभ ग्रह है, और सातवाँ तथा आठवाँ भाव पाप ग्रहों से मुक्त हैं '
+              '(खाली या शुभ ग्रहों से युक्त)।',
+        ),
+        holder: const _T(
+          'BPHS 36.7 as Santhanam reads the Sanskrit (the Thakur Prasad edition '
+              'and the first Venkateswara form agree)',
+          'बृहत्पाराशर 36.7, जैसा संथानम संस्कृत को पढ़ते हैं (ठाकुर प्रसाद संस्करण और '
+              'वेंकटेश्वर का पहला रूप एक हैं)',
+        ),
+        reasoning: const _T(
+          'The verse names the 7th and 8th as the clean houses and says nothing '
+              'of the other kendras being free of malefics.',
+          'श्लोक सातवें और आठवें को शुद्ध भाव बताता है और बाकी केंद्रों के पाप-मुक्त होने '
+              'की बात नहीं करता।',
+        ),
+        holds: bphs,
+        found: const _T(
+          'Forms by the verse: every kendra holds a benefic and the 7th and 8th '
+              'are free of malefics.',
+          'श्लोक से बनता है: हर केंद्र में शुभ ग्रह है और सातवाँ-आठवाँ पाप-मुक्त है।',
+        ),
+        notFound: const _T(
+          'Does not form by the verse.',
+          'श्लोक के अनुसार नहीं बनता।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'Every kendra holds a benefic, and the 6th and 8th houses are free of '
+              'malefics.',
+          'हर केंद्र में शुभ ग्रह है, और छठा तथा आठवाँ भाव पाप ग्रहों से मुक्त हैं।',
+        ),
+        holder: const _T(
+          'B. V. Raman, Three Hundred Important Combinations #14; Jataka '
+              'Parijata 7.128; the Chaukhamba and a Tamil edition of the BPHS, '
+              'as Santhanam’s note reports. (PyJHora, which cites Raman, '
+              'uses the 7th and 8th.)',
+          'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #14; जातक पारिजात 7.128; '
+              'बृहत्पाराशर का चौखंबा और एक तमिल संस्करण, जैसा संथानम की टिप्पणी बताती '
+              'है। (PyJHora, जो रमन का नाम लेता है, सातवाँ-आठवाँ लेता है।)',
+        ),
+        reasoning: const _T(
+          'The 6th and 8th are the houses of struggle and of loss, so a '
+              'mountain is steady when those two are clear.',
+          'छठा और आठवाँ संघर्ष और हानि के भाव हैं, इसलिए जब ये दोनों शुद्ध हों तब '
+              'पर्वत स्थिर होता है।',
+        ),
+        holds: raman,
+        found: const _T(
+          'Forms on this reading: every kendra holds a benefic and the 6th and '
+              '8th are free of malefics.',
+          'इस पाठ में बनता है: हर केंद्र में शुभ ग्रह है और छठा-आठवाँ पाप-मुक्त है।',
+        ),
+        notFound: const _T(
+          'Does not form on this reading.',
+          'इस पाठ में नहीं बनता।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Dhana ------------------------------------------------------------------
+
+const Map<Graha, List<Graha>> _fifthGroup = <Graha, List<Graha>>{
+  Graha.venus: <Graha>[Graha.mars],
+  Graha.mercury: <Graha>[Graha.moon, Graha.mars, Graha.jupiter],
+  Graha.sun: <Graha>[Graha.saturn, Graha.moon, Graha.jupiter],
+  Graha.saturn: <Graha>[Graha.sun, Graha.moon],
+  Graha.jupiter: <Graha>[Graha.mercury],
+  Graha.mars: <Graha>[Graha.venus],
+  Graha.moon: <Graha>[Graha.saturn],
+};
+
+const Map<Graha, List<Graha>> _lagnaGroup = <Graha, List<Graha>>{
+  Graha.sun: <Graha>[Graha.mars, Graha.jupiter],
+  Graha.moon: <Graha>[Graha.mercury, Graha.jupiter],
+  Graha.mars: <Graha>[Graha.mercury, Graha.venus, Graha.saturn],
+  Graha.mercury: <Graha>[Graha.saturn, Graha.jupiter],
+  Graha.jupiter: <Graha>[Graha.mercury, Graha.mars],
+  Graha.venus: <Graha>[Graha.saturn, Graha.mercury],
+  Graha.saturn: <Graha>[Graha.mars, Graha.jupiter],
+};
+
+YogaMatbhed _dhanaMatbhed(_Ctx c) {
+  final Graha l2 = c.lordOfHouse(2);
+  final Graha l11 = c.lordOfHouse(11);
+  final bool second =
+      l2 != l11 &&
+      (c.together(l2, l11) ||
+          (c.aspects(l2, l11) && c.aspects(l11, l2)) ||
+          (c.lordOfSign(c.sign(l2)) == l11 && c.lordOfSign(c.sign(l11)) == l2));
+
+  // BPHS chapter 41, verses 2 to 15.
+  final List<_T> combos = <_T>[];
+  final Graha fifthLord = c.lordOfHouse(5);
+  final List<Graha>? fifthWith = _fifthGroup[fifthLord];
+  if (fifthWith != null &&
+      c.house(fifthLord) == 5 &&
+      fifthWith.every((Graha x) => c.house(x) == 11)) {
+    combos.add(
+      _T(
+        'the 5th lord ${_gEn(fifthLord)} in the 5th with '
+            '${_listEn(fifthWith.map(_gEn).toList())} in the 11th',
+        'पंचमेश ${_gHi(fifthLord)} पंचम में और ${_listHi(fifthWith.map(_gHi).toList())} '
+            'ग्यारहवें में',
+      ),
+    );
+  }
+  final Graha lagnaLord = c.lordOfHouse(1);
+  final List<Graha>? lagnaWith = _lagnaGroup[lagnaLord];
+  if (lagnaWith != null &&
+      c.house(lagnaLord) == 1 &&
+      lagnaWith.every(
+        (Graha x) => c.together(x, lagnaLord) || c.aspects(x, lagnaLord),
+      )) {
+    combos.add(
+      _T(
+        'the lagna lord ${_gEn(lagnaLord)} in the lagna, joined or aspected by '
+            '${_listEn(lagnaWith.map(_gEn).toList())}',
+        'लग्नेश ${_gHi(lagnaLord)} लग्न में, ${_listHi(lagnaWith.map(_gHi).toList())} '
+            'से युत या दृष्ट',
+      ),
+    );
+  }
+  final bool chapter41 = combos.isNotEmpty;
+  return _matbhedOf(
+    key: 'dhana_2_11',
+    family: YogaFamily.rajaDhana,
+    name: const _T('Dhana yoga', 'धन योग'),
+    topic: const _T(
+      'Dhana: which combinations count',
+      'धन: कौन-से संयोग गिने जाएँ',
+    ),
+    why: const _T(
+      'The app’s test, the 2nd and 11th lords joined, comes from later manuals; '
+          'BPHS 13.4 gives only its exchange form. Chapter 41 of the BPHS lists '
+          'other combinations, built from the lord of the 5th house and of the '
+          'lagna.',
+      'ऐप की कसौटी, दूसरे और ग्यारहवें के स्वामियों का जुड़ना, बाद की पुस्तकों से है; '
+          'बृहत्पाराशर 13.4 केवल उसका आदान-प्रदान वाला रूप देता है। बृहत्पाराशर का '
+          'अध्याय 41 और संयोग गिनाता है, जो पंचम और लग्न के स्वामी से बने हैं।',
+    ),
+    defaultReason: const _T(
+      'The 2nd-and-11th link is the standard test of later Parashari manuals '
+          'and the one this app has always used; chapter 41 is shown beside it.',
+      'दूसरे-ग्यारहवें का संबंध बाद की पाराशरी पुस्तकों की मानक कसौटी है और ऐप इसी '
+          'से चलता आया है; अध्याय 41 उसके बगल में दिखाया है।',
+    ),
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The lords of the 2nd and the 11th are in one sign, in mutual aspect, '
+              'or in exchange of signs.',
+          'दूसरे और ग्यारहवें के स्वामी एक राशि में हैं, परस्पर दृष्टि में हैं, या राशियाँ '
+              'बदले हुए हैं।',
+        ),
+        holder: const _T(
+          'The later Parashari manuals; BPHS 13.4 and 13.5 give related forms '
+              '(exchange; both lords together in a kendra or trikona)',
+          'बाद की पाराशरी पुस्तकें; बृहत्पाराशर 13.4 और 13.5 मिलते-जुलते रूप देते हैं '
+              '(आदान-प्रदान; दोनों स्वामी केंद्र या त्रिकोण में साथ)',
+        ),
+        reasoning: const _T(
+          'What is kept and what comes in are tied through their lords.',
+          'जो बचता है और जो आता है, वे अपने स्वामियों से जुड़े हैं।',
+        ),
+        holds: second,
+        found: _T(
+          'Forms: the 2nd lord ${_gEn(l2)} and the 11th lord ${_gEn(l11)} are '
+              'linked.',
+          'बनता है: दूसरे का स्वामी ${_gHi(l2)} और ग्यारहवें का स्वामी ${_gHi(l11)} '
+              'जुड़े हैं।',
+        ),
+        notFound: const _T(
+          'Does not form: the 2nd and 11th lords are not linked.',
+          'नहीं बनता: दूसरे और ग्यारहवें के स्वामी जुड़े नहीं हैं।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'Either the lord of the 5th, in the 5th, with the companions the '
+              'chapter names for that graha in the 11th; or the lord of the '
+              'lagna, in the lagna, joined or aspected by the companions it '
+              'names.',
+          'या तो पंचम का स्वामी पंचम में, और उस ग्रह के लिए अध्याय के बताए साथी '
+              'ग्यारहवें में; या लग्न का स्वामी लग्न में, अध्याय के बताए साथियों से '
+              'युत या दृष्ट।',
+        ),
+        holder: const _T(
+          'BPHS 41.2 to 41.15 (Sanskrit and Santhanam); B. V. Raman lists the '
+              'same combinations as #122 to 132',
+          'बृहत्पाराशर 41.2 से 41.15 (संस्कृत और संथानम); बी. वी. रमन वही संयोग '
+              '#122 से 132 में गिनाते हैं',
+        ),
+        reasoning: const _T(
+          'The chapter gives, for each graha, the companions that make it a '
+              'giver of wealth when it holds the 5th house or the lagna.',
+          'अध्याय हर ग्रह के लिए वे साथी बताता है जिनसे वह पंचम या लग्न का स्वामी होकर '
+              'धन देने वाला बनता है।',
+        ),
+        holds: chapter41,
+        found: _T(
+          'Forms: ${combos.map((_T t) => t.en).join('; ')}.',
+          'बनता है: ${combos.map((_T t) => t.hi).join('; ')}।',
+        ),
+        notFound: const _T(
+          'Does not form: neither the 5th-house nor the lagna combination of '
+              'the chapter is met.',
+          'नहीं बनता: अध्याय का न पंचम-भाव वाला संयोग पूरा है न लग्न वाला।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Daridra ----------------------------------------------------------------
+
+YogaMatbhed _daridraMatbhed(_Ctx c) {
+  final Graha l1 = c.lordOfHouse(1);
+  final Graha l2 = c.lordOfHouse(2);
+  final Graha l11 = c.lordOfHouse(11);
+  final bool strict =
+      l2 != l11 &&
+      _dusthanas.contains(c.house(l2)) &&
+      _dusthanas.contains(c.house(l11));
+  final bool eleventh = _dusthanas.contains(c.house(l11));
+
+  // BPHS chapter 42, the forms that can be computed from the chart.
+  final Graha l7 = c.lordOfHouse(7);
+  final List<Graha> maraka = <Graha>[l2, l7];
+  bool touched(Graha x) =>
+      maraka.any((Graha m) => m != x && (c.together(m, x) || c.aspects(m, x)));
+  final List<_T> forms = <_T>[];
+  if (c.house(l1) == 12 && c.house(c.lordOfHouse(12)) == 1 && touched(l1)) {
+    forms.add(
+      const _T(
+        'the lagna lord in the 12th and the 12th lord in the lagna, with or '
+            'aspected by a maraka lord (42.2)',
+        'लग्नेश बारहवें में और द्वादशेश लग्न में, मारक स्वामी से युत या दृष्ट (42.2)',
+      ),
+    );
+  }
+  if (c.house(l1) == 6 && c.house(c.lordOfHouse(6)) == 1 && touched(l1)) {
+    forms.add(
+      const _T(
+        'the lagna lord in the 6th and the 6th lord in the lagna, with or '
+            'aspected by a maraka lord (42.3)',
+        'लग्नेश छठे में और षष्ठेश लग्न में, मारक स्वामी से युत या दृष्ट (42.3)',
+      ),
+    );
+  }
+  final Dignity d2 = c.g[l2]!.dignity;
+  if (_dusthanas.contains(c.house(l1)) &&
+      Graha.values.any(
+        (Graha x) => x != l1 && c.together(x, l1) && c.malefic(x),
+      ) &&
+      (d2 == Dignity.enemy || d2 == Dignity.debilitated)) {
+    forms.add(
+      const _T(
+        'the lagna lord with a malefic in the 6th, 8th or 12th, and the 2nd '
+            'lord in an enemy sign or debilitated (42.5)',
+        'लग्नेश पाप ग्रह के साथ छठे, आठवें या बारहवें में, और धनेश शत्रु राशि या नीच '
+            'में (42.5)',
+      ),
+    );
+  }
+  final Graha l5 = c.lordOfHouse(5);
+  final Graha l9 = c.lordOfHouse(9);
+  if (c.house(l5) == 6 &&
+      c.house(l9) == 12 &&
+      (maraka.any((Graha m) => c.aspects(m, l5) || c.aspects(m, l9)))) {
+    forms.add(
+      const _T(
+        'the 5th lord in the 6th and the 9th lord in the 12th, aspected by a '
+            'maraka lord (42.7)',
+        'पंचमेश छठे में और नवमेश बारहवें में, मारक स्वामी से दृष्ट (42.7)',
+      ),
+    );
+  }
+  return _matbhedOf(
+    key: 'daridra',
+    family: YogaFamily.dosha,
+    name: const _T('Daridra yoga', 'दरिद्र योग'),
+    topic: const _T(
+      'Daridra: which combinations count',
+      'दरिद्र: कौन-से संयोग गिने जाएँ',
+    ),
+    why: const _T(
+      'The app’s test comes from BPHS chapter 13 as Santhanam glosses it. '
+          'Raman’s manual needs only the 11th lord badly placed, and BPHS '
+          'chapter 42 gives a longer list built on the maraka lords.',
+      'ऐप की कसौटी बृहत्पाराशर अध्याय 13 से है, जैसा संथानम उसकी टीका करते हैं। रमन '
+          'की पुस्तक में केवल ग्यारहवें के स्वामी का बुरी स्थिति में होना काफ़ी है, और '
+          'बृहत्पाराशर अध्याय 42 मारक स्वामियों पर बनी लंबी सूची देता है।',
+    ),
+    defaultReason: const _T(
+      'The app has used the strict form, both lords badly placed, so that the '
+          'yoga is not called on a single weak point; the wider readings are '
+          'shown beside it. Whichever reading holds, the app says only that '
+          'means come with effort, never how much.',
+      'ऐप कठोर रूप लेता आया है, दोनों स्वामी बुरी स्थिति में, ताकि एक ही कमज़ोर '
+          'बिंदु पर योग न कहा जाए; चौड़े पाठ उसके बगल में दिखाए हैं। जो भी पाठ बने, '
+          'ऐप केवल इतना कहता है कि साधन प्रयास से आते हैं, कितने, यह कभी नहीं।',
+    ),
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: const _T(
+          'The lords of both the 2nd and the 11th stand in the 6th, 8th or '
+              '12th.',
+          'दूसरे और ग्यारहवें दोनों के स्वामी छठे, आठवें या बारहवें भाव में हैं।',
+        ),
+        holder: const _T(
+          'BPHS chapter 13 (13.6 to 13.8) as R. Santhanam glosses it',
+          'बृहत्पाराशर अध्याय 13 (13.6 से 13.8), जैसा आर. संथानम उसकी टीका करते हैं',
+        ),
+        reasoning: const _T(
+          'Both the house of what is kept and the house of what comes in lose '
+              'their lords to the difficult houses.',
+          'जो बचता है उसका भाव और जो आता है उसका भाव, दोनों अपने स्वामी कठिन भावों को '
+              'खो देते हैं।',
+        ),
+        holds: strict,
+        found: _T(
+          'Forms: the 2nd lord ${_gEn(l2)} is in house ${c.house(l2)} and the '
+              '11th lord ${_gEn(l11)} in house ${c.house(l11)}.',
+          'बनता है: धनेश ${_gHi(l2)} ${_hiOrdinal[c.house(l2)]} भाव में और लाभेश '
+              '${_gHi(l11)} ${_hiOrdinal[c.house(l11)]} भाव में है।',
+        ),
+        notFound: const _T(
+          'Does not form: the two lords are not both in the 6th, 8th or 12th.',
+          'नहीं बनता: दोनों स्वामी छठे, आठवें या बारहवें में नहीं हैं।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'The lord of the 11th alone stands in the 6th, 8th or 12th.',
+          'केवल ग्यारहवें का स्वामी छठे, आठवें या बारहवें में है।',
+        ),
+        holder: const _T(
+          'B. V. Raman, Three Hundred Important Combinations #108, who adds '
+              'that it is common and only slight if the lagna is strong; '
+              'PyJHora’s description of the yoga says the same',
+          'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #108, जो जोड़ते हैं कि यह '
+              'आम है और लग्न बली हो तो हल्का; PyJHora का योग-वर्णन भी यही कहता है',
+        ),
+        reasoning: const _T(
+          'Income is the matter of the 11th, so its lord in a difficult house is '
+              'enough to call the yoga.',
+          'आय ग्यारहवें भाव का विषय है, इसलिए उसके स्वामी का कठिन भाव में होना योग '
+              'कहने को काफ़ी है।',
+        ),
+        holds: eleventh,
+        found: _T(
+          'Forms: the 11th lord ${_gEn(l11)} is in house ${c.house(l11)}.',
+          'बनता है: लाभेश ${_gHi(l11)} ${_hiOrdinal[c.house(l11)]} भाव में है।',
+        ),
+        notFound: const _T(
+          'Does not form: the 11th lord is not in the 6th, 8th or 12th.',
+          'नहीं बनता: लाभेश छठे, आठवें या बारहवें में नहीं है।',
+        ),
+      ),
+      _yogaView(
+        rule: const _T(
+          'One of the combinations of BPHS chapter 42, which are built on the '
+              'maraka lords (the lords of the 2nd and the 7th); the ones that '
+              'can be read from the chart are worked here.',
+          'बृहत्पाराशर अध्याय 42 का कोई एक संयोग, जो मारक स्वामियों (दूसरे और सातवें के '
+              'स्वामी) पर बने हैं; जो कुंडली से पढ़े जा सकते हैं वे यहाँ गिने गए हैं।',
+        ),
+        holder: const _T(
+          'BPHS chapter 42 (Sanskrit and Santhanam); B. V. Raman lists the same '
+              'forms as #148 to 157',
+          'बृहत्पाराशर अध्याय 42 (संस्कृत और संथानम); बी. वी. रमन वही रूप #148 से 157 '
+              'में गिनाते हैं',
+        ),
+        reasoning: const _T(
+          'These look at the lagna lord and the lords of the difficult houses '
+              'touched by the maraka lords, rather than at the wealth houses '
+              'themselves. “Touched” is read here as joined or aspected, which '
+              'is our reading.',
+          'ये धन के भावों को नहीं, लग्नेश और मारक स्वामियों से छुए गए कठिन भावों के '
+              'स्वामियों को देखते हैं। “छुए” का अर्थ यहाँ युत या दृष्ट लिया गया है, जो '
+              'हमारा पाठ है।',
+        ),
+        holds: forms.isNotEmpty,
+        found: _T(
+          'Forms: ${forms.map((_T t) => t.en).join('; ')}.',
+          'बनता है: ${forms.map((_T t) => t.hi).join('; ')}।',
+        ),
+        notFound: const _T(
+          'Does not form: none of the chapter 42 combinations that can be read '
+              'from the chart is met.',
+          'नहीं बनता: अध्याय 42 का कुंडली से पढ़ा जा सकने वाला कोई संयोग पूरा नहीं है।',
+        ),
+      ),
+    ],
+  );
+}
+
+// --- Mala, Sarpa, Vajra, Yava and the Moon -----------------------------------
+
+List<YogaMatbhed> _nabhasaMoonMatbhed(_Ctx c) {
+  // The narrow reading: seven grahas, the Moon left out, Mercury a benefic
+  // when unafflicted. The wide one: BPHS 3.11's own sets, the Moon by its
+  // phase and the nodes malefic.
+  bool threeKendras(Iterable<Graha> from, bool Function(Graha) kind) =>
+      _kendras
+          .where((int h) => from.any((Graha x) => c.house(x) == h && kind(x)))
+          .length >=
+      3;
+  bool inHouse(Iterable<Graha> from, int h, bool Function(Graha) kind) =>
+      from.any((Graha x) => c.house(x) == h && kind(x));
+  const List<Graha> narrow = _seven;
+  final List<Graha> wide = Graha.values;
+  final bool Function(Graha) nb = c.nabhasaBenefic;
+  final bool Function(Graha) nm = c.nabhasaMalefic;
+  final bool Function(Graha) wb = c.benefic;
+  final bool Function(Graha) wm = c.malefic;
+
+  const _T narrowHolder = _T(
+    'Brihat Jataka’s Nabhasa chapter as Bhattotpala reads it (in V. '
+        'Subrahmanya Sastri’s notes: the Moon is left out and three benefics '
+        'and three malefics remain); B. V. Raman, Three Hundred Important '
+        'Combinations #105 and #106; PyJHora’s chart-based code',
+    'बृहज्जातक का नाभस अध्याय, जैसा भट्टोत्पल उसे पढ़ते हैं (वी. सुब्रह्मण्य शास्त्री की '
+        'टिप्पणियों में: चंद्र छोड़ दिया जाता है और तीन शुभ व तीन पाप ग्रह बचते हैं); '
+        'बी. वी. रमन, थ्री हंड्रेड इम्पॉर्टेंट कॉम्बिनेशन्स #105 और #106; PyJHora का '
+        'कुंडली-आधारित कोड',
+  );
+  const _T wideHolder = _T(
+    'BPHS 35.8 and 35.11 read with the definition of benefic and malefic in '
+        'BPHS 3.11 (the malefics are the Sun, Saturn, Mars, the waning Moon, '
+        'Rahu, Ketu and Mercury when joined to a malefic; the rest are '
+        'benefic); PyJHora’s date-and-place code counts the Moon by phase',
+    'बृहत्पाराशर 35.8 और 35.11, बृहत्पाराशर 3.11 की शुभ-पाप की परिभाषा के साथ पढ़े '
+        '(पाप ग्रह सूर्य, शनि, मंगल, क्षीण चंद्र, राहु, केतु और पाप से युत बुध हैं; '
+        'बाकी शुभ); PyJHora का तिथि-स्थान वाला कोड चंद्र को उसकी कला से गिनता है',
+  );
+  const _T narrowWhy = _T(
+    'Only three benefics and three malefics are in play, so the Moon, which '
+        'changes character with its phase, is left out.',
+    'केवल तीन शुभ और तीन पाप ग्रह गिने जाते हैं, इसलिए चंद्र, जो अपनी कला से स्वभाव '
+        'बदलता है, छोड़ दिया जाता है।',
+  );
+  const _T wideWhy = _T(
+    'The verses say “benefics” and “malefics” without a list, and chapter 3 '
+        'defines them, so the Moon counts by its phase and the nodes are '
+        'malefic.',
+    'श्लोक बिना सूची के “शुभ” और “पाप” कहते हैं, और अध्याय 3 उन्हें परिभाषित करता है, '
+        'इसलिए चंद्र अपनी कला से गिना जाता है और छाया-ग्रह पाप हैं।',
+  );
+  const _T defaultWhy = _T(
+    'The app has never counted the Moon in the Nabhasa yogas, so that a '
+        'yoga is reported only when it holds however the Moon is read; the '
+        'reading with the Moon is shown beside it.',
+    'ऐप ने नाभस योगों में चंद्र को कभी नहीं गिना, ताकि योग तभी कहा जाए जब वह चंद्र को '
+        'जैसे भी पढ़ें तब बने; चंद्र वाला पाठ उसके बगल में दिखाया है।',
+  );
+  const _T moonRule = _T(
+    ' Here the waxing Moon counts as a benefic and the waning Moon as a '
+        'malefic, Rahu and Ketu as malefics, and Mercury as a benefic unless it '
+        'stands with a malefic.',
+    ' यहाँ बढ़ता चंद्र शुभ और घटता चंद्र पाप गिना जाता है, राहु-केतु पाप, और बुध शुभ '
+        'जब तक वह पाप ग्रह के साथ न हो।',
+  );
+
+  YogaMatbhed build({
+    required String key,
+    required _T name,
+    required _T ruleNarrow,
+    required bool narrowHolds,
+    required bool wideHolds,
+  }) => _matbhedOf(
+    key: key,
+    family: YogaFamily.nabhasa,
+    name: name,
+    topic: _T(
+      '${name.en}: with or without the Moon',
+      '${name.hi}: चंद्र के साथ या बिना',
+    ),
+    why: const _T(
+      'Parashara says “benefics” and “malefics” without listing them. The '
+          'Brihat Jataka tradition counts three of each and leaves the Moon '
+          'out; the BPHS definition of the words puts the Moon in by its phase.',
+      'पराशर बिना सूची दिए “शुभ” और “पाप” कहते हैं। बृहज्जातक की परंपरा तीन-तीन '
+          'गिनती है और चंद्र को छोड़ देती है; बृहत्पाराशर की शब्दों की परिभाषा चंद्र को '
+          'उसकी कला से जोड़ लेती है।',
+    ),
+    defaultReason: defaultWhy,
+    views: <Mat>[
+      _yogaView(
+        isDefault: true,
+        rule: ruleNarrow,
+        holder: narrowHolder,
+        reasoning: narrowWhy,
+        holds: narrowHolds,
+        found: const _T(
+          'Forms with the Moon left out.',
+          'चंद्र को छोड़कर बनता है।',
+        ),
+        notFound: const _T(
+          'Does not form with the Moon left out.',
+          'चंद्र को छोड़कर नहीं बनता।',
+        ),
+      ),
+      _yogaView(
+        rule: _T(
+          '${ruleNarrow.en}${moonRule.en}',
+          '${ruleNarrow.hi}${moonRule.hi}',
+        ),
+        holder: wideHolder,
+        reasoning: wideWhy,
+        holds: wideHolds,
+        found: const _T(
+          'Forms with the Moon counted by its phase and the nodes as malefics.',
+          'चंद्र को उसकी कला से और छाया-ग्रहों को पाप गिनने पर बनता है।',
+        ),
+        notFound: const _T(
+          'Does not form with the Moon counted by its phase and the nodes as '
+              'malefics.',
+          'चंद्र को उसकी कला से और छाया-ग्रहों को पाप गिनने पर नहीं बनता।',
+        ),
+      ),
+    ],
+  );
+
+  return <YogaMatbhed>[
+    build(
+      key: 'nabhasa_mala',
+      name: const _T('Mala yoga', 'माला योग'),
+      ruleNarrow: const _T(
+        'Three of the four kendras each hold Jupiter, Venus or an unafflicted '
+            'Mercury.',
+        'चार में से तीन केंद्रों में गुरु, शुक्र या अपीड़ित बुध में से कोई एक-एक है।',
+      ),
+      narrowHolds: threeKendras(narrow, nb),
+      wideHolds: threeKendras(wide, wb),
+    ),
+    build(
+      key: 'nabhasa_sarpa',
+      name: const _T('Sarpa yoga', 'सर्प योग'),
+      ruleNarrow: const _T(
+        'Three of the four kendras each hold the Sun, Mars or Saturn.',
+        'चार में से तीन केंद्रों में सूर्य, मंगल या शनि में से कोई एक-एक है।',
+      ),
+      narrowHolds: threeKendras(narrow, nm),
+      wideHolds: threeKendras(wide, wm),
+    ),
+    build(
+      key: 'nabhasa_vajra',
+      name: const _T('Vajra yoga', 'वज्र योग'),
+      ruleNarrow: const _T(
+        'Benefics stand in the 1st and 7th and malefics in the 4th and 10th.',
+        'शुभ ग्रह पहले और सातवें में और पाप ग्रह चौथे और दसवें में हैं।',
+      ),
+      narrowHolds:
+          inHouse(narrow, 1, nb) &&
+          inHouse(narrow, 7, nb) &&
+          inHouse(narrow, 4, nm) &&
+          inHouse(narrow, 10, nm),
+      wideHolds:
+          inHouse(wide, 1, wb) &&
+          inHouse(wide, 7, wb) &&
+          inHouse(wide, 4, wm) &&
+          inHouse(wide, 10, wm),
+    ),
+    build(
+      key: 'nabhasa_yava',
+      name: const _T('Yava yoga', 'यव योग'),
+      ruleNarrow: const _T(
+        'Malefics stand in the 1st and 7th and benefics in the 4th and 10th.',
+        'पाप ग्रह पहले और सातवें में और शुभ ग्रह चौथे और दसवें में हैं।',
+      ),
+      narrowHolds:
+          inHouse(narrow, 1, nm) &&
+          inHouse(narrow, 7, nm) &&
+          inHouse(narrow, 4, nb) &&
+          inHouse(narrow, 10, nb),
+      wideHolds:
+          inHouse(wide, 1, wm) &&
+          inHouse(wide, 7, wm) &&
+          inHouse(wide, 4, wb) &&
+          inHouse(wide, 10, wb),
+    ),
+  ];
 }
 
 /// Where Saturn's seven-and-a-half year passage stands today.

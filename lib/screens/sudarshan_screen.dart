@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../engine/jyotish/chart.dart';
+import '../engine/jyotish/mat.dart';
 import '../engine/jyotish/rashi.dart';
 import '../engine/jyotish/sudarshan.dart';
 import '../l10n/app_localizations.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
+import '../widgets/matbhed_card.dart';
 import 'profile_scope.dart';
 
 /// Sudarshana Chakra: each of the twelve houses read from the Lagna, the Moon
@@ -28,10 +30,11 @@ class SudarshanScreen extends StatelessWidget {
       title: hindi ? 'सुदर्शन चक्र' : 'Sudarshan Chakra',
       profileId: profileId,
       builder: (BuildContext context, Kundli kundli, _) =>
-          DeferredBuilder<SudarshanChakra>(
+          DeferredBuilder<(SudarshanChakra, Matbhed)>(
             message: l.computing,
-            work: () => computeSudarshan(kundli),
-            builder: (BuildContext context, SudarshanChakra chakra) {
+            work: () => (computeSudarshan(kundli), sudarshanMatbhed(kundli)),
+            builder: (BuildContext context, (SudarshanChakra, Matbhed) both) {
+              final SudarshanChakra chakra = both.$1;
               final ThemeData theme = Theme.of(context);
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -84,6 +87,11 @@ class SudarshanScreen extends StatelessWidget {
                   ),
                   for (final SudarshanHouse h in chakra.houses)
                     _HouseCard(house: h, kundli: kundli, hindi: hindi),
+                  MatbhedList(
+                    withHeading: true,
+                    items: <Matbhed>[both.$2],
+                    hindi: hindi,
+                  ),
                   DisclaimerNote(l.disclaimer),
                 ],
               );

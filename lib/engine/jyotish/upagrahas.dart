@@ -25,8 +25,10 @@ import '../astro/houses.dart';
 import '../astro/rise_set.dart';
 import '../astro/time.dart';
 import 'chart.dart';
+import 'mat.dart';
 import 'nakshatra.dart';
 import 'rashi.dart';
+import 'tajika_common.dart' show Bi, degText, houseBi, rashiBi;
 
 enum Upagraha {
   dhuma,
@@ -62,12 +64,29 @@ class UpagrahaConvention {
     this.gulika = UpagrahaPoint.begin,
     this.mandi = UpagrahaPoint.end,
     this.others = UpagrahaPoint.middle,
+    this.eighth = EighthPart.lordless,
   });
 
   final UpagrahaPoint gulika;
   final UpagrahaPoint mandi;
   final UpagrahaPoint others;
+
+  /// What the eighth part of the day or night is: lordless, as the app reads
+  /// BPHS 3.67, or a slot in an eight-place cycle after Saturn.
+  final EighthPart eighth;
 }
+
+/// The two ways the eighth part is handled when the seven grahas are dealt
+/// round the eight parts of the day or night.
+///
+///  * [lordless]: the first seven parts go to the seven grahas in weekday
+///    order from the weekday lord, and the eighth belongs to no one. This is
+///    how the app reads BPHS 3.67.
+///  * [cycleOfEight]: the grahas sit in a cycle of eight places, the eighth
+///    place empty and coming straight after Saturn, and the parts are dealt
+///    round that cycle from the weekday lord. Where a graha's turn falls after
+///    Saturn, its part is one later than in the other reading.
+enum EighthPart { lordless, cycleOfEight }
 
 class UpagrahaInfo {
   const UpagrahaInfo({
@@ -481,7 +500,9 @@ UpagrahaResult computeUpagrahas(
 
   for (final MapEntry<Upagraha, int> e in _partLordIndex.entries) {
     // The part whose lord is the target: counting from the first lord.
-    final int k = (e.value - firstLord + 7) % 7;
+    final int k = convention.eighth == EighthPart.cycleOfEight
+        ? (e.value - firstLord + 8) % 8
+        : (e.value - firstLord + 7) % 7;
     final UpagrahaPoint point = switch (e.key) {
       Upagraha.gulika => convention.gulika,
       Upagraha.mandi => convention.mandi,
@@ -518,4 +539,267 @@ UpagrahaResult computeUpagrahas(
     sunsetJdUt: sunset,
     nextSunriseJdUt: nextSunrise,
   );
+}
+
+// =============================================================================
+// Where the books differ: मतभेद on the upagrahas.
+//
+// BPHS 3.66-3.70 (the Sanskrit read on enjoylearningsanskrit.com) names Saturn's
+// part of the day as Gulika's and says the eighth part has no lord, and the
+// night is counted from the fifth lord. It names a part and gives no point
+// inside it, and it does not define Mandi. So two things are conventions:
+// where in Saturn's part Mandi is taken, and what the eighth part is. Each is
+// worked out here under every position that could be read.
+// =============================================================================
+
+Bi _upagrahaName(Upagraha u) {
+  final UpagrahaInfo info = upagrahaInfo(u);
+  return Bi(info.english, info.hindi);
+}
+
+Bi _placedText(Kundli chart, PlacedUpagraha p) {
+  final int sign = p.rashi.index;
+  final int part = p.partNumber ?? 0;
+  return Bi(
+    '${_upagrahaName(p.upagraha).en} ${degText(p.degreesInSign)} '
+        '${rashiBi(sign).en}, ${houseBi(p.house).en} (part $part)',
+    '${_upagrahaName(p.upagraha).hi} ${rashiBi(sign).hi} '
+        '${degText(p.degreesInSign)}, ${houseBi(p.house).hi} (भाग $part)',
+  );
+}
+
+/// The disagreements on the upagrahas, worked out for [kundli]: where in
+/// Saturn's part Mandi is taken, and what the eighth part of the day or night
+/// is.
+List<Matbhed> upagrahaMatbhed(Kundli kundli) {
+  PlacedUpagraha mandiAt(UpagrahaPoint point) => computeUpagrahas(
+    kundli,
+    convention: UpagrahaConvention(mandi: point),
+  ).of(Upagraha.mandi);
+  final PlacedUpagraha atEnd = mandiAt(UpagrahaPoint.end);
+  final PlacedUpagraha atMiddle = mandiAt(UpagrahaPoint.middle);
+  final PlacedUpagraha atBegin = mandiAt(UpagrahaPoint.begin);
+
+  Mat mandiView({
+    required PlacedUpagraha placed,
+    required Bi position,
+    required Bi holder,
+    required Bi reasoning,
+    bool isDefault = false,
+  }) => Mat(
+    position: position,
+    holder: holder,
+    reasoning: reasoning,
+    result: _placedText(kundli, placed),
+    isDefault: isDefault,
+    value: placed.siderealLongitude,
+  );
+
+  final Matbhed mandi = Matbhed(
+    key: 'upagraha_mandi',
+    topic: const Bi(
+      'Where Mandi is taken in Saturn’s part',
+      'शनि के भाग में मांदि कहाँ ली जाए',
+    ),
+    whyTheyDiffer: const Bi(
+      'Parashara names Saturn’s part of the day or night and gives no point '
+          'inside it, and he does not define Mandi. The books and the software '
+          'fill the gap in three different ways.',
+      'पराशर दिन या रात में शनि का भाग बताते हैं पर उसके भीतर कोई बिंदु नहीं देते, '
+          'और मांदि को परिभाषित नहीं करते। ग्रंथ और सॉफ़्टवेयर इस खाली जगह को तीन '
+          'अलग तरह से भरते हैं।',
+    ),
+    defaultReason: const Bi(
+      'The app has taken Mandi at the end of Saturn’s part from the start, '
+          'as the nearest single rule to the Kerala tables, and keeps Gulika at '
+          'the beginning so the two stay apart.',
+      'ऐप शुरू से मांदि को शनि के भाग के अंत पर लेता आया है, केरल की तालिकाओं के '
+          'सबसे निकट एक नियम की तरह, और गुलिक को आरंभ पर रखता है ताकि दोनों अलग रहें।',
+    ),
+    views: <Mat>[
+      mandiView(
+        isDefault: true,
+        placed: atEnd,
+        position: const Bi(
+          'The ascendant at the end of Saturn’s part.',
+          'शनि के भाग के अंत पर उदय होने वाला लग्न।',
+        ),
+        holder: const Bi(
+          'The Kerala tradition: Mantreswara’s Phaladeepika (chapter 25) and '
+              'the Prasna Marga as B. V. Raman translated it, which tabulate '
+              'Mandi’s time after sunrise; G. K. Goel, in a forum thread, says '
+              'some prefer the ending point',
+          'केरल परंपरा: मंत्रेश्वर की फलदीपिका (अध्याय 25) और बी. वी. रमन द्वारा अनूदित '
+              'प्रश्नमार्ग, जो सूर्योदय के बाद मांदि का समय तालिका में देते हैं; जी. के. '
+              'गोयल, एक फ़ोरम-चर्चा में, कहते हैं कि कुछ लोग अंतिम बिंदु पसंद करते हैं',
+        ),
+        reasoning: const Bi(
+          'The tables put Mandi late in Saturn’s part, from about half to nine '
+              'tenths of the way through it on a thirty-ghatika day (our '
+              'arithmetic on the table), so the end of the part is the nearest '
+              'single rule.',
+          'तालिकाएँ मांदि को शनि के भाग में देर से रखती हैं, तीस घटी के दिन पर '
+              'आधे से नौ-दसवें हिस्से तक (तालिका पर हमारा हिसाब), इसलिए भाग का अंत '
+              'ही सबसे निकट एक नियम है।',
+        ),
+      ),
+      mandiView(
+        placed: atMiddle,
+        position: const Bi(
+          'The ascendant at the middle of Saturn’s part.',
+          'शनि के भाग के मध्य पर उदय होने वाला लग्न।',
+        ),
+        holder: const Bi(
+          'Jagannatha Hora’s default (as two other pages report it), PyJHora’s '
+              'code, and the school of Sanjay Rath, as P. V. R. Narasimha Rao '
+              'describes it in a 2009 email reproduced on a forum (Gulika at the '
+              'beginning, Mandi at the middle)',
+          'जगन्नाथ होरा का डिफ़ॉल्ट (जैसा दो और पन्ने बताते हैं), PyJHora का कोड, और '
+              'संजय रथ की परंपरा, जैसा पी. वी. आर. नरसिम्हा राव 2009 के एक ईमेल में बताते हैं '
+              'जो एक फ़ोरम पर छपा है (गुलिक आरंभ पर, मांदि मध्य पर)',
+        ),
+        reasoning: const Bi(
+          'It keeps Mandi apart from Gulika. The verses give no point inside '
+              'the part, so this is a convention: the software defaults to it.',
+          'यह मांदि को गुलिक से अलग रखता है। श्लोक भाग के भीतर कोई बिंदु नहीं देते, '
+              'इसलिए यह एक परिपाटी है: सॉफ़्टवेयर इसे डिफ़ॉल्ट रखता है।',
+        ),
+      ),
+      mandiView(
+        placed: atBegin,
+        position: const Bi(
+          'The ascendant at the beginning of Saturn’s part: Mandi is Gulika.',
+          'शनि के भाग के आरंभ पर उदय होने वाला लग्न: मांदि वही है जो गुलिक।',
+        ),
+        holder: const Bi(
+          'P. V. R. Narasimha Rao, the author of Jagannatha Hora, in the same '
+              '2009 email: he recommends every upagraha at the beginning of its '
+              'part and calls Mandi “just another name for Gulika”',
+          'पी. वी. आर. नरसिम्हा राव, जगन्नाथ होरा के लेखक, उसी 2009 के ईमेल में: '
+              'वे हर उपग्रह को उसके भाग के आरंभ पर लेने की सलाह देते हैं और मांदि को '
+              '“गुलिक का ही दूसरा नाम” कहते हैं',
+        ),
+        reasoning: const Bi(
+          'Parashara defines Gulika and not Mandi, and he says the beginning-or-'
+              'middle question is the one thing left open, so the simplest '
+              'rule is the start of the part for all of them.',
+          'पराशर गुलिक को परिभाषित करते हैं, मांदि को नहीं, और वे आरंभ या मध्य का '
+              'प्रश्न खुला छोड़ देते हैं, इसलिए सबसे सरल नियम सबके लिए भाग का आरंभ है।',
+        ),
+      ),
+    ],
+  );
+
+  // The lordless eighth part.
+  final UpagrahaResult lordless = computeUpagrahas(kundli);
+  final UpagrahaResult cycle = computeUpagrahas(
+    kundli,
+    convention: const UpagrahaConvention(eighth: EighthPart.cycleOfEight),
+  );
+  const List<Upagraha> shifted = <Upagraha>[
+    Upagraha.kaala,
+    Upagraha.mrityu,
+    Upagraha.ardhaprahara,
+    Upagraha.yamaghantaka,
+  ];
+  Bi four(UpagrahaResult r) {
+    final List<Bi> parts = <Bi>[
+      for (final Upagraha u in shifted) _placedText(kundli, r.of(u)),
+    ];
+    return Bi(
+      parts.map((Bi b) => b.en).join('; '),
+      parts.map((Bi b) => b.hi).join('; '),
+    );
+  }
+
+  final int moved = shifted
+      .where(
+        (Upagraha u) =>
+            (lordless.of(u).partNumber ?? 0) != (cycle.of(u).partNumber ?? 0),
+      )
+      .length;
+  final Matbhed eighth = Matbhed(
+    key: 'upagraha_eighth',
+    topic: const Bi(
+      'The eighth part of the day or night',
+      'दिन या रात का आठवाँ भाग',
+    ),
+    whyTheyDiffer: Bi(
+      moved == 0
+          ? 'The two differ on most weekdays; on this birth’s weekday the '
+                'turn of every graha comes before Saturn, so they agree.'
+          : 'The two differ on this birth’s weekday: $moved of the four '
+                'upagrahas fall in a different part.',
+      moved == 0
+          ? 'दोनों अधिकतर वारों में अलग पड़ते हैं; इस जन्म के वार पर हर ग्रह की '
+                'बारी शनि से पहले आती है, इसलिए वे एक हैं।'
+          : 'दोनों इस जन्म के वार पर अलग पड़ते हैं: चार में से $moved उपग्रह दूसरे '
+                'भाग में आते हैं।',
+    ),
+    defaultReason: const Bi(
+      'The app follows BPHS 3.67 as the Sanskrit reads: the eighth part has no '
+          'lord. The software’s rotation is shown beside it; no text for that '
+          'rotation was found.',
+      'ऐप बृहत्पाराशर 3.67 का अनुसरण करता है, जैसा संस्कृत पढ़ती है: आठवें भाग का '
+          'कोई स्वामी नहीं। सॉफ़्टवेयर का घुमाव उसके बगल में दिखाया है; उस घुमाव का '
+          'कोई ग्रंथ नहीं मिला।',
+    ),
+    views: <Mat>[
+      Mat(
+        isDefault: true,
+        value: 0,
+        position: const Bi(
+          'The first seven parts go to the seven grahas in weekday order from '
+              'the weekday lord; the eighth part has no lord.',
+          'पहले सात भाग सात ग्रहों को वार के क्रम से वारेश से मिलते हैं; आठवें भाग '
+              'का कोई स्वामी नहीं।',
+        ),
+        holder: const Bi(
+          'Brihat Parashara Hora Shastra 3.67 (the Sanskrit read on '
+              'enjoylearningsanskrit.com: the eighth part is lordless; the night '
+              'is counted from the fifth lord); Mantreswara’s Phaladeepika '
+              'tables for Kala, Yamakantaka and Ardhaprahara fit it, by our check',
+          'बृहत्पाराशर होरा शास्त्र 3.67 (enjoylearningsanskrit.com पर पढ़ी संस्कृत: '
+              'आठवाँ भाग बिना स्वामी का; रात की गिनती पाँचवें स्वामी से); मंत्रेश्वर की '
+              'फलदीपिका की काल, यमकंटक और अर्धप्रहर की तालिकाएँ हमारी जाँच में इससे '
+              'मेल खाती हैं',
+        ),
+        reasoning: const Bi(
+          'The verse says the eighth part has no lord, so the grahas fill '
+              'the first seven parts only.',
+          'श्लोक कहता है कि आठवें भाग का कोई स्वामी नहीं, इसलिए ग्रह केवल पहले सात '
+              'भाग भरते हैं।',
+        ),
+        result: four(lordless),
+      ),
+      Mat(
+        value: moved.toDouble(),
+        position: const Bi(
+          'The grahas sit in a cycle of eight places with the empty one straight '
+              'after Saturn, and the parts are dealt round it from the weekday '
+              'lord.',
+          'ग्रह आठ स्थानों के चक्र में बैठते हैं जिसमें खाली स्थान शनि के ठीक बाद है, '
+              'और भाग वारेश से उसी चक्र में बाँटे जाते हैं।',
+        ),
+        holder: const Bi(
+          'PyJHora’s code (weekday tables in its const.py); the same tables '
+              'were not found in any text, and Jagannatha Hora’s own pages speak '
+              'of “the lordless 8th portion”',
+          'PyJHora का कोड (इसके const.py की वार-तालिकाएँ); वही तालिकाएँ किसी ग्रंथ '
+              'में नहीं मिलीं, और जगन्नाथ होरा के अपने पन्ने “बिना स्वामी के आठवें भाग” '
+              'की बात करते हैं',
+        ),
+        reasoning: const Bi(
+          'The empty place travels with the cycle, so where a graha’s turn '
+              'falls after Saturn its part comes one place later; Gulika and '
+              'Mandi, which are Saturn’s, do not move.',
+          'खाली स्थान चक्र के साथ चलता है, इसलिए जहाँ किसी ग्रह की बारी शनि के बाद '
+              'आती है वहाँ उसका भाग एक स्थान बाद पड़ता है; गुलिक और मांदि, जो शनि के '
+              'हैं, नहीं हिलते।',
+        ),
+        result: four(cycle),
+      ),
+    ],
+  );
+  return <Matbhed>[mandi, eighth];
 }

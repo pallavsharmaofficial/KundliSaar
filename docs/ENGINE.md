@@ -185,6 +185,134 @@ friendships, whether the nodes aspect, the 12th lord as a malefic, which
 conditions make a viparita raja yoga) are hedged in the text rather than stated
 as settled.
 
+### Strength of indication
+
+Every house, graha, period (all three levels), timeline window and transit
+carries a band that says how strongly the chart itself points at the reading,
+with the factors behind it listed, the ones that agree and the ones that do
+not. It is a count of agreeing chart factors, this app's own convention. It is
+not a classical measure, and it is not a probability: nothing in phaladesh
+gives the chance of any event, no percentage appears anywhere, and a test scans
+every output for percentages and for words of chance.
+
+A factor is one separate fact of the chart that points either to the matter
+going with support or to it asking effort. A fact that takes no side (a neutral
+sign, a bindu count of four, a pair of company that cancels out) is not a
+factor, and being merely unafflicted is never counted as support. A factor is
+*firm* when it is a plainly measured, weighty fact (exaltation or fall, a
+kendra or a difficult house, shadbala against its minimum, five bindus or
+three) and *light* when it is a mild nudge (a friend's sign, the company a graha
+keeps). Firm and light are this app's own convention, like the weights that
+make the tone.
+
+| Reading | Its factors |
+|---|---|
+| `grahaPhala` | dignity (and neecha bhanga as its own factor, pointing the other way), functional nature for the lagna, the house it stands in, viparita raja yoga, shadbala against its minimum, ashtakavarga (its own bindus, else the sign's), combustion, company, aspects, each yoga it takes part in |
+| `bhavaPhala` | where the lord stands from the lagna, the lord in the 12th from its house, the lord's dignity, combustion, viparita, the occupants, the aspects on the house, the sign's sarvashtakavarga, the lord's shadbala, yogas the lord takes part in |
+| `dashaPhala` | the lord's own factors as above; for a sub-period also its place counted from the lord of the period around it, their friendship, and how that period fares (as one fact each) |
+| `gocharPhala` | the house from the natal Moon against the favourable table, the bindus (own, or the sign's for the nodes), the sign's sarvashtakavarga, the sign the graha passes through (own, exaltation or fall), what the graha is in the natal chart (nature, shadbala) |
+
+The band counts the factors that agree with the reading's tone and sets them
+against those that do not:
+
+| Band | When |
+|---|---|
+| Strong (प्रबल संकेत) | at least four factors agree, at most one disagrees, and at least two of those that agree are firm |
+| Moderate (मध्यम संकेत) | at least three agree and they outnumber those that disagree by two or more |
+| Weak (हल्का संकेत) | anything less, which includes every reading resting on one or two factors |
+| Mixed (मिला-जुला संकेत) | the reading itself says support and effort go together, so the split is shown as it stands ("3 factors point to support, 2 to effort") |
+
+It is written as the count behind it: "Strong indication - 4 of 5 factors agree"
+(प्रबल संकेत - 5 में से 4 कारक सहमत). A reading that rests on a single factor is
+never strong and says so in plain words, and says if that factor is a light one.
+A reading with no factor on its side says that nothing but the app's own
+weighing stands behind it. The tone is the app's weighted summary and the band
+is a count, so they can disagree, and when they do the band says it
+(a "supportive" tone with more factors against than for is a weak band, with a
+caution beside it).
+
+The factors are separate facts of the chart, not statistically independent
+measurements: dignity feeds shadbala, and the sarvashtakavarga is the sum of the
+other ashtakavargas. That is one more reason a high count is a stronger pointer
+and never a promise. The thresholds are a convention, no verse is quoted for
+them, and the sweep of twelve lagnas in `test/engine/phaladesh_test.dart` checks
+that the scale tells readings apart (every band turns up).
+
+### What tends to come up
+
+Every house, every period (and so every timeline window) and every transit also
+carries `tends`: the areas of life the tradition associates with it and what it
+says tends to come up there, phrased as tendencies and as what the time asks of
+the person ("Questions of home and peace of mind tend to come up..."). It is
+built from the house or houses in focus, the occupants of a house or the lord of
+a period, the tone, and for a transit the way the graha tends to colour what it
+touches. It never carries a date or an event, and the tests check that it holds
+no digit, no month, no future tense and no refused subject. For the childhood
+years it says the home and the family carry it.
+
+### Remedies
+
+An upaya is attached to every finding that calls for one: a house or graha the
+rules found strained (the same test that gives it a relief note) or whose tone is
+demanding, a difficult period (its tone asks for effort, or its lord stands in
+the 6th, 8th or 12th from the lord of the period around it; a lord that is
+merely strained in its own right has its remedies in the graha reading, not in
+every period it rules), a testing transit (the house from the Moon is not a
+favourable one, or the tone asks for effort), and every dosha the chart does not
+itself cancel. A finding that does not call for one carries none. Each remedy says which graha it is for and which
+of the reading's own pressing factors it answers, word for word, so it is never
+a generic list: a house is remedied through its lord or through the malefic
+occupants and aspectors that press on it (at most three), a graha through itself,
+a period through its own lord first and then the lord of the period around it
+when that one is under strain (at most two), a transit through the transiting
+graha, and a yoga through the grahas that make it (at most two; the node that
+joins the Sun or Moon in a grahan dosha, the Sun and the touching node in pitra
+dosha, Rahu and Ketu in Kaal Sarpa, and so on).
+
+What a remedy holds (`GrahaRemedyKit` in `remedies.dart`) is the graha's mantra
+with its traditional japa count, the fasting day, the deity, the daan and one
+plain act:
+
+| Graha | Count | Day | Deity commonly named |
+|---|---|---|---|
+| Sun | 7,000 | Sunday | Surya Dev |
+| Moon | 11,000 | Monday | Shiva, with Parvati |
+| Mars | 10,000 | Tuesday | Hanuman, or Kartikeya |
+| Mercury | 9,000 | Wednesday | Vishnu |
+| Jupiter | 19,000 | Thursday | Vishnu, and Brihaspati |
+| Venus | 16,000 | Friday | Lakshmi, and Durga |
+| Saturn | 23,000 | Saturday | Hanuman, and Shani Dev |
+| Rahu | 18,000 | Saturday | Durga |
+| Ketu | 17,000 | Tuesday | Ganesha |
+
+The counts are the ones the remedy tables commonly list; lineages differ a
+little (Ketu is 17,000 in the usual table and was entered as 7,000 earlier, which
+was a slip). They are common practice and no verse is quoted for any of them. The
+text says so beside every set of remedies, and says the full count is the
+traditional target and not a requirement, that a fast is light and is skipped
+by anyone for whom it does not suit, and that the daan is whatever one already
+has at home or can spare, given by one's own hand.
+
+Held by tests: a remedy is a mantra, a fast, giving, a service or a discipline.
+Nothing in it has to be bought, nothing is a paid ritual, and no gemstone, ring,
+yantra, amulet or priest is ever named. It is offered as what the tradition
+prescribes to strengthen a graha and as nothing more: no remedy says or implies
+that anything will change, and the refusal scan (death, illness, pregnancy,
+examinations, courts, investments) and the doom scan run over every remedy text
+too.
+
+The older `remediesFor` (the three grahas the whole chart leans on, shown on the
+Remedies screen) is unchanged, and it still lists a gemstone and a yantra for each
+graha. Those two fields do not meet the rule above and are not used anywhere in
+phaladesh.
+
+Left out on purpose: remedies for the Nabhasa yogas that the library marks as
+adverse (they describe the pattern of the whole chart, so no one graha is the one
+to address, and phaladesh does not show them in a graha reading at all); a
+remedy for a supportive reading; any count of how often a remedy should be done
+beyond the traditional total and the one-mala start; and any timing of a remedy
+to a date.
+
 ## Varshphal, read the Tajika way
 
 The annual chart is the kundli of the moment the Sun returns to its natal
@@ -266,30 +394,33 @@ Dutthottha-davira. The matter yogas read the lagna lord against the lord of
 each house (Hayanaratna ch. 3). Nakta and Yamaya measure the third graha's reach
 by ITS OWN deeptamsha, as Hayanaratna 3.5-3.6 words it.
 
-Left out, because the definitions cannot be met without guessing:
-
-* Gairi-kamboola and Tambira: both turn on what a graha at the end of a sign
-  does on entering the next; Hayanaratna's Tambira example has the slower
-  graha applying to the swifter one, which contradicts the rule that the swifter
-  applies.
-* Kuttha: its definition includes "strength by time", which the engine cannot
-  pin to one method.
-* Durapha: its clauses include "in the mouth or tail of Rahu" and any malefic
-  aspect (which on sign aspects alone would flag nearly every graha).
+Gairi-kamboola, Tambira, Kuttha and Durapha used to be left out because their
+definitions are not agreed. They are now worked out on the year chart under each
+definition that could be read, as "two views" (see "Where the texts disagree"
+below). Of Durapha's list only "in the mouth or tail of Rahu" is still not
+computed: the book that lists it does not say what mouth and tail are.
 
 ### Sahams
 
-Formulas follow Hayanaratna ch. 4 (quoting the Samjnatantra for Punya),
-cross-checked against Dr. Shanker Adawal's *Encyclopedia of Vedic Astrology:
-Tajik Shastra and Annual Horoscopy*, and against Jagannatha Hora's table and
-PyJHora's `saham.py`. Day or night is the Sun's altitude against the standard
-horizon at the place, so it flips at the sunrise and sunset the panchang uses.
+Formulas follow Hayanaratna ch. 4 (quoting the Samjnatantra for Punya), read in
+Martin Gansten's English translation, and are checked against PyJHora's saham
+code (version 4.9.3) and the Jagannatha Hora values kept in PyJHora's test file.
+Dr. Shanker Adawal's book could not be reached, and nothing is credited to it
+(earlier versions of this note did). Day or night is the Sun's altitude against
+the standard horizon at the place, so it flips at the sunrise and sunset the
+panchang uses.
 Houses are equal-house points (lagna degree repeated through the signs) so a
 house point's sign is the whole-sign house it names.
 
 One sign (30°) is added when the ascendant is not in the arc from B forward to
-A (Hayanaratna 4.2, where Balabhadra argues it holds for every saham; JHora
-tests the third term instead).
+A. This is PyJHora's current rule for most sahams, and what Hayanaratna 4.2
+does for Fortune, where the added term is the ascendant itself. An earlier
+version of this note said JHora tests the third term C instead; that is not so:
+Hayanaratna 4.3 tests C (for Mitra at Venus, for Mrityu at Saturn, for Shastra at
+Mercury), JHora's recorded values for Shastra, Karyasiddhi and Santapa are
+reproduced only by testing the ascendant, and some authors Balabhadra reports
+(Keshava Daivajna, Haribhatta, Ganesha Daivajna) add no sign at all. The three
+rules are worked out on every saham of the year chart by `extraSignMatbhed`.
 
 | Saham | Day | Night |
 |---|---|---|
@@ -318,24 +449,33 @@ tests the third term instead).
 | Shatru | Mars − Saturn + Lagna | Saturn − Mars + Lagna |
 | Jalapatana | Cancer 15° − Saturn + Lagna | Saturn − Cancer 15° + Lagna |
 
-Where the sources differ and the app picked a side: Asha (Hayanaratna and
-Adawal subtract Venus; JHora and PyJHora subtract Mars), Mrityu (Hayanaratna
-and Adawal add Saturn; JHora adds the Lagna), Gaurava (written A − B + C by
-Hayanaratna as Jupiter − Moon + Sun, by Adawal as Sun − Moon + Jupiter: the same
-sum, but the arc test differs), Jalapatana (Hayanaratna calls this formula
-"travel by water"; JHora's name is kept and the reading stays with journeys over
-water), Roga (Adawal adds a sign at the end; the others do not).
+Where the sources differ the app no longer picks a side silently or leaves the
+saham out; each is worked out under every position and shown as "two views", the
+Hayanaratna form the default (see below). That covers Asha (Venus or Mars
+subtracted), Mrityu (Saturn or the Lagna added), Putra (swapped at night or not),
+and the sahams that used to be left out:
 
-Left out, with the reason:
+* Mitra: Hayanaratna 4.3 subtracts Fortune from "the lot of the teacher", which
+  it names as the Teacher and Learning saham (Vidya), so the first term is a
+  point, not the planet Jupiter; PyJHora takes Jupiter, and its recorded JHora
+  value fits Jupiter.
+* Vanik, Vivaha, Santapa, Shraddha, Bandhu (and Putra): Hayanaratna gives them
+  "at all times"; PyJHora swaps the terms at night. Vivaha has a third form,
+  Venus minus Jupiter, found on one website that names no book.
+* Preeti: Vidya minus Fortune (Hayanaratna, "at all times" read as no night swap,
+  which is our reading) or Shastra minus Fortune, swapped at night (PyJHora).
+* Vyapara: Mars minus Mercury (Hayanaratna) or Mars minus Saturn (PyJHora and
+  JHora).
+* Gaurava (Jupiter − Moon + Sun in Hayanaratna, Sun − Moon + Jupiter in PyJHora)
+  is the same sum; only the extra-sign test differs. Jalapatana: Hayanaratna
+  calls this formula "travel by water"; JHora's name is kept and the reading
+  stays with journeys over water. Roga is the same in Hayanaratna and PyJHora;
+  the earlier note that Adawal adds a sign was not verified and is gone.
 
-* Mitra: the first term is Jupiter in JHora and PyJHora and "the sahama of the
-  teacher" in Hayanaratna; the two give different longitudes.
-* Vanik, Vivaha, Santapa, Shraddha, Preeti, Bandhu: Hayanaratna gives them
-  "at all times" while JHora and PyJHora reverse them at night; Vivaha has a
-  third form (Venus − Jupiter) in other books. A wrong longitude is worse than
-  none.
-* Vyapara: Hayanaratna has Mars − Mercury, JHora Mars − Saturn.
-* Vishwasghata: no formula could be established.
+Still not computed: Vishwasghata. No formula for it is in Hayanaratna's list of 75
+names, PyJHora's 36 sahams, or a developer's transcription of Charak's 41, and a
+search found none; Hayanaratna's "ghata" (Jupiter minus Fortune) is a different
+point and tying the two would be a guess.
 
 Roga, Mrityu and Jeeva are computed and shown with their formula, and are
 never interpreted: no reading, no tone, no mention in any dated window. (Jeeva
@@ -363,7 +503,13 @@ Patyayini (Hayanaratna 7.1): the seven grahas and the lagna are ordered by the
 degrees they stand at within their signs, the signs left out; each takes the
 degrees between it and the one before; the year is divided in that proportion.
 (The books count 360 days; the app divides the real length of the year.) It is
-not based on five-fold strength: that only breaks a tie.
+not based on five-fold strength: that only breaks a tie. No source read sizes
+the periods by five-fold strength (an earlier brief said so; it appears to be a
+mix-up with the tie-break). The second position that Hayanaratna 7.2 records,
+that the signs are counted too (order by full longitude from Mesha), is worked
+out beside it. Yadava's version by distance from the lagna is not: the working
+Hayanaratna prints for it does not add up (the distances should sum to 360° and
+the printed total is 404°) and Balabhadra says it is unclear to him.
 
 ### The dated windows
 
@@ -388,4 +534,94 @@ charts; each yoga on a chart built to show it; every reading names a chart
 factor and both languages are present; and nothing the engine writes mentions
 death, illness, pregnancy, examinations, courts or investments.
 `test/varshphal_screen_test.dart` scrolls the whole page and opens every card,
-in both languages and at a larger text size.
+in both languages and at a larger text size, and finds the two-view cards in the
+dasha, Tajika and saham sections.
+
+The two-view findings are held by tests in each area (`varshphal_test.dart`,
+`classical_test.dart`, `panchang_test.dart`, `jyotish_test.dart` for the shared
+type, and the screen tests): every finding carries its positions with non-empty
+text in both languages, exactly one is marked as the default, the computed results
+differ where the formulas differ (and are the same where they agree, as for the
+night-only disputes on a day chart), the defaults match what the rest of the app
+already computes, the Drik labels and changeover times are reproduced, and none
+of it mentions what the app never speaks of.
+
+## Where the texts disagree: two views
+
+Where classical texts or traditions disagree, the app does not choose silently
+and does not drop the item. `lib/engine/jyotish/mat.dart` defines the shared
+type: a `Mat` (मत) is one position, with the rule, who holds it, the reasoning
+they give, the computed result under it, and whether it is the position the app
+computes by default; a `Matbhed` (मतभेद) carries two or three of them with the
+reason for the default. `lib/widgets/matbhed_card.dart` shows it as "दो मत" /
+"Two views" (three: "तीन मत"), the results side by side, each position's holder
+and argument, and the default marked. Every string is in both languages. Nothing
+about death, illness, pregnancy, examinations, courts or investment returns is
+said, and Roga, Mrityu and Jeeva stay computed but unread.
+
+Where it appears, and what the default is:
+
+| Where | Disagreement | Default |
+|---|---|---|
+| Sahams | Mitra, Vanik, Vivaha, Santapa, Shraddha, Preeti, Bandhu, Vyapara; Asha, Mrityu, Putra; the rule for the extra sign (three positions) | Hayanaratna; the Lagna test |
+| Tajika | Orb of a pair (mean, swifter's own, 12°); when Ishrafa begins (any distance, or a full degree); Gairi-kamboola, Tambira, Kuttha, Durapha | the mean; any distance; Hayanaratna's definitions |
+| Patyayini | Degrees within the sign, or the signs counted too | degrees within the sign |
+| Yogas | Ardha Chandra, Punarphoo, Adhi, Lakshmi, Kahala, Parvata, Dhana, Daridra, Mala, Sarpa, Vajra, Yava | the reading `findYogas` uses |
+| Panchang | Name of the Vikram year; Ravi Yoga; Tripushkar; the kind of Panchak; Chandra bala; the Janma tara | Drik Panchang |
+| Ghat chakra | Common table or Sanjay Rath's lineage (ghat Moon, ghat lagna); how the month column is matched to a day | the common table; the lunar month |
+| Upagrahas | Where Mandi is taken in Saturn's part (end, middle, start); the lordless eighth part | end; lordless (BPHS 3.67) |
+| Sudarshan | Whether Rahu and Ketu aspect (none, the 7th, the 5th, 7th and 9th) | none |
+
+`findYogas` is unchanged: a yoga that only the other reading finds is shown in
+`findYogaMatbhed`, not added to the findings the rest of the app reads.
+
+What the research found that changes earlier notes:
+
+* The Vikram year's name. Drik prints Vikram 2083 as Siddharthi and also shows
+  Raudra from 21 April 2026 on its Brihaspati row; the Hindi dailies call 2083
+  Raudra; the southern count (the Shaka year) gives Parabhava. They are 13 and 14
+  places apart in the sixty-cycle, not 12. "12" is the gap of the Gujarati count
+  (Vikram + 9) and, on our model, was also the Jupiter count's gap until about
+  1942; each name the Jupiter count skips adds one (the next skip is Durmati in
+  April 2028). Drik does not state its rule; the model in `panchang_calendar.dart`
+  (mean Jovian year of 361.026721 days, anchored on the changeover Drik prints for
+  21 April 2026, the Vikram year named by the samvatsara running at Mesha
+  Sankranti) reproduces every Drik label from Vikram 2079 to 2086 and its
+  changeover times to within an hour.
+* The ghat lagna: the common table has no lagna column. Its two sign columns are
+  the ghat Moon for a man and for a woman; the lagna appears only in Sanjay
+  Rath's lineage, whose ghat Moon also differs from the common one in nine of the
+  twelve signs. No table keyed on the lunar birth month was found anywhere; what
+  is disputed is how the month column is matched to a day (lunar month, or the
+  Sun's sign, as one calculator approximates it).
+* Adhi: BPHS 37.5 ranks king, minister or commander by strength, not by how many
+  benefics stand there; the count-based grading is from Phaladeepika, Raman and a
+  commentator on the Brihat Jataka. Ardha Chandra: no BPHS verse defines it
+  (35.5 names it, 35.40 gives its effect); Varahamihira does. Lakshmi: the verse
+  reads kendra only; Raman's "kendra or trikona" and Phaladeepika's Venus form are
+  the other two. Daridra: the app's strict form is from BPHS chapter 13 as
+  Santhanam glosses it, not chapter 42.
+* Ishrafa: Hayanaratna 3.4 (quoting Tajikabhushana) and the Hindi commentary on
+  the Tajika Neelakanthi wait for a full degree; PyJHora's code, and the app so
+  far, do not.
+* The Janma tara: Drik and Vedpanchang leave it out of their lists of good taras
+  without calling it bad; Wilhelm grades it by round of nine.
+* Bhadra's heaven and netherworld split: no second table of signs was found, so
+  it is not a two-view item; what the sources differ on is how harmful a Bhadra
+  that is not on earth is.
+
+How it was checked. Hayanaratna was read in Gansten's English on wisdomlib; the
+Sanskrit pages could not be opened. The BPHS verses were read in the Sanskrit on
+enjoylearningsanskrit.com and in Santhanam's English; PyJHora's saham, Tajaka,
+yoga, upagraha and panchang code was read as source; the Tajika Neelakanthi was
+read in the Hindi commentary printed with the Venkateshwar Press edition on
+Sanskrit Wikisource; Drik Panchang's pages were read and, where it prints only
+dates (Ravi Yoga, Tripushkar), its October 2026 and 2026 rows were recomputed
+against the rules. What is credited to K. S. Charak is what a developer's
+transcription of the book (the teistro-sdk project) says, and every such line
+says so; the book was not seen. Adawal, Sarvartha Chintamani, the Saravali, the
+Sanskrit of the Muhurta Chintamani and of Narada, Rath's own article and the
+Jagannatha Hora software itself were not reached. No verse is credited that was
+not seen. Where a rule needed a threshold the text does not give (strength by
+time for Kuttha, "powerful", "unqualified", "touched by a maraka lord"), the
+choice is called "our reading" on the card.

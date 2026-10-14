@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/astro/ephemeris.dart';
 import '../engine/jyotish/graha_data.dart';
+import '../engine/jyotish/mat.dart';
 import '../engine/jyotish/saham.dart';
 import '../engine/jyotish/tajika_aspects.dart';
 import '../engine/jyotish/tajika_bala.dart';
@@ -10,6 +11,7 @@ import '../engine/jyotish/varshphal.dart';
 import '../engine/jyotish/varshphal_dasha.dart';
 import '../engine/jyotish/varshphal_months.dart';
 import '../widgets/common.dart';
+import '../widgets/matbhed_card.dart';
 
 /// The sections of the varshphal screen that read the year the Tajika way.
 /// Each takes the computed [Varshphal] and the language and draws with the
@@ -20,6 +22,53 @@ String _name(Graha graha, bool hindi) =>
 
 String _range(DateTime a, DateTime b, bool hindi) =>
     '${dateBi(a).of(hindi)} – ${dateBi(b).of(hindi)}';
+
+/// "Where the books differ": the heading and the "Two views" cards of one
+/// part of the page, with what is still left out and why.
+class _Matbhed extends StatelessWidget {
+  const _Matbhed({
+    required this.items,
+    required this.leftOut,
+    required this.hindi,
+  });
+
+  final List<Matbhed> items;
+  final List<LeftOut> leftOut;
+  final bool hindi;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty && leftOut.isEmpty) return const SizedBox.shrink();
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 18, 4, 4),
+          child: Text(
+            hindi ? 'जहाँ ग्रंथों में मतभेद है' : 'Where the books differ',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(
+            hindi
+                ? 'यहाँ ग्रंथ एक राय नहीं रखते, इसलिए दोनों मत उनके तर्क और इस वर्ष कुंडली पर उनकी गणना के साथ दिए हैं। ऐप जिससे गिनता है वह चिह्नित है।'
+                : 'The books do not agree here, so each view is given with its reasoning and its working on this year chart. The one the app counts by is marked.',
+            style: _small(context),
+          ),
+        ),
+        MatbhedList(items: items, leftOut: leftOut, hindi: hindi),
+      ],
+    );
+  }
+}
+
+List<LeftOut> _leftOutFor(Varshphal v, bool Function(String key) test) =>
+    v.leftOut.where((LeftOut l) => test(l.key)).toList(growable: false);
 
 /// "Why this": the chart factors a reading was built from.
 class _WhyThis extends StatelessWidget {
@@ -507,6 +556,14 @@ class DashaSection extends StatelessWidget {
             ],
           ),
         ),
+        _Matbhed(
+          items: varshphal.dashaMatbhed,
+          leftOut: _leftOutFor(
+            varshphal,
+            (String k) => k.startsWith('patyayini'),
+          ),
+          hindi: hindi,
+        ),
       ],
     );
   }
@@ -701,10 +758,10 @@ class TajikaSection extends StatelessWidget {
               ],
             ),
           ),
-        DisclaimerNote(
-          hindi
-              ? 'सोलह ताजिक योगों में से बारह यहाँ गिने गए हैं। गैरी-कम्बूल, ताम्बीर, कुत्थ और दुरुफ नहीं, क्योंकि ग्रंथों की उनकी परिभाषा बिना अनुमान के पूरी नहीं होती।'
-              : 'Twelve of the sixteen Tajika yogas are worked out here. Gairi-kamboola, Tambira, Kuttha and Durapha are not, because their definitions in the texts cannot be met without guessing.',
+        _Matbhed(
+          items: varshphal.tajikaMatbhed,
+          leftOut: _leftOutFor(varshphal, (String k) => k == 'rahu_mouth_tail'),
+          hindi: hindi,
         ),
       ],
     );
@@ -811,8 +868,8 @@ class SahamSection extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 hindi
-                    ? 'सूत्र A − B + C है: B से A तक का चाप C से आगे। लग्न B से A के चाप में न हो तो एक राशि (30°) और जुड़ती है (हायनरत्न 4.2)।'
-                    : 'The formula is A − B + C: the arc from B to A laid off from C. If the lagna is not in the arc from B to A, one sign (30°) is added (Hayanaratna 4.2).',
+                    ? 'सूत्र A − B + C है: B से A तक का चाप C से आगे। लग्न B से A के चाप में न हो तो एक राशि (30°) और जुड़ती है; इस नियम पर ग्रंथों में मतभेद है, नीचे देखें।'
+                    : 'The formula is A − B + C: the arc from B to A laid off from C. If the lagna is not in the arc from B to A, one sign (30°) is added; the books differ on this rule, see below.',
                 style: _small(context),
               ),
             ],
@@ -895,10 +952,13 @@ class SahamSection extends StatelessWidget {
               ],
             ),
           ),
-        DisclaimerNote(
-          hindi
-              ? 'मित्र, वाणिज्य, विवाह, संताप, श्रद्धा, प्रीति, व्यापार और बंधु सहम यहाँ नहीं हैं: ग्रंथों और सॉफ़्टवेयर में उनके सूत्र या रात्रि के उलटाव पर मतभेद है। विश्वासघात सहम का सूत्र स्थापित नहीं हो सका।'
-              : 'The Mitra, Vanik, Vivaha, Santapa, Shraddha, Preeti, Vyapara and Bandhu sahams are left out: the texts and the software disagree on their formulas or on whether they reverse at night. A formula for the Vishwasghata saham could not be established.',
+        _Matbhed(
+          items: <Matbhed>[
+            ?varshphal.extraSign,
+            for (final SahamMatbhed m in varshphal.sahamMatbhed) m.matbhed,
+          ],
+          leftOut: _leftOutFor(varshphal, (String k) => k == 'vishwasghata'),
+          hindi: hindi,
         ),
       ],
     );

@@ -6,6 +6,8 @@ import 'package:kundlisaar/engine/astro/houses.dart';
 import 'package:kundlisaar/engine/astro/time.dart';
 import 'package:kundlisaar/engine/jyotish/chart.dart';
 import 'package:kundlisaar/engine/jyotish/dasha.dart';
+import 'package:kundlisaar/engine/jyotish/mat.dart';
+import 'package:kundlisaar/engine/jyotish/tajika_common.dart' show Bi;
 import 'package:kundlisaar/engine/jyotish/matching.dart';
 import 'package:kundlisaar/engine/jyotish/nakshatra.dart';
 import 'package:kundlisaar/engine/jyotish/panchang.dart';
@@ -334,6 +336,86 @@ void main() {
       final MatchResult result = matchCharts(same, same);
       final Koota nadi = result.kootas.firstWhere((Koota k) => k.key == 'nadi');
       expect(nadi.score, 0);
+    });
+  });
+
+  group('matbhed, the carrier of two views', () {
+    Mat view({
+      bool isDefault = false,
+      double? value,
+      bool? holds,
+      String en = 'x',
+    }) => Mat(
+      position: Bi('rule $en', 'नियम $en'),
+      holder: const Bi('a widely printed convention', 'एक प्रचलित परिपाटी'),
+      reasoning: const Bi('because', 'क्योंकि'),
+      result: Bi('result $en', 'नतीजा $en'),
+      isDefault: isDefault,
+      value: value,
+      holds: holds,
+    );
+    Matbhed pair(List<Mat> views) => Matbhed(
+      key: 'k',
+      topic: const Bi('topic', 'विषय'),
+      views: views,
+      defaultReason: const Bi('why', 'क्यों'),
+    );
+
+    test('is titled by how many views it carries', () {
+      expect(pair(<Mat>[view(isDefault: true), view()]).title.en, 'Two views');
+      expect(pair(<Mat>[view(isDefault: true), view()]).title.hi, 'दो मत');
+      expect(
+        pair(<Mat>[view(isDefault: true), view(), view()]).title.hi,
+        'तीन मत',
+      );
+    });
+
+    test('is complete only with exactly one default and both languages', () {
+      expect(pair(<Mat>[view(isDefault: true), view()]).isComplete, isTrue);
+      expect(pair(<Mat>[view(), view()]).isComplete, isFalse);
+      expect(
+        pair(<Mat>[view(isDefault: true), view(isDefault: true)]).isComplete,
+        isFalse,
+      );
+      expect(pair(<Mat>[view(isDefault: true)]).isComplete, isFalse);
+      final Mat hollow = Mat(
+        position: const Bi('rule', ''),
+        holder: const Bi('h', 'ह'),
+        reasoning: const Bi('r', 'र'),
+        result: const Bi('x', 'क'),
+      );
+      expect(pair(<Mat>[view(isDefault: true), hollow]).isComplete, isFalse);
+    });
+
+    test('says whether the positions come to different results', () {
+      expect(
+        pair(<Mat>[view(isDefault: true, value: 10), view(value: 40)]).differs,
+        isTrue,
+      );
+      expect(
+        pair(<Mat>[view(isDefault: true, value: 10), view(value: 10)]).differs,
+        isFalse,
+      );
+      expect(
+        pair(<Mat>[
+          view(isDefault: true, holds: true),
+          view(holds: false),
+        ]).differs,
+        isTrue,
+      );
+      expect(
+        pair(<Mat>[view(isDefault: true, en: 'a'), view(en: 'b')]).differs,
+        isTrue,
+      );
+    });
+
+    test('finds the default and the others', () {
+      final Matbhed m = pair(<Mat>[
+        view(en: 'a'),
+        view(isDefault: true, en: 'b'),
+      ]);
+      expect(m.defaultView.position.en, 'rule b');
+      expect(m.others.single.position.en, 'rule a');
     });
   });
 }

@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../engine/jyotish/chart.dart';
 import '../engine/jyotish/ghat_chakra.dart';
+import '../engine/jyotish/mat.dart';
 import '../engine/jyotish/rashi.dart';
 import '../l10n/app_localizations.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
+import '../widgets/matbhed_card.dart';
 import 'profile_scope.dart';
 
 /// Ghat Chakra: the month, tithi, weekday, nakshatra, yoga, karana, prahar and
@@ -130,6 +132,18 @@ class GhatChakraScreen extends StatelessWidget {
                     ),
                 ],
               ),
+            ),
+            MatbhedList(
+              withHeading: true,
+              items: <Matbhed>[ghatChakraMatbhed(kundli)],
+              leftOut: ghatLeftOut,
+              hindi: hindi,
+            ),
+            DeferredBuilder<Matbhed>(
+              message: l.computing,
+              work: () => ghatMonthMatbhed(kundli, DateTime.now()),
+              builder: (BuildContext context, Matbhed month) =>
+                  MatbhedList(items: <Matbhed>[month], hindi: hindi),
             ),
             DisclaimerNote(l.disclaimer),
           ],

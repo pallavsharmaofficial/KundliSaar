@@ -7,6 +7,7 @@ import '../engine/jyotish/chart.dart';
 import '../engine/jyotish/graha_data.dart';
 import '../engine/jyotish/phaladesh.dart';
 import '../engine/jyotish/rashi.dart';
+import '../engine/jyotish/remedies.dart';
 import '../l10n/app_localizations.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
@@ -254,20 +255,283 @@ class _Factors extends StatelessWidget {
   }
 }
 
-/// What the period or house asks of the person, what eases it, and why the
-/// chart says so. Collapsed by default so a long list stays readable.
+/// How strongly the chart points at a reading, as a chip: the band and the
+/// count of factors behind it. It is a count of agreeing chart factors, never
+/// a chance of anything happening, and the details open under "Why this".
+class _StrengthChip extends StatelessWidget {
+  const _StrengthChip(this.indication, this.fmt);
+
+  final Indication indication;
+  final _Fmt fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color color = switch (indication.band) {
+      IndicationBand.strong => theme.colorScheme.primary,
+      IndicationBand.moderate => theme.colorScheme.onSurface.withValues(
+        alpha: 0.8,
+      ),
+      IndicationBand.weak => theme.colorScheme.onSurface.withValues(
+        alpha: 0.58,
+      ),
+      IndicationBand.mixed => theme.colorScheme.onSurface.withValues(
+        alpha: 0.72,
+      ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        fmt.bi(indication.summary),
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontSize: 13.5,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+/// The tone and the strength of indication, side by side.
+class _Chips extends StatelessWidget {
+  const _Chips({
+    required this.tone,
+    required this.indication,
+    required this.fmt,
+  });
+
+  final Tone tone;
+  final Indication indication;
+  final _Fmt fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[_ToneChip(tone), _StrengthChip(indication, fmt)],
+    );
+  }
+}
+
+/// A bullet list of chart factors under a heading.
+class _FactorGroup extends StatelessWidget {
+  const _FactorGroup({
+    required this.heading,
+    required this.factors,
+    required this.fmt,
+  });
+
+  final Bi heading;
+  final List<IndicatorFactor> factors;
+  final _Fmt fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context)!;
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            fmt.bi(heading),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              letterSpacing: 0.3,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          if (factors.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Text(l.phNone, style: theme.textTheme.bodySmall),
+            )
+          else
+            _Factors(
+              basis: <Bi>[for (final IndicatorFactor f in factors) f.text],
+              fmt: fmt,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The band, the count and every factor behind it, the ones that agree and
+/// the ones that do not, with the scale named plainly.
+class _StrengthBlock extends StatelessWidget {
+  const _StrengthBlock({required this.indication, required this.fmt});
+
+  final Indication indication;
+  final _Fmt fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context)!;
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            l.phStrength,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              letterSpacing: 0.3,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            fmt.bi(indication.summary),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (indication.caution != null) ...<Widget>[
+            const SizedBox(height: 4),
+            Text(
+              fmt.bi(indication.caution!),
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+          _FactorGroup(
+            heading: indication.agreeHeading,
+            factors: indication.agreeing,
+            fmt: fmt,
+          ),
+          _FactorGroup(
+            heading: indication.disagreeHeading,
+            factors: indication.disagreeing,
+            fmt: fmt,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            fmt.bi(indicationScaleNote),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              height: 1.45,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The remedies that belong to one finding. Each says which graha it is for
+/// and what presses on it, then the mantra with its count, the fasting day,
+/// the giving, the deity and one plain act. Nothing here is bought.
+class _RemedyBlock extends StatelessWidget {
+  const _RemedyBlock({required this.remedies, required this.fmt});
+
+  final List<Remedy> remedies;
+  final _Fmt fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    if (remedies.isEmpty) return const SizedBox.shrink();
+    final AppLocalizations l = AppLocalizations.of(context)!;
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            l.phRemedies,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              letterSpacing: 0.3,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final Remedy remedy in remedies)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    fmt.graha(remedy.graha),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      fmt.bi(remedy.addresses),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _Labelled(l.mantra, fmt.bi(remedy.kit.mantra)),
+                  _Labelled(l.japaCount, fmt.bi(remedy.kit.japa)),
+                  _Labelled(l.fastingDay, fmt.bi(remedy.kit.fast)),
+                  _Labelled(l.daan, fmt.bi(remedy.kit.daan)),
+                  _Labelled(l.phDeity, fmt.bi(remedy.kit.deity)),
+                  _Labelled(l.simpleAct, fmt.bi(remedy.kit.simpleAct)),
+                ],
+              ),
+            ),
+          Text(
+            fmt.bi(remedyStance),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13.5,
+              height: 1.45,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What tends to come up, what the period or house asks of the person, how
+/// strongly the chart says so, what eases it, what the tradition offers, and
+/// why the chart says so. Collapsed by default so a long list stays readable.
 class _WhyBlock extends StatelessWidget {
   const _WhyBlock({
     required this.asks,
     required this.relief,
     required this.basis,
     required this.fmt,
+    this.tends,
+    this.indication,
+    this.remedies = const <Remedy>[],
   });
 
   final Bi asks;
   final Bi? relief;
   final List<Bi> basis;
   final _Fmt fmt;
+  final Bi? tends;
+  final Indication? indication;
+  final List<Remedy> remedies;
 
   @override
   Widget build(BuildContext context) {
@@ -287,8 +551,12 @@ class _WhyBlock extends StatelessWidget {
           ),
         ),
         children: <Widget>[
+          if (tends != null) _Labelled(l.phTends, fmt.bi(tends!)),
           _Labelled(l.phAsks, fmt.bi(asks)),
+          if (indication != null)
+            _StrengthBlock(indication: indication!, fmt: fmt),
           if (relief != null) _Labelled(l.phRelief, fmt.bi(relief!)),
+          _RemedyBlock(remedies: remedies, fmt: fmt),
           _Factors(basis: basis, fmt: fmt),
         ],
       ),
@@ -435,7 +703,6 @@ class _NowPanel extends StatelessWidget {
     ];
     return Panel(
       title: l.phNow,
-      trailing: _ToneChip(window.tone),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -446,6 +713,8 @@ class _NowPanel extends StatelessWidget {
               emphasise: i == 0,
             ),
           const SizedBox(height: 8),
+          _Chips(tone: window.tone, indication: window.indication, fmt: fmt),
+          const SizedBox(height: 10),
           Text(
             fmt.bi(window.headline),
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -454,6 +723,8 @@ class _NowPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(fmt.bi(window.expect)),
+          const SizedBox(height: 10),
+          _Labelled(l.phTends, fmt.bi(window.tends)),
         ],
       ),
     );
@@ -599,12 +870,16 @@ class _WindowRow extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
                       _ToneChip(window.tone),
+                      _StrengthChip(window.indication, fmt),
                       _AreaChips(areas: window.areas, fmt: fmt),
                     ],
                   ),
                   _WhyBlock(
+                    tends: window.tends,
                     asks: window.asks,
+                    indication: window.indication,
                     relief: window.relief,
+                    remedies: window.remedies,
                     basis: window.basis,
                     fmt: fmt,
                   ),
@@ -682,7 +957,11 @@ class _HouseCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 6),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: _ToneChip(house.tone),
+            child: _Chips(
+              tone: house.tone,
+              indication: house.indication,
+              fmt: fmt,
+            ),
           ),
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -716,8 +995,11 @@ class _HouseCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(fmt.bi(house.reading)),
           _WhyBlock(
+            tends: house.tends,
             asks: house.asks,
+            indication: house.indication,
             relief: house.relief,
+            remedies: house.remedies,
             basis: house.basis,
             fmt: fmt,
           ),
@@ -814,7 +1096,7 @@ class _PeriodCard extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(fontSize: 14),
             ),
             const SizedBox(height: 6),
-            _ToneChip(period.tone),
+            _Chips(tone: period.tone, indication: period.indication, fmt: fmt),
           ],
         ),
       ),
@@ -835,8 +1117,11 @@ class _PeriodCard extends StatelessWidget {
           _Labelled(l.phModifier, fmt.bi(period.modifier!)),
         _Labelled(l.phContext, fmt.bi(period.context)),
         _WhyBlock(
+          tends: period.tends,
           asks: period.asks,
+          indication: period.indication,
           relief: period.relief,
+          remedies: period.remedies,
           basis: period.basis,
           fmt: fmt,
         ),
@@ -895,7 +1180,7 @@ class _GrahasTab extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(fontSize: 14),
                     ),
                     const SizedBox(height: 6),
-                    _ToneChip(g.tone),
+                    _Chips(tone: g.tone, indication: g.indication, fmt: fmt),
                   ],
                 ),
               ),
@@ -922,10 +1207,18 @@ class _GrahasTab extends StatelessWidget {
                     l.phYogas,
                     g.yogas.map((Bi y) => fmt.bi(y)).join('\n\n'),
                   ),
+                  _RemedyBlock(
+                    remedies: <Remedy>[
+                      for (final YogaNote y in g.yogaNotes) ...y.remedies,
+                    ],
+                    fmt: fmt,
+                  ),
                 ],
                 _WhyBlock(
                   asks: g.asks,
+                  indication: g.indication,
                   relief: g.relief,
+                  remedies: g.remedies,
                   basis: g.basis,
                   fmt: fmt,
                 ),
@@ -968,10 +1261,11 @@ class _GocharTab extends StatelessWidget {
           for (final GocharReading r in gochar.readings)
             Panel(
               title: fmt.graha(r.graha),
-              trailing: _ToneChip(r.tone),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  _Chips(tone: r.tone, indication: r.indication, fmt: fmt),
+                  const SizedBox(height: 8),
                   FactRow(l.sign, fmt.sign(r.sign), emphasise: true),
                   FactRow(l.phFromMoon, '${l.house} ${r.houseFromMoon}'),
                   FactRow(l.phFromLagna, '${l.house} ${r.houseFromLagna}'),
@@ -993,8 +1287,11 @@ class _GocharTab extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(fmt.bi(r.reading)),
                   _WhyBlock(
+                    tends: r.tends,
                     asks: r.asks,
+                    indication: r.indication,
                     relief: r.relief,
+                    remedies: r.remedies,
                     basis: r.basis,
                     fmt: fmt,
                   ),
