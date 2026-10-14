@@ -26,3 +26,8 @@ tools/flyer/art/*.png
 tools/flyer/art/*.jpg
 tools/flyer/art/*.jpeg
 tools/flyer/art/*.webp
+tools/card/build/
+tools/card/art/*.png
+tools/card/art/*.jpg
+tools/card/art/*.jpeg
+tools/card/art/*.webp
