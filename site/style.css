@@ -133,3 +133,9 @@
     .pill.major { color: var(--haldi); }
     .stamp { color: var(--haldi); background: rgba(227,160,8,0.16); }
   }
+
+/* The sample report, offered before anyone is asked for anything. */
+.sample { margin: 2.5rem 0; padding: 1.6rem 1.4rem; border-radius: 14px;
+          background: rgba(184,134,11,.08); border: 1px solid rgba(184,134,11,.3); }
+.sample h2 { margin-top: 0; }
+.sample .cta { margin-top: 1.1rem; }
