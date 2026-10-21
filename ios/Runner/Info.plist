@@ -25,7 +25,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Your spoken question is turned into text on this device so the app can answer it from your chart. Nothing is sent to KundliSaar.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>The camera is used only if you choose to photograph your own palm, so you can trace your lines over the picture. The photo stays on this device.</string>
+	<string>The camera looks at your palm on the hastrekha screen, and takes the picture when your hand is steady. It is looked at on this device only; the photo is never saved or sent anywhere.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pick an existing photo of your palm to trace your lines over. The photo stays on this device.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

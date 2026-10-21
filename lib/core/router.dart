@@ -6,6 +6,8 @@ import '../screens/ask_screen.dart';
 import '../screens/birth_form_screen.dart';
 import '../screens/chart_screen.dart';
 import '../screens/festivals_screen.dart';
+import '../palm/hand_tracker.dart';
+import '../screens/hastrekha_capture_screen.dart';
 import '../screens/hastrekha_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/learn_screen.dart';
@@ -149,8 +151,19 @@ GoRouter createRouter() => GoRouter(
     ),
     GoRoute(
       path: '/hastrekha',
+      // The camera reads the palm where the phone can run the hand models;
+      // the browser build keeps the hand tracer.
       builder: (BuildContext context, GoRouterState state) =>
-          const HastrekhaScreen(),
+          handDetectionSupported
+          ? const HastrekhaCaptureScreen()
+          : const HastrekhaScreen(),
+      routes: <RouteBase>[
+        GoRoute(
+          path: 'manual',
+          builder: (BuildContext context, GoRouterState state) =>
+              const HastrekhaScreen(),
+        ),
+      ],
     ),
   ],
 );

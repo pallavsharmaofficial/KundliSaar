@@ -10,14 +10,16 @@ import '../l10n/app_localizations.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/common.dart';
 import '../widgets/palm_canvas.dart';
+import '../widgets/palm_reading_view.dart';
 import 'profile_scope.dart';
 
 /// Hastrekha, read from a trace the person makes themselves.
 ///
-/// The honest shape of this feature: no camera is asked to understand a hand.
-/// The person drags the app's lines onto their own, optionally over a photo of
-/// their palm, and the engine reads the geometry they drew by the classical
-/// rules, saying which measurement produced which sentence.
+/// This is the by-hand path, and the fallback when the camera cannot read a
+/// palm (see hastrekha_capture_screen.dart). The person drags the app's lines
+/// onto their own, optionally over a photo of their palm, and the engine reads
+/// the geometry they drew by the classical rules, saying which measurement
+/// produced which sentence. Nothing here looks at the photo.
 class HastrekhaScreen extends StatefulWidget {
   const HastrekhaScreen({super.key});
 
@@ -256,45 +258,7 @@ class _HastrekhaScreenState extends State<HastrekhaScreen> {
           ),
           if (_reading != null) ...<Widget>[
             const SizedBox(height: 20),
-            Panel(
-              title: l.handType,
-              child: Text(hindi ? _reading!.summaryHindi : _reading!.summary),
-            ),
-            for (final LineReading line in _reading!.lines)
-              Panel(
-                title: hindi
-                    ? lineNames[line.line]![1]
-                    : lineNames[line.line]![0],
-                trailing: Text(
-                  hindi ? line.measuredHindi : line.measured,
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 12.5),
-                ),
-                child: Text(hindi ? line.readingHindi : line.reading),
-              ),
-            for (final MountReading mount in _reading!.mounts)
-              Panel(
-                title: hindi
-                    ? mountNames[mount.mount]![1]
-                    : mountNames[mount.mount]![0],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(hindi ? mount.readingHindi : mount.reading),
-                    if (mount.chartAgreement != null) ...<Widget>[
-                      const SizedBox(height: 8),
-                      Text(
-                        hindi
-                            ? mount.chartAgreementHindi!
-                            : mount.chartAgreement!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 14,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            PalmReadingPanels(reading: _reading!, hindi: hindi),
           ],
           DisclaimerNote(l.disclaimer),
         ],

@@ -33,6 +33,7 @@ DESCRIPTION
 REVIEW NOTES
 The app has no account and no server. Everything is computed on the device from
 bundled data. The microphone is used only while the user holds the mic button on
-the Ask screen, and the camera only if the user chooses to photograph their own
-palm on the Hastrekha screen; both are optional and every screen works without
-them. The app is free with no purchases.
+the Ask screen, and the camera only on the Hastrekha screen after the user taps
+to open it, to find their own open palm and take its picture; the hand is
+detected on the device with bundled models and nothing is stored or sent. Both
+are optional and every screen works without them. The app is free with no purchases.

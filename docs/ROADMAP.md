@@ -12,7 +12,9 @@
 - **Festival and vrat calendar**, computed per place, with the observance-time
   rules (pradosh, nishita, midday) and Bhadra.
 - **Hastrekha**: guided palm tracing with the classical line and mount rules,
-  cross-read against the kundli.
+  cross-read against the kundli; and an automatic camera capture that finds the
+  hand on the device, counts down, takes the picture and reads the hand type
+  and the great lines that are clear (see docs/ARCHITECTURE.md).
 - **Ank Jyotish**, **Prashna**, **daily reading**, **namkaran**, and
   **remedies** chosen from the chart.
 - **Voice**: ask by speaking, hear the answer read back, in both languages.

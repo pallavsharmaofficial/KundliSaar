@@ -5,13 +5,27 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-feature android:name="android.hardware.microphone" android:required="false"/>
 
-    <!-- The palm photo goes through the system camera app and the Android photo
-         picker, both of which hand back one picture without the app ever being
-         able to read the library. Declaring CAMERA or READ_MEDIA_IMAGES would
-         gain nothing, would oblige a runtime prompt the user should not see,
-         and would drag the listing into Google's photo and video permissions
-         declaration. The plugins inject them, so they are removed here. -->
-    <uses-permission android:name="android.permission.CAMERA" tools:node="remove"/>
+    <!-- The camera is used on the hastrekha screen, to find an open palm and
+         take its picture when it is steady. It is asked for there, with the
+         reason given first, never at start-up, and every screen works without
+         it: the hand tracer needs no camera. Frames are looked at on the phone
+         and dropped; nothing is stored or uploaded. The camera hardware is not
+         required, so the listing still installs on phones without one.
+
+         The photo library is another matter. The palm picker uses the Android
+         photo picker, which hands back one picture without the app ever being
+         able to read the library, so the media permissions the plugins inject
+         are removed: they would gain nothing and would drag the listing into
+         Google's photo and video permissions declaration. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" tools:replace="android:required"/>
+    <!-- Two more that arrive with the camera and model libraries and are used by
+         nothing here: the phone-state one is implied by an old-targeting GPU
+         library, and the network-state one by a media library's streaming code. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>

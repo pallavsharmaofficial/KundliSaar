@@ -21,7 +21,7 @@ browser tab they were typed into.
 | Muhurta | A **finder** that scores every choghadiya slot across a date range against the rules for ten named activities, and shows what moved each score |
 | Year chart | **Varshphal**: the solar return to the arc-minute, Muntha, and the lord of the year chosen from the five contenders by shadbala |
 | Festivals | A computed **festival and vrat calendar** for any year — each date from the tithi running at the moment the rule asks for: sunrise, midday, pradosh or nishita, with Bhadra moving Holika Dahan |
-| Palmistry | **Hastrekha**: trace your own lines over a palm outline, optionally on a photo of your hand, and the classical rules read the geometry you drew, naming the measurement behind every sentence |
+| Palmistry | **Hastrekha**: show your palm to the camera and the app finds the hand, takes the picture by itself, measures its shape and traces the great lines it can clearly see, on the device; or trace your own lines over a palm outline. The classical rules read the geometry, naming the measurement behind every sentence |
 | Panchang | Tithi, nakshatra, yoga, karana and vara with end times, sunrise, sunset, moonrise, moonset, Rahu Kaal, Gulika, Yamaganda, Abhijit, day and night choghadiya, horas |
 | Matching | Ashtakoota to 36 gunas with every koota explained, plus Mangal dosha on both sides |
 | Baby names | **Namkaran**: the syllable from the pada of the janma nakshatra, with example names |

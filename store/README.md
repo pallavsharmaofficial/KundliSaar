@@ -46,7 +46,9 @@ Answer the form this way, because it is what the code does:
 - **Data types:** none. Birth details, charts and settings are written to the
   app's own storage and are never transmitted.
 - **Permissions:** microphone (optional, only while the mic button is held),
-  camera and photos (optional, only for the palm photo the user chooses).
+  camera (optional, only on the hastrekha screen, after the user taps to open
+  it; frames are looked at on the device and dropped) and photos (optional,
+  only for a palm photo the user chooses to trace over).
 
 ## Content rating questionnaire
 

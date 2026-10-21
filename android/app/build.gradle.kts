@@ -52,6 +52,15 @@ android {
         }
     }
 
+    packaging {
+        jniLibs {
+            // tflite_flutter pulls in LiteRT's GPU delegate, which this app
+            // never loads (two CPU threads are plenty for these networks, and
+            // GPU delegates are where cheap phones misbehave). 2.5 MB an ABI.
+            excludes += "**/libtensorflowlite_gpu_jni.so"
+        }
+    }
+
     buildTypes {
         release {
             signingConfig = if (keystoreProperties.isNotEmpty()) {
