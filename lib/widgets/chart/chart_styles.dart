@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme.dart';
 import '../../engine/astro/ephemeris.dart';
 import '../../engine/jyotish/chart.dart';
 import '../../engine/jyotish/graha_data.dart';
@@ -81,6 +82,7 @@ class KundliChartPainter extends CustomPainter {
     required this.accentColor,
     required this.hindi,
     this.highlightHouse,
+    this.lagnaFill,
   });
 
   final List<HouseContents> houses;
@@ -90,6 +92,12 @@ class KundliChartPainter extends CustomPainter {
   final Color accentColor;
   final bool hindi;
   final int? highlightHouse;
+
+  /// What the rising house is washed with. Without one it is the accent at a
+  /// low opacity, as it always was.
+  final Color? lagnaFill;
+
+  Color get _lagnaFill => lagnaFill ?? accentColor.withValues(alpha: 0.14);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -120,6 +128,17 @@ class KundliChartPainter extends CustomPainter {
     final Offset tl = r.topLeft;
     Offset p(double x, double y) => Offset(tl.dx + x * s, tl.dy + y * s);
 
+    // The rising house is the diamond at the top: washed, so the eye finds
+    // where the chart begins.
+    canvas.drawPath(
+      Path()
+        ..moveTo(p(0.5, 0).dx, p(0.5, 0).dy)
+        ..lineTo(p(0.75, 0.25).dx, p(0.75, 0.25).dy)
+        ..lineTo(p(0.5, 0.5).dx, p(0.5, 0.5).dy)
+        ..lineTo(p(0.25, 0.25).dx, p(0.25, 0.25).dy)
+        ..close(),
+      Paint()..color = _lagnaFill,
+    );
     canvas.drawRect(r, _stroke);
     canvas.drawLine(p(0, 0), p(1, 1), _stroke);
     canvas.drawLine(p(1, 0), p(0, 1), _stroke);
@@ -177,7 +196,7 @@ class KundliChartPainter extends CustomPainter {
         );
         if (house.isLagna) {
           final Paint fill = Paint()
-            ..color = accentColor.withValues(alpha: 0.14)
+            ..color = _lagnaFill
             ..style = PaintingStyle.fill;
           canvas.drawRect(box, fill);
           canvas.drawLine(
@@ -238,7 +257,7 @@ class KundliChartPainter extends CustomPainter {
         TextSpan(
           text: '${rashiNumber(house.signIndex)}\n',
           style: TextStyle(
-            color: textColor.withValues(alpha: 0.55),
+            color: textColor.withValues(alpha: 0.65),
             fontSize: 12 * scale,
             height: 1.2,
           ),
@@ -298,7 +317,10 @@ class KundliChartPainter extends CustomPainter {
       old.style != style ||
       old.hindi != hindi ||
       old.highlightHouse != highlightHouse ||
-      old.lineColor != lineColor;
+      old.lineColor != lineColor ||
+      old.textColor != textColor ||
+      old.accentColor != accentColor ||
+      old.lagnaFill != lagnaFill;
 }
 
 /// The chart as a widget, with the style switch handled by the caller.
@@ -321,22 +343,48 @@ class KundliChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final KundliTones tones = KundliTones.of(context);
     final bool hindi = Localizations.localeOf(context).languageCode == 'hi';
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    // The chart is drawn on a sheet of its own, raised off the page like a
+    // panel, with the drawing inset so its outer square keeps clear of the
+    // edge. The widget keeps the size it was asked for.
+    final double inset = size * 0.045;
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: KundliChartPainter(
-          houses: houseContents(
-            kundli,
-            overrideSigns: overrideSigns,
-            overrideLagna: overrideLagna,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tones.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: tones.cardBorder),
+          boxShadow: dark
+              ? null
+              : <BoxShadow>[
+                  BoxShadow(
+                    color: tones.shadow.withValues(alpha: 0.10),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(inset),
+          child: CustomPaint(
+            painter: KundliChartPainter(
+              houses: houseContents(
+                kundli,
+                overrideSigns: overrideSigns,
+                overrideLagna: overrideLagna,
+              ),
+              style: style,
+              lineColor: tones.glyph.withValues(alpha: dark ? 0.7 : 0.8),
+              textColor: scheme.onSurface,
+              accentColor: scheme.primary,
+              lagnaFill: tones.accentWash,
+              hindi: hindi,
+            ),
           ),
-          style: style,
-          lineColor: scheme.onSurface.withValues(alpha: 0.45),
-          textColor: scheme.onSurface,
-          accentColor: scheme.primary,
-          hindi: hindi,
         ),
       ),
     );

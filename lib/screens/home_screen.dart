@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import '../models/saved_profile.dart';
 import '../state/profiles_cubit.dart';
 import '../widgets/common.dart';
+import '../widgets/feature_tile.dart';
+import '../widgets/glyphs.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -38,7 +40,14 @@ class HomeScreen extends StatelessWidget {
               children: <Widget>[
                 FilledButton.icon(
                   onPressed: () => context.push('/new'),
-                  icon: const Icon(Icons.auto_awesome_outlined),
+                  // On the night theme the button is the accent's own colour, so the
+                  // chart's lit diamond takes the button's label colour instead.
+                  icon: KIcon(
+                    KGlyph.kundli,
+                    accent: theme.brightness == Brightness.dark
+                        ? theme.colorScheme.onPrimary
+                        : null,
+                  ),
                   label: Text(l.newChart),
                 ),
                 if (profiles.isNotEmpty) ...<Widget>[
@@ -84,95 +93,51 @@ class HomeScreen extends StatelessWidget {
                 _Section(
                   title: l.tabChart,
                   tiles: <_Tile>[
+                    _Tile(KGlyph.phaladesh, l.featurePhaladesh, '/phaladesh'),
+                    _Tile(KGlyph.rashifal, l.featureRashifal, '/today'),
+                    _Tile(KGlyph.sudarshan, l.featureSudarshan, '/sudarshan'),
                     _Tile(
-                      Icons.timeline_outlined,
-                      l.featurePhaladesh,
-                      '/phaladesh',
-                    ),
-                    _Tile(Icons.today_outlined, l.featureRashifal, '/today'),
-                    _Tile(
-                      Icons.donut_large_outlined,
-                      l.featureSudarshan,
-                      '/sudarshan',
-                    ),
-                    _Tile(
-                      Icons.event_busy_outlined,
+                      KGlyph.ghatChakra,
                       l.featureGhatChakra,
                       '/ghat-chakra',
                     ),
                     _Tile(
-                      Icons.grid_on_outlined,
+                      KGlyph.sarvatobhadra,
                       l.featureSarvatobhadra,
                       '/sarvatobhadra',
                     ),
-                    _Tile(
-                      Icons.speed_outlined,
-                      l.featureStrengths,
-                      '/strengths',
-                    ),
-                    _Tile(
-                      Icons.sync_alt_outlined,
-                      l.featureTransits,
-                      '/transits',
-                    ),
-                    _Tile(
-                      Icons.cake_outlined,
-                      l.featureVarshphal,
-                      '/varshphal',
-                    ),
-                    _Tile(
-                      Icons.healing_outlined,
-                      l.featureRemedies,
-                      '/remedies',
-                    ),
+                    _Tile(KGlyph.strengths, l.featureStrengths, '/strengths'),
+                    _Tile(KGlyph.transits, l.featureTransits, '/transits'),
+                    _Tile(KGlyph.varshphal, l.featureVarshphal, '/varshphal'),
+                    _Tile(KGlyph.remedies, l.featureRemedies, '/remedies'),
                   ],
                 ),
                 _Section(
                   title: l.tabPanchang,
                   tiles: <_Tile>[
-                    _Tile(
-                      Icons.calendar_month_outlined,
-                      l.tabPanchang,
-                      '/panchang',
-                    ),
-                    _Tile(
-                      Icons.schedule_outlined,
-                      l.featureMuhurta,
-                      '/muhurta',
-                    ),
-                    _Tile(
-                      Icons.celebration_outlined,
-                      l.featureFestivals,
-                      '/festivals',
-                    ),
+                    _Tile(KGlyph.panchang, l.tabPanchang, '/panchang'),
+                    _Tile(KGlyph.muhurta, l.featureMuhurta, '/muhurta'),
+                    _Tile(KGlyph.festivals, l.featureFestivals, '/festivals'),
                   ],
                 ),
                 _Section(
                   title: l.matchTitle,
                   tiles: <_Tile>[
-                    _Tile(Icons.favorite_outline, l.tabMatch, '/match'),
-                    _Tile(
-                      Icons.child_care_outlined,
-                      l.featureNamkaran,
-                      '/namkaran',
-                    ),
+                    _Tile(KGlyph.match, l.tabMatch, '/match'),
+                    _Tile(KGlyph.namkaran, l.featureNamkaran, '/namkaran'),
                   ],
                 ),
                 _Section(
                   title: l.moreFeatures,
                   tiles: <_Tile>[
+                    _Tile(KGlyph.hastrekha, l.featureHastrekha, '/hastrekha'),
                     _Tile(
-                      Icons.back_hand_outlined,
-                      l.featureHastrekha,
-                      '/hastrekha',
-                    ),
-                    _Tile(
-                      Icons.pin_outlined,
+                      KGlyph.numerology,
                       l.featureNumerology,
                       '/numerology',
                     ),
-                    _Tile(Icons.help_outline, l.featurePrashna, '/prashna'),
-                    _Tile(Icons.menu_book_outlined, l.tabLearn, '/learn'),
+                    _Tile(KGlyph.prashna, l.featurePrashna, '/prashna'),
+                    _Tile(KGlyph.learn, l.tabLearn, '/learn'),
                   ],
                 ),
               ],
@@ -186,9 +151,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _Tile {
-  const _Tile(this.icon, this.label, this.route);
+  const _Tile(this.glyph, this.label, this.route);
 
-  final IconData icon;
+  final KGlyph glyph;
   final String label;
   final String route;
 }
@@ -201,21 +166,10 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            title,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: 13.5,
-              letterSpacing: 0.4,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ),
+        SectionLabel(title),
         Wrap(
           spacing: 10,
           runSpacing: 10,
@@ -236,34 +190,17 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final double width = (MediaQuery.of(context).size.width - 32 - 20) / 3;
-    return InkWell(
+    // Three to a row; two, then one, as the text grows, so a name such as
+    // Sarvatobhadra Chakra is never broken in the middle of a word.
+    final double scale = MediaQuery.textScalerOf(context).scale(1);
+    final int columns = scale > 1.5 ? 1 : (scale > 1.2 ? 2 : 3);
+    final double width =
+        (MediaQuery.of(context).size.width - 32 - 10 * (columns - 1)) / columns;
+    return FeatureTile(
+      glyph: tile.glyph,
+      label: tile.label,
       onTap: () => context.push(tile.route),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: width.clamp(96.0, 150.0),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.14),
-          ),
-        ),
-        child: Column(
-          children: <Widget>[
-            Icon(tile.icon, color: theme.colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(
-              tile.label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        ),
-      ),
+      width: columns == 3 ? width.clamp(96.0, 150.0) : width,
     );
   }
 }

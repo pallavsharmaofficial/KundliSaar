@@ -6,6 +6,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'camera_source_stub.dart'
+    if (dart.library.js_interop) 'camera_source_web.dart'
+    as web;
 import 'hand_tracker.dart';
 
 /// Why the camera could not be used.
@@ -50,6 +53,50 @@ abstract class CameraSource {
 
   Future<void> close();
 }
+
+/// A camera whose preview the person sees as in a mirror, as a laptop's
+/// webcam is shown. The frames handed to the hand tracker are never mirrored,
+/// so the hand is read as the camera saw it; only what is drawn over the
+/// preview needs to be turned to match.
+abstract interface class MirroredPreview {
+  bool get previewMirrored;
+}
+
+/// Whether a browser camera's preview should be mirrored, from the
+/// `facingMode` it reports. Only a camera that says it faces away from the
+/// person (a phone's back camera) is shown as it is; a webcam, which usually
+/// reports nothing, is mirrored.
+bool previewMirroredFor(String? facingMode) => facingMode != 'environment';
+
+/// What a browser's `getUserMedia` error, by its DOMException name, means for
+/// the person.
+CameraProblem cameraProblemFromBrowserError(String? name) {
+  switch (name) {
+    case 'NotAllowedError':
+    case 'PermissionDeniedError':
+    case 'SecurityError':
+      return CameraProblem.denied;
+    default:
+      // NotFoundError, NotReadableError, OverconstrainedError, AbortError and
+      // anything unforeseen: there is no usable camera right now.
+      return CameraProblem.unavailable;
+  }
+}
+
+/// The size to draw a video frame at: the video's own, or shrunk to keep its
+/// long side within [longSide] so a 1080p webcam costs no more than a phone's
+/// 720p stream does.
+(int, int) captureSize(int width, int height, {int longSide = 1280}) {
+  final int long = width > height ? width : height;
+  if (long <= longSide) return (width, height);
+  final double k = longSide / long;
+  return ((width * k).round(), (height * k).round());
+}
+
+/// The camera for this platform: the browser's own on the web, where the
+/// `camera` plugin cannot stream frames, and the plugin everywhere else.
+CameraSource createCameraSource() =>
+    kIsWeb ? web.createWebCameraSource() : PluginCameraSource();
 
 /// The `camera` plugin's implementation.
 class PluginCameraSource implements CameraSource {

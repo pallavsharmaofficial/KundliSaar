@@ -15,9 +15,11 @@ import '../models/saved_profile.dart';
 import '../state/profiles_cubit.dart';
 import '../state/settings_cubit.dart';
 import '../widgets/chart/chart_styles.dart';
+import '../widgets/chart_more.dart';
 import '../widgets/common.dart';
 import '../widgets/upagraha_panel.dart';
 import '../widgets/yoga_cards.dart';
+import 'kundli_pdf_action.dart';
 
 class ChartScreen extends StatefulWidget {
   const ChartScreen({super.key, required this.profileId});
@@ -30,7 +32,7 @@ class ChartScreen extends StatefulWidget {
 
 class _ChartScreenState extends State<ChartScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 5, vsync: this);
+  late final TabController _tabs = TabController(length: 6, vsync: this);
 
   @override
   void dispose() {
@@ -60,6 +62,22 @@ class _ChartScreenState extends State<ChartScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(profile.name),
+        actions: <Widget>[
+          // The whole kundli as a password-protected PDF, in Hindi.
+          Builder(
+            builder: (BuildContext buttonContext) => IconButton(
+              key: const ValueKey<String>('kundli-pdf-action'),
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              tooltip: hindi ? 'पूरी कुंडली PDF में' : 'Full kundli as PDF',
+              onPressed: () => downloadKundliPdf(
+                buttonContext,
+                profile: profile,
+                ayanamsa: settings.ayanamsa,
+                hindi: hindi,
+              ),
+            ),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
@@ -70,6 +88,7 @@ class _ChartScreenState extends State<ChartScreen>
             Tab(text: l.divisionalCharts),
             Tab(text: l.tabDasha),
             Tab(text: l.yogasAndDoshas),
+            Tab(text: l.moreFeatures),
           ],
         ),
       ),
@@ -86,6 +105,14 @@ class _ChartScreenState extends State<ChartScreen>
           _VargaTab(kundli: kundli, hindi: hindi),
           _DashaTab(kundli: kundli, hindi: hindi),
           _YogaTab(kundli: kundli, hindi: hindi),
+          // The readings used to live only on the home screen, so reading
+          // somebody's chart and wanting the phaladesh meant going back out
+          // and hoping the tile opened the same chart. It did not: the routes
+          // never carried a profile, so they quietly opened the saved default.
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            child: ChartMore(profileId: profile.id),
+          ),
         ],
       ),
     );
@@ -195,6 +222,33 @@ class _ChartTab extends StatelessWidget {
           ),
         ),
         if (profile.timeIsApproximate) Panel(child: Text(l.timeNotSureHelp)),
+        Panel(
+          title: hindi ? 'पूरी कुंडली, PDF में' : 'The full kundli, as a PDF',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                hindi
+                    ? 'जन्म पत्रिका की तरह सजी, विस्तृत हिंदी कुंडली: सारे चार्ट, दशा, फलादेश, योग-दोष, वर्षफल और उपाय, आधार सहित। फ़ाइल पासवर्ड से बंद रहती है और आपके इसी उपकरण पर बनती है।'
+                    : 'A detailed Hindi janampatri: every chart, the dashas, the readings, yogas and doshas, the year chart and remedies, with the basis for each. The file is locked with a password and made on this device.',
+              ),
+              const SizedBox(height: 12),
+              Builder(
+                builder: (BuildContext buttonContext) => FilledButton.icon(
+                  key: const ValueKey<String>('kundli-pdf-button'),
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(hindi ? 'PDF डाउनलोड करें' : 'Download PDF'),
+                  onPressed: () => downloadKundliPdf(
+                    buttonContext,
+                    profile: profile,
+                    ayanamsa: settings.ayanamsa,
+                    hindi: hindi,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         DisclaimerNote(l.accuracyNote),
       ],
     );

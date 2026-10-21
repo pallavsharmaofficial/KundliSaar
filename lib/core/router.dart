@@ -82,32 +82,32 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/phaladesh',
       builder: (BuildContext context, GoRouterState state) =>
-          const PhaladeshScreen(),
+          PhaladeshScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/ghat-chakra',
       builder: (BuildContext context, GoRouterState state) =>
-          const GhatChakraScreen(),
+          GhatChakraScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/sarvatobhadra',
       builder: (BuildContext context, GoRouterState state) =>
-          const SarvatobhadraScreen(),
+          SarvatobhadraScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/sudarshan',
       builder: (BuildContext context, GoRouterState state) =>
-          const SudarshanScreen(),
+          SudarshanScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/strengths',
       builder: (BuildContext context, GoRouterState state) =>
-          const StrengthsScreen(),
+          StrengthsScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/transits',
       builder: (BuildContext context, GoRouterState state) =>
-          const TransitsScreen(),
+          TransitsScreen(profileId: state.uri.queryParameters['profile']),
     ),
     GoRoute(
       path: '/today',
@@ -151,8 +151,9 @@ GoRouter createRouter() => GoRouter(
     ),
     GoRoute(
       path: '/hastrekha',
-      // The camera reads the palm where the phone can run the hand models;
-      // the browser build keeps the hand tracer.
+      // The camera reads the palm wherever the hand models can run: on a phone,
+      // and in a browser that has WebAssembly and may ask for a camera (a
+      // secure page). Anywhere else the hand tracer is the screen.
       builder: (BuildContext context, GoRouterState state) =>
           handDetectionSupported
           ? const HastrekhaCaptureScreen()

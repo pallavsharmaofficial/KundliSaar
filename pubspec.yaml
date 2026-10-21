@@ -26,6 +26,14 @@ dependencies:
   url_launcher: ^6.3.2
   tflite_flutter: ^0.12.1
   camera: ^0.12.1
+  # The full-kundli PDF (lib/kundli_pdf): the writer, the share sheet, a temp
+  # file to share, the browser download, and the AES that locks the file.
+  pdf: ^3.13.1
+  share_plus: ^13.3.1
+  path_provider: ^2.1.6
+  web: ^1.1.1
+  pointycastle: ^4.0.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
@@ -49,19 +57,19 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: assets/branding/icon-1024.png
-    background_color: "#FDF6E8"
+    background_color: "#F6EEE2"
     theme_color: "#6B1D1D"
 
 flutter_native_splash:
-  color: "#FDF6E8"
-  color_dark: "#14183A"
+  color: "#F6EEE2"
+  color_dark: "#0F1330"
   image: assets/branding/splash-light.png
   image_dark: assets/branding/splash-dark.png
   android_12:
     image: assets/branding/splash-light.png
-    icon_background_color: "#FDF6E8"
+    icon_background_color: "#F6EEE2"
     image_dark: assets/branding/splash-dark.png
-    icon_background_color_dark: "#14183A"
+    icon_background_color_dark: "#0F1330"
   web: false
 
 flutter:
@@ -70,12 +78,14 @@ flutter:
   assets:
     - assets/data/
     - assets/branding/
-    # The hand models are for the phone apps. The browser build cannot run
-    # them, so it does not carry them.
+    # The hand models. The browser fetches them only when someone opens the
+    # camera on the hastrekha screen (see lib/palm/hand_tracker_web.dart), so
+    # they cost the rest of the app nothing until then.
     - path: assets/models/
       platforms:
         - android
         - ios
+        - web
   fonts:
     - family: Mukta
       fonts:

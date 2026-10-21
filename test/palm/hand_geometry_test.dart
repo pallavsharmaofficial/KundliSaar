@@ -14,39 +14,58 @@ void main() {
       expect(g.fingerRatio, closeTo(0.80, 0.01));
     });
 
-    test('turning the hand in the picture does not change what is measured', () {
-      final HandGeometry upright = HandGeometry.of(syntheticHand());
-      for (final double angle in <double>[25, 40, 90, 135, 180, 270]) {
-        final HandGeometry g = HandGeometry.of(
-          syntheticHand(rotationDegrees: angle, handLength: 560),
-        );
-        expect(g.widthRatio, closeTo(upright.widthRatio, 0.01), reason: '$angle');
-        expect(g.fingerRatio, closeTo(upright.fingerRatio, 0.01), reason: '$angle');
-        expect(g.minExtension, closeTo(upright.minExtension, 0.01), reason: '$angle');
-        expect(g.facing, upright.facing, reason: '$angle');
-        expect(g.palmSide, upright.palmSide, reason: '$angle');
-      }
-    });
+    test(
+      'turning the hand in the picture does not change what is measured',
+      () {
+        final HandGeometry upright = HandGeometry.of(syntheticHand());
+        for (final double angle in <double>[25, 40, 90, 135, 180, 270]) {
+          final HandGeometry g = HandGeometry.of(
+            syntheticHand(rotationDegrees: angle, handLength: 560),
+          );
+          expect(
+            g.widthRatio,
+            closeTo(upright.widthRatio, 0.01),
+            reason: '$angle',
+          );
+          expect(
+            g.fingerRatio,
+            closeTo(upright.fingerRatio, 0.01),
+            reason: '$angle',
+          );
+          expect(
+            g.minExtension,
+            closeTo(upright.minExtension, 0.01),
+            reason: '$angle',
+          );
+          expect(g.facing, upright.facing, reason: '$angle');
+          expect(g.palmSide, upright.palmSide, reason: '$angle');
+        }
+      },
+    );
 
     test('the angle of the hand in the picture is reported', () {
-      expect(
-        HandGeometry.of(syntheticHand()).angleDegrees.abs(),
-        lessThan(5),
-      );
+      expect(HandGeometry.of(syntheticHand()).angleDegrees.abs(), lessThan(5));
       expect(
         HandGeometry.of(syntheticHand(rotationDegrees: 30)).angleDegrees,
         closeTo(30, 5),
       );
     });
 
-    test('size changes how much of the frame the hand fills, not its shape', () {
-      final HandGeometry small = HandGeometry.of(syntheticHand(handLength: 300));
-      final HandGeometry large = HandGeometry.of(syntheticHand(handLength: 1000));
-      expect(small.fill, lessThan(0.4));
-      expect(large.fill, greaterThan(0.75));
-      expect(small.widthRatio, closeTo(large.widthRatio, 0.01));
-      expect(small.fingerRatio, closeTo(large.fingerRatio, 0.01));
-    });
+    test(
+      'size changes how much of the frame the hand fills, not its shape',
+      () {
+        final HandGeometry small = HandGeometry.of(
+          syntheticHand(handLength: 300),
+        );
+        final HandGeometry large = HandGeometry.of(
+          syntheticHand(handLength: 1000),
+        );
+        expect(small.fill, lessThan(0.4));
+        expect(large.fill, greaterThan(0.75));
+        expect(small.widthRatio, closeTo(large.widthRatio, 0.01));
+        expect(small.fingerRatio, closeTo(large.fingerRatio, 0.01));
+      },
+    );
 
     test('a hand going past the edge of the frame is seen to be cut off', () {
       expect(HandGeometry.of(syntheticHand()).partlyOutside, isFalse);
@@ -81,21 +100,27 @@ void main() {
       expect(g.palmSide, HandSide.left);
     });
 
-    test('a right palm has its thumb on the right and the network says right', () {
-      final HandGeometry g = HandGeometry.of(syntheticHand(thumbLeft: false));
-      expect(g.thumbOnLeft, isFalse);
-      expect(g.facing, Facing.palm);
-      expect(g.palmSide, HandSide.right);
-    });
+    test(
+      'a right palm has its thumb on the right and the network says right',
+      () {
+        final HandGeometry g = HandGeometry.of(syntheticHand(thumbLeft: false));
+        expect(g.thumbOnLeft, isFalse);
+        expect(g.facing, Facing.palm);
+        expect(g.palmSide, HandSide.right);
+      },
+    );
 
-    test('the back of a right hand has the outline of a left palm and is told apart', () {
-      // Thumb on the left, but the network says right: a right hand seen from
-      // behind. The outline alone cannot tell it from a left palm.
-      final HandGeometry g = HandGeometry.of(
-        syntheticHand(thumbLeft: true, rightProbability: 0.93),
-      );
-      expect(g.facing, Facing.back);
-    });
+    test(
+      'the back of a right hand has the outline of a left palm and is told apart',
+      () {
+        // Thumb on the left, but the network says right: a right hand seen from
+        // behind. The outline alone cannot tell it from a left palm.
+        final HandGeometry g = HandGeometry.of(
+          syntheticHand(thumbLeft: true, rightProbability: 0.93),
+        );
+        expect(g.facing, Facing.back);
+      },
+    );
 
     test('the back of a left hand likewise', () {
       final HandGeometry g = HandGeometry.of(

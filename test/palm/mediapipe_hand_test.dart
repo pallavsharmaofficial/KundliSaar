@@ -63,18 +63,23 @@ void main() {
       expect(top.y, closeTo(100, 1e-9));
     });
 
-    test('the region after an upright hand is upright, and follows it when it turns', () {
-      final double upright = roiFromLandmarks(syntheticHand().points).rotation;
-      expect(upright.abs(), lessThan(0.1));
-      final double turned = roiFromLandmarks(
-        syntheticHand(rotationDegrees: 90, handLength: 560).points,
-      ).rotation;
-      expect(turned, closeTo(math.pi / 2, 0.1));
-      final double upsideDown = roiFromLandmarks(
-        syntheticHand(rotationDegrees: 180, handLength: 560).points,
-      ).rotation.abs();
-      expect(upsideDown, closeTo(math.pi, 0.1));
-    });
+    test(
+      'the region after an upright hand is upright, and follows it when it turns',
+      () {
+        final double upright = roiFromLandmarks(
+          syntheticHand().points,
+        ).rotation;
+        expect(upright.abs(), lessThan(0.1));
+        final double turned = roiFromLandmarks(
+          syntheticHand(rotationDegrees: 90, handLength: 560).points,
+        ).rotation;
+        expect(turned, closeTo(math.pi / 2, 0.1));
+        final double upsideDown = roiFromLandmarks(
+          syntheticHand(rotationDegrees: 180, handLength: 560).points,
+        ).rotation.abs();
+        expect(upsideDown, closeTo(math.pi, 0.1));
+      },
+    );
 
     test('the region is wider than the hand, so the fingers are inside', () {
       final HandObservation h = syntheticHand(handLength: 600);
@@ -106,13 +111,16 @@ void main() {
 
   group('decoding the palm detector', () {
     Float32List regressors() => Float32List(2016 * 18);
-    Float32List scores() => Float32List.fromList(
-      List<double>.filled(2016, -10),
-    );
+    Float32List scores() =>
+        Float32List.fromList(List<double>.filled(2016, -10));
 
     test('nothing above the threshold: no palm', () {
       expect(
-        decodePalm(regressors: regressors(), scores: scores(), anchors: PalmAnchors()),
+        decodePalm(
+          regressors: regressors(),
+          scores: scores(),
+          anchors: PalmAnchors(),
+        ),
         isNull,
       );
     });

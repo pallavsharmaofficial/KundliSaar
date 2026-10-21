@@ -183,6 +183,9 @@ void main() {
             find.byKey(ValueKey<String>('matbhed-$key')),
             300,
             scrollable: scrollable,
+            // The page is long, and a little longer in the new theme's
+            // roomier type; 50 steps of 300 no longer reach its end.
+            maxScrolls: 200,
           );
           expect(
             find.byKey(ValueKey<String>('matbhed-$key')),

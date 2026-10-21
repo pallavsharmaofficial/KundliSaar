@@ -6,6 +6,7 @@ import 'palm_types.dart';
 
 import 'hand_tracker_stub.dart'
     if (dart.library.ffi) 'hand_tracker_native.dart'
+    if (dart.library.js_interop) 'hand_tracker_web.dart'
     as platform;
 
 /// One plane of a camera frame.
@@ -17,7 +18,16 @@ class FramePlane {
   final int? bytesPerPixel;
 }
 
-enum FrameFormat { yuv420, bgra8888 }
+enum FrameFormat {
+  /// Android's camera.
+  yuv420,
+
+  /// iOS's camera.
+  bgra8888,
+
+  /// Plain RGBA bytes, which is what a browser's canvas gives.
+  rgba8888,
+}
 
 /// A frame as the camera plugin hands it over, kept free of the plugin's own
 /// types so tests can make one and the worker can be sent one.
@@ -63,6 +73,9 @@ class CameraFrame {
           rowStride: planes[0].bytesPerRow,
           turn: turn,
         );
+      case FrameFormat.rgba8888:
+        // A browser hands over frames already upright, tightly packed.
+        return RgbaFrame(planes[0].bytes, width, height);
     }
   }
 }
@@ -124,8 +137,9 @@ abstract class HandTracker {
   Future<void> dispose();
 }
 
-/// Whether this build can run the hand models at all. The web build cannot;
-/// it keeps the hand tracer.
+/// Whether this build can run the hand models at all: the phone apps always
+/// can; the web build can where the browser has WebAssembly and a camera it is
+/// allowed to ask for, and otherwise keeps the hand tracer.
 bool get handDetectionSupported => platform.handDetectionSupported;
 
 /// The tracker for this platform.

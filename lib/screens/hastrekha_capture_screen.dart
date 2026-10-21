@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../l10n/app_localizations.dart';
 import '../palm/camera_source.dart';
+import '../palm/capture_copy.dart';
 import '../palm/capture_flow.dart';
 import '../palm/guidance.dart';
 import '../palm/hand_tracker.dart';
@@ -36,14 +38,20 @@ enum _Trouble {
 ///
 /// The person is asked for nothing but the palm. The camera finds the hand,
 /// says what to fix, counts down, takes the picture and reads it; the picture
-/// is looked at on this phone and is never saved or sent anywhere.
+/// is looked at on this device (the phone, or inside the browser page) and is
+/// never saved or sent anywhere.
 class HastrekhaCaptureScreen extends StatefulWidget {
   const HastrekhaCaptureScreen({
     super.key,
     this.cameraFactory,
     this.trackerFactory,
     this.onManual,
+    this.web = kIsWeb,
   });
+
+  /// Whether this is the browser build, which changes what the screen promises
+  /// and how it asks for the camera. For tests; the app passes nothing.
+  final bool web;
 
   /// For tests: a camera that plays a script instead of looking at anything.
   final CameraSource Function()? cameraFactory;
@@ -89,6 +97,13 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
 
   bool get _hindi => context.read<SettingsCubit>().state.languageCode == 'hi';
 
+  CaptureCopy get _copy => CaptureCopy(web: widget.web);
+
+  /// What the opening screen says: first the camera, then (in the browser) the
+  /// hand-finding files coming down.
+  late String _openingEnglish = _copy.startingCamera.english;
+  late String _openingHindi = _copy.startingCamera.hindi;
+
   @override
   void initState() {
     super.initState();
@@ -113,7 +128,12 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // The camera belongs to the foreground. If the person leaves, let it go,
     // and let them start again when they are back.
-    if (state == AppLifecycleState.paused && _stage == _Stage.aiming) {
+    // In a browser, a tab that is hidden is `hidden` and not `paused`; the
+    // camera should be let go there too, so its light does not stay on.
+    final bool away =
+        state == AppLifecycleState.paused ||
+        (widget.web && state == AppLifecycleState.hidden);
+    if (away && _stage == _Stage.aiming) {
       unawaited(_closeCamera());
       if (mounted) setState(() => _stage = _Stage.intro);
     }
@@ -133,28 +153,54 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     setState(() {
       _stage = _Stage.opening;
       _trouble = null;
+      _openingEnglish = _copy.startingCamera.english;
+      _openingHindi = _copy.startingCamera.hindi;
     });
     _orient(<DeviceOrientation>[DeviceOrientation.portraitUp]);
-    final CameraSource camera = (widget.cameraFactory ?? PluginCameraSource.new)();
+    final CameraSource camera =
+        (widget.cameraFactory ?? createCameraSource)();
     final HandTracker tracker =
         _tracker ?? (widget.trackerFactory ?? createHandTracker)();
     _tracker = tracker;
     _camera = camera;
-    try {
-      await tracker.start();
-    } catch (_) {
-      return _fail(_Trouble.models);
-    }
-    try {
-      await camera.open();
-    } on CameraUnavailable catch (e) {
-      return _fail(
-        e.problem == CameraProblem.denied
+    Future<_Trouble?> openCamera() async {
+      try {
+        await camera.open();
+        return null;
+      } on CameraUnavailable catch (e) {
+        return e.problem == CameraProblem.denied
             ? _Trouble.denied
-            : _Trouble.unavailable,
-      );
-    } catch (_) {
-      return _fail(_Trouble.unavailable);
+            : _Trouble.unavailable;
+      } catch (_) {
+        return _Trouble.unavailable;
+      }
+    }
+
+    Future<_Trouble?> startModels() async {
+      if (widget.web && mounted) {
+        setState(() {
+          _openingEnglish = _copy.loadingDetector.english;
+          _openingHindi = _copy.loadingDetector.hindi;
+        });
+      }
+      try {
+        await tracker.start();
+        return null;
+      } catch (_) {
+        return _Trouble.models;
+      }
+    }
+
+    // On the phone the models are already on the device, so they come first,
+    // as they always have. In a browser they are a download, so the camera
+    // comes first: it is what the person just asked for, so the browser's
+    // permission question follows the tap at once and not a wait, and someone
+    // who says no costs nothing to fetch.
+    for (final Future<_Trouble?> Function() step in widget.web
+        ? <Future<_Trouble?> Function()>[openCamera, startModels]
+        : <Future<_Trouble?> Function()>[startModels, openCamera]) {
+      final _Trouble? why = await step();
+      if (why != null) return _fail(why);
     }
     if (!mounted) return;
     _flow.reset();
@@ -163,6 +209,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     _hand.value = null;
     _scanning = false;
     _slowHint = false;
+    _lookFailures = 0;
     _status.value = const CaptureStatus(
       phase: CapturePhase.aiming,
       guidance: Guidance.noHand,
@@ -214,13 +261,24 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     final HandTracker? tracker = _tracker;
     if (tracker == null) return;
     final Future<TrackResult?> look = tracker.track(frame, _nowMs);
-    unawaited(look.then(_onLook));
+    unawaited(look.then(_onLook, onError: _onLookFailed));
+  }
+
+  /// Looks that fail in a row, before the screen gives up and offers the hand
+  /// tracer. One bad frame is forgiven; a runtime that keeps failing is not
+  /// left to leave the person watching a camera that will never see anything.
+  int _lookFailures = 0;
+
+  void _onLookFailed(Object error) {
+    if (!mounted || _stage != _Stage.aiming || _scanning) return;
+    if (++_lookFailures >= 3) _fail(_Trouble.models);
   }
 
   void _onLook(TrackResult? look) {
     if (look == null || !mounted || _stage != _Stage.aiming || _scanning) {
       return;
     }
+    _lookFailures = 0;
     final Guidance raw;
     if (look.hand == null) {
       _steady.clear();
@@ -320,9 +378,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
       case _Stage.intro:
         body = _intro(hindi);
       case _Stage.opening:
-        body = _busy(
-          hindi ? 'कैमरा शुरू हो रहा है…' : 'Starting the camera…',
-        );
+        body = _busy(hindi ? _openingHindi : _openingEnglish);
       case _Stage.aiming:
         body = _aiming(hindi);
       case _Stage.analysing:
@@ -347,13 +403,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
         const SizedBox(width: 8),
         Flexible(
           child: Text(
-            small
-                ? (hindi
-                      ? 'आपकी तस्वीर इसी फ़ोन में रहती है। कुछ अपलोड नहीं होता।'
-                      : 'Your photograph stays on this phone. Nothing is uploaded.')
-                : (hindi
-                      ? 'आपकी तस्वीर इसी फ़ोन में रहती है। उसे फ़ोन पर ही देखा जाता है; न अपलोड होती है, न सहेजी जाती है, और इस स्क्रीन से निकलते ही मिट जाती है।'
-                      : 'Your photograph stays on this phone. It is looked at on the phone itself, never uploaded, never saved, and gone when you leave this screen.'),
+            (small ? _copy.privacyShort : _copy.privacyLong).of(hindi),
             key: const ValueKey<String>('privacy-line'),
             style: small
                 ? theme.textTheme.bodySmall?.copyWith(fontSize: 13)
@@ -367,10 +417,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
   Widget _intro(bool hindi) {
     final ThemeData theme = Theme.of(context);
     final List<(String, String)> steps = <(String, String)>[
-      (
-        'Hold the phone in one hand. Open your other palm toward the back camera, about a foot away, fingers up.',
-        'फ़ोन एक हाथ में पकड़िए। दूसरी हथेली खोलकर, उँगलियाँ ऊपर करके, पीछे के कैमरे के सामने लगभग एक फुट दूर रखिए।',
-      ),
+      (_copy.holdStep.english, _copy.holdStep.hindi),
       (
         'The app tells you what to adjust: closer, further, more light, fingers open.',
         'ऐप बताता रहेगा कि क्या ठीक करना है: पास, दूर, ज़्यादा रोशनी, उँगलियाँ खुली।',
@@ -432,11 +479,17 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
               _privacyLine(hindi),
               const SizedBox(height: 10),
               Text(
-                hindi
-                    ? 'कैमरा सिर्फ़ यहीं, सिर्फ़ आपकी हथेली देखने के लिए इस्तेमाल होता है। इसे चालू करने पर फ़ोन आपसे अनुमति पूछेगा।'
-                    : 'The camera is used only here, only to look at your palm. Your phone will ask your permission when you open it.',
+                _copy.cameraAsk.of(hindi),
                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 14),
               ),
+              if (_copy.downloadNote != null) ...<Widget>[
+                const SizedBox(height: 10),
+                Text(
+                  _copy.downloadNote!.of(hindi),
+                  key: const ValueKey<String>('download-note'),
+                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 14),
+                ),
+              ],
             ],
           ),
         ),
@@ -495,6 +548,8 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
   Widget _aiming(bool hindi) {
     final CameraSource? camera = _camera;
     final double aspect = camera?.previewAspectRatio ?? 3 / 4;
+    final bool mirrored =
+        camera is MirroredPreview && (camera as MirroredPreview).previewMirrored;
     return Column(
       children: <Widget>[
         Expanded(
@@ -508,14 +563,20 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
                     if (camera != null)
                       ColoredBox(
                         color: Colors.black,
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: 100 * aspect,
-                            height: 100,
-                            child: camera.buildPreview(context),
-                          ),
-                        ),
+                        // The browser's video element covers its box by itself
+                        // (object-fit: cover), so on the web it is not scaled
+                        // up from a small one, which a page element does not
+                        // like.
+                        child: widget.web
+                            ? SizedBox.expand(child: camera.buildPreview(context))
+                            : FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: 100 * aspect,
+                                  height: 100,
+                                  child: camera.buildPreview(context),
+                                ),
+                              ),
                       ),
                     ValueListenableBuilder<CaptureStatus>(
                       valueListenable: _status,
@@ -527,16 +588,36 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
                         return Stack(
                           fit: StackFit.expand,
                           children: <Widget>[
-                            CustomPaint(painter: HandGuidePainter(colour: guide)),
+                            // The outline is drawn for a portrait picture; on a
+                            // wide one (a laptop's webcam) it keeps its shape,
+                            // in the middle, rather than being stretched.
+                            aspect > 0.85
+                                ? Center(
+                                    child: AspectRatio(
+                                      aspectRatio: 3 / 4,
+                                      child: CustomPaint(
+                                        painter: HandGuidePainter(colour: guide),
+                                      ),
+                                    ),
+                                  )
+                                : CustomPaint(painter: HandGuidePainter(colour: guide)),
                             ValueListenableBuilder<HandObservation?>(
                               valueListenable: _hand,
-                              builder: (BuildContext context, HandObservation? h, _) =>
-                                  CustomPaint(
-                                    painter: HandSkeletonPainter(
-                                      hand: h,
-                                      colour: guide,
-                                    ),
+                              builder: (BuildContext context, HandObservation? h, _) {
+                                final Widget skeleton = CustomPaint(
+                                  painter: HandSkeletonPainter(
+                                    hand: h,
+                                    colour: guide,
                                   ),
+                                );
+                                // A webcam is shown as a mirror is, but the
+                                // hand was found in the picture as the camera
+                                // saw it; the drawing is turned to sit on the
+                                // mirrored preview.
+                                return mirrored
+                                    ? Transform.flip(flipX: true, child: skeleton)
+                                    : skeleton;
+                              },
                             ),
                             Center(child: CountdownBadge(status: s)),
                           ],
@@ -613,18 +694,18 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
       case _Trouble.denied:
         return _card(
           icon: Icons.no_photography_outlined,
-          title: hindi ? 'इस ऐप के लिए कैमरा बंद है' : 'The camera is off for this app',
-          body: hindi
-              ? 'इसके बिना हथेली अपने-आप नहीं पढ़ी जा सकती। आप फ़ोन की सेटिंग में कैमरा चालू कर सकते हैं, या हथेली हाथ से अंकित कर सकते हैं। दोनों तरह कुछ नहीं बिगड़ता।'
-              : 'The palm cannot be read automatically without it. You can switch the camera on in your phone’s settings, or trace your palm by hand. Nothing is lost either way.',
+          title: _copy.deniedTitle.of(hindi),
+          body: _copy.deniedBody.of(hindi),
           actions: <Widget>[
             again,
-            const SizedBox(height: 8),
-            OutlinedButton(
-              key: const ValueKey<String>('open-settings'),
-              onPressed: openAppSettings,
-              child: Text(hindi ? 'सेटिंग खोलिए' : 'Open settings'),
-            ),
+            if (_copy.offersSettings) ...<Widget>[
+              const SizedBox(height: 8),
+              OutlinedButton(
+                key: const ValueKey<String>('open-settings'),
+                onPressed: openAppSettings,
+                child: Text(hindi ? 'सेटिंग खोलिए' : 'Open settings'),
+              ),
+            ],
             manual,
           ],
         );
@@ -632,21 +713,15 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
         return _card(
           icon: Icons.videocam_off_outlined,
           title: hindi ? 'कैमरा शुरू नहीं हो सका' : 'The camera could not be started',
-          body: hindi
-              ? 'शायद कोई दूसरा ऐप इसे इस्तेमाल कर रहा है। दूसरे कैमरा ऐप बंद करके फिर कोशिश कीजिए, या हथेली हाथ से अंकित कीजिए।'
-              : 'Another app may be using it. Close other camera apps and try again, or trace your palm by hand.',
+          body: _copy.unavailableBody.of(hindi),
           actions: <Widget>[again, manual],
         );
       case _Trouble.models:
         return _card(
           icon: Icons.memory_outlined,
-          title: hindi
-              ? 'इस फ़ोन पर हाथ पहचानना शुरू नहीं हो सका'
-              : 'Hand detection could not start on this phone',
-          body: hindi
-              ? 'आप फिर भी हथेली हाथ से अंकित कर सकते हैं, और पढ़ाई उसी तरह होगी।'
-              : 'You can still trace your palm by hand, and it will be read the same way.',
-          actions: <Widget>[manual],
+          title: _copy.modelsTitle.of(hindi),
+          body: _copy.modelsBody.of(hindi),
+          actions: <Widget>[if (_copy.modelsCanRetry) again, manual],
         );
       case _Trouble.nothingSeen:
         return _card(

@@ -1,0 +1,14 @@
+{
+  "name": "kundlisaar-litert-web",
+  "private": true,
+  "type": "module",
+  "description": "Builds web/litert/: LiteRT.js's CPU WebAssembly runtime plus a small synchronous wrapper, so the hand models can run in the browser. Run build.sh after changing the pinned versions.",
+  "license": "MIT",
+  "dependencies": {
+    "@litertjs/core": "2.5.3",
+    "@litertjs/wasm-utils": "2.5.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}

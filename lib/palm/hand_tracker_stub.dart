@@ -1,8 +1,9 @@
 import 'hand_tracker.dart';
 
-/// Browsers cannot run the native model runtime, so the web build has no
-/// automatic capture and sends people to the hand tracer.
+/// For a platform that has neither the native runtime (hand_tracker_native.dart)
+/// nor a browser's (hand_tracker_web.dart): no automatic capture, and the hand
+/// tracer is used instead.
 const bool handDetectionSupported = false;
 
 HandTracker createHandTracker() =>
-    throw UnsupportedError('Hand detection needs the phone app.');
+    throw UnsupportedError('Hand detection is not available on this platform.');

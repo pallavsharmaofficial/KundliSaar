@@ -5,12 +5,10 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-import 'crease_finder.dart';
 import 'frame.dart';
+import 'frame_scan.dart';
 import 'hand_pipeline.dart';
 import 'hand_tracker.dart';
-import 'palm_geometry.dart';
-import 'palm_types.dart';
 import 'tensor_model.dart';
 
 const bool handDetectionSupported = true;
@@ -144,76 +142,18 @@ void _worker(_Init init) {
       );
       final PalmFrame frame = real.toPalmFrame();
       if (message.scan) {
-        init.reply.send(_Answer(message.id, still: _scan(pipeline, frame, message.timeMs)));
-      } else {
-        final HandObservation? hand = pipeline.process(
-          frame,
-          timeMs: message.timeMs,
-        );
         init.reply.send(
-          _Answer(
-            message.id,
-            track: TrackResult(
-              hand: hand,
-              frameBrightness: _brightness(frame),
-              timeMs: message.timeMs,
-            ),
-          ),
+          _Answer(message.id, still: scanFrame(pipeline, frame, message.timeMs)),
+        );
+      } else {
+        init.reply.send(
+          _Answer(message.id, track: trackFrame(pipeline, frame, message.timeMs)),
         );
       }
     } catch (e) {
       init.reply.send(_Answer(message.id, error: '$e'));
     }
   });
-}
-
-double _brightness(PalmFrame frame) {
-  double sum = 0;
-  const int n = 12;
-  for (int j = 0; j < n; j++) {
-    for (int i = 0; i < n; i++) {
-      sum += frame.lumaAt(
-        (i + 0.5) / n * frame.width,
-        (j + 0.5) / n * frame.height,
-      );
-    }
-  }
-  return sum / (n * n);
-}
-
-StillScan _scan(HandPipeline pipeline, PalmFrame frame, int timeMs) {
-  final HandObservation? hand = pipeline.refine(frame, timeMs: timeMs);
-  CreaseResult? creases;
-  if (hand != null) {
-    final HandGeometry g = HandGeometry.of(hand);
-    if (g.facing != Facing.back) {
-      creases = findCreases(frame, hand.points, thumbOnLeft: g.thumbOnLeft);
-    }
-  }
-  // A shrunken copy to show the lines on. 640 on the long side is plenty.
-  final double scale = 640 / (frame.width > frame.height ? frame.width : frame.height);
-  final int pw = (frame.width * scale).round();
-  final int ph = (frame.height * scale).round();
-  final Uint8List rgba = Uint8List(pw * ph * 4);
-  final Float32List px = Float32List(3);
-  for (int y = 0; y < ph; y++) {
-    for (int x = 0; x < pw; x++) {
-      frame.rgbAt((x + 0.5) / scale - 0.5, (y + 0.5) / scale - 0.5, px, 0);
-      final int o = (y * pw + x) * 4;
-      rgba[o] = (px[0] * 255).round();
-      rgba[o + 1] = (px[1] * 255).round();
-      rgba[o + 2] = (px[2] * 255).round();
-      rgba[o + 3] = 255;
-    }
-  }
-  return StillScan(
-    hand: hand,
-    creases: creases,
-    previewRgba: rgba,
-    previewWidth: pw,
-    previewHeight: ph,
-    previewScale: scale,
-  );
 }
 
 class NativeHandTracker implements HandTracker {

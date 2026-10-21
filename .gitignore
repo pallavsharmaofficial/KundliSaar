@@ -31,3 +31,6 @@ tools/card/art/*.png
 tools/card/art/*.jpg
 tools/card/art/*.jpeg
 tools/card/art/*.webp
+
+# Node tooling that rebuilds web/litert/ (the output is committed)
+vendor/litert_web/node_modules/

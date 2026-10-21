@@ -22,7 +22,8 @@ Yuv420Frame yuv(Turn turn) {
   );
 }
 
-int luma(PalmFrame f, int x, int y) => (f.lumaAt(x.toDouble(), y.toDouble()) * 255).round();
+int luma(PalmFrame f, int x, int y) =>
+    (f.lumaAt(x.toDouble(), y.toDouble()) * 255).round();
 
 void main() {
   group('turning a sensor picture upright', () {
@@ -33,14 +34,17 @@ void main() {
       expect(luma(f, 3, 1), 80);
     });
 
-    test('a quarter turn clockwise: the sensor\'s bottom-left becomes the top-left', () {
-      final PalmFrame f = yuv(Turn.quarter);
-      expect((f.width, f.height), (2, 4));
-      expect(luma(f, 0, 0), 50);
-      expect(luma(f, 1, 0), 10);
-      expect(luma(f, 0, 3), 80);
-      expect(luma(f, 1, 3), 40);
-    });
+    test(
+      'a quarter turn clockwise: the sensor\'s bottom-left becomes the top-left',
+      () {
+        final PalmFrame f = yuv(Turn.quarter);
+        expect((f.width, f.height), (2, 4));
+        expect(luma(f, 0, 0), 50);
+        expect(luma(f, 1, 0), 10);
+        expect(luma(f, 0, 3), 80);
+        expect(luma(f, 1, 3), 40);
+      },
+    );
 
     test('a half turn', () {
       final PalmFrame f = yuv(Turn.half);

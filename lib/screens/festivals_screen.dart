@@ -174,20 +174,25 @@ class _FestivalCard extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Card(
       child: ListTile(
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              '${festival.date.day}',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: highlight ? theme.colorScheme.primary : null,
+        // A list tile gives its leading widget 56 dp of height, which the day
+        // and month no longer fit at a large text size; they scale down to it.
+        leading: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                '${festival.date.day}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: highlight ? theme.colorScheme.primary : null,
+                ),
               ),
-            ),
-            Text(
-              _months[festival.date.month - 1],
-              style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
-            ),
-          ],
+              Text(
+                _months[festival.date.month - 1],
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+              ),
+            ],
+          ),
         ),
         title: Text(
           hindi ? festival.hindi : festival.english,
