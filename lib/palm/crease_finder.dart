@@ -30,9 +30,14 @@ class FoundLine {
     required this.box,
     required this.image,
     required this.cover,
+    this.faint = false,
   });
 
   final FoundLineKind kind;
+
+  /// True for a line that was there, but faint or broken in the photograph:
+  /// drawn and read, and said to be faint, rather than left out.
+  final bool faint;
 
   /// Seven points along the line in the palm box (0 to 1, thumb on the left),
   /// in the direction the engine reads each line: life from the web of the
@@ -85,24 +90,29 @@ class _Spec {
 // and the share of its route that must sit on real evidence.
 const List<_Spec> _specs = <_Spec>[
   _Spec(FoundLineKind.life, <Pt>[
-    Pt(0.36, 0.33),
-    Pt(0.33, 0.50),
-    Pt(0.37, 0.70),
-    Pt(0.45, 0.90),
-  ], 0.14, 0.80),
+    Pt(0.37, 0.32),
+    Pt(0.36, 0.50),
+    Pt(0.40, 0.70),
+    Pt(0.47, 0.90),
+  ], 0.15, 0.75),
   _Spec(FoundLineKind.heart, <Pt>[
-    Pt(0.86, 0.36),
-    Pt(0.70, 0.32),
-    Pt(0.52, 0.30),
-    Pt(0.38, 0.32),
-  ], 0.08, 0.70),
+    Pt(0.84, 0.37),
+    Pt(0.70, 0.33),
+    Pt(0.52, 0.31),
+    Pt(0.38, 0.33),
+  ], 0.10, 0.62),
   _Spec(FoundLineKind.head, <Pt>[
     Pt(0.34, 0.40),
     Pt(0.50, 0.46),
     Pt(0.66, 0.52),
     Pt(0.78, 0.56),
-  ], 0.11, 0.70),
+  ], 0.12, 0.62),
 ];
+
+/// How far below its bar a line may fall and still be shown as faint, if a
+/// good part of it runs on unbroken.
+const double _faintSlack = 0.20;
+const double _faintRun = 0.30;
 
 const int _w = 320;
 const int _h = 400;
@@ -138,8 +148,16 @@ CreaseResult findCreases(
 
   // The part of the box that is palm, pulled in from its edge, so the edge of
   // the hand against the background is never mistaken for a crease.
-  final Uint8List palm = _palmMask(map, landmarks);
-  final Uint8List inner = _erode(palm, _w, _h, 6);
+  final (Uint8List palm, Uint8List core) = _palmMask(map, landmarks, patch);
+  // Inside the knuckles' hull the margin is as before; where the mask was
+  // widened to the edge of the hand it is wider, because the side of a palm
+  // curves away into a soft shadow that reads just like a crease.
+  final Uint8List innerCore = _erode(core, _w, _h, 6);
+  final Uint8List innerWide = _erode(palm, _w, _h, 14);
+  final Uint8List inner = Uint8List(_w * _h);
+  for (int i = 0; i < inner.length; i++) {
+    inner[i] = (innerCore[i] & palm[i]) | innerWide[i];
+  }
   int innerCount = 0;
   for (final int v in inner) {
     innerCount += v;
@@ -196,17 +214,48 @@ CreaseResult findCreases(
   final Map<FoundLineKind, FoundLine> found = <FoundLineKind, FoundLine>{};
   final Map<FoundLineKind, double> tried = <FoundLineKind, double>{};
   for (final _Spec spec in _specs) {
+    // The heart and head lines are often fainter than the life line, and a
+    // bar set by the whole palm cuts them into pieces too short to keep. In
+    // each line's own corridor the bar is set by that corridor, but never
+    // below a floor from the whole palm, so the grain of the skin is still
+    // not taken for a line.
+    final Uint8List corridor = _corridor(spec);
+    final List<double> local = <double>[
+      for (int i = 0; i < ridge.length; i++)
+        if (corridor[i] != 0 && inner[i] != 0) ridge[i],
+    ]..sort();
+    Uint8List lineFat = fat;
+    if (local.length > 200) {
+      double lpct(double p) => local[((local.length - 1) * p).round()];
+      // The floor is also tied to the palm's deepest creases: on a palm whose
+      // other lines are clear, a corridor with nothing in it would otherwise
+      // set its bar in the noise and find a line there.
+      final double loC = math.max(
+        math.min(lo, lpct(0.80)),
+        math.max(pct(0.75), 0.15 * top),
+      );
+      final double hiC = math.max(
+        math.min(hi, lpct(0.93)),
+        math.max(pct(0.88), 0.30 * top),
+      );
+      final Uint8List near = _evidence(ridge, hiC, loC, minLength: 60);
+      lineFat = Uint8List(fat.length);
+      final Uint8List nearFat = _dilate(near, _w, _h, 2);
+      for (int i = 0; i < fat.length; i++) {
+        lineFat[i] = fat[i] | (nearFat[i] & corridor[i]);
+      }
+    }
     final Float32List score = Float32List(_w * _h);
     for (int i = 0; i < score.length; i++) {
       if (taken[i] != 0) continue;
-      score[i] = math.min(1.0, ridge[i] / top) * 0.6 + fat[i] * 0.8;
+      score[i] = math.min(1.0, ridge[i] / top) * 0.6 + lineFat[i] * 0.8;
     }
     final List<Pt> route = _route(score, spec);
     int covered = 0, within = 0;
     for (final Pt p in route) {
       final int x = p.x.round().clamp(0, _w - 1);
       final int y = p.y.round().clamp(0, _h - 1);
-      if (fat[y * _w + x] != 0) covered++;
+      if (lineFat[y * _w + x] != 0) covered++;
       if (inner[y * _w + x] != 0) within++;
     }
     final double cover = covered / route.length;
@@ -215,7 +264,17 @@ CreaseResult findCreases(
     // With little fine detail on the palm there is little to tell a crease
     // from the grain, so the bar goes up.
     final double needed = spec.needs + (hi < 0.015 ? 0.10 : 0);
-    if (cover < needed || inside < 0.7) continue;
+    if (inside < 0.7) continue;
+    // A real line in a photograph is often broken by the light; what tells it
+    // from the grain is a long stretch of it that runs on unbroken.
+    final double run = _longestRun(route, lineFat) / route.length;
+    final bool clear = cover >= needed;
+    final bool faint =
+        !clear &&
+        hi >= 0.015 &&
+        cover >= needed - _faintSlack &&
+        run >= _faintRun;
+    if (!clear && !faint) continue;
 
     // Keep the same crease from being called two lines.
     final int skip = spec.kind == FoundLineKind.life
@@ -231,6 +290,7 @@ CreaseResult findCreases(
       box: boxPts,
       image: boxPts.map((Pt p) => map.toImage(p.x, p.y)).toList(),
       cover: cover,
+      faint: faint,
     );
   }
   return CreaseResult(
@@ -244,8 +304,12 @@ CreaseResult findCreases(
 // -----------------------------------------------------------------------------
 // The palm region.
 
-Uint8List _palmMask(PalmMap map, List<Pt> lm) {
-  final List<Pt> hull = _hull(<Pt>[
+/// The palm: the hull of the wrist, the thumb's base and the knuckles,
+/// widened to the outer edge of the hand, where the heart line begins and
+/// which the knuckles alone leave out, and then kept to the pixels that are
+/// the colour of this palm, so the widening never takes in the background.
+(Uint8List, Uint8List) _palmMask(PalmMap map, List<Pt> lm, BoxPatch patch) {
+  final List<Pt> joints = <Pt>[
     for (final int j in const <int>[
       Joint.wrist,
       Joint.thumbCmc,
@@ -259,14 +323,69 @@ Uint8List _palmMask(PalmMap map, List<Pt> lm) {
         final Pt b = map.toBox(lm[j]);
         return Pt(b.x * _w, b.y * _h);
       }(),
+  ];
+  final List<Pt> core = _hull(joints);
+  // The outer edge of the palm and the heel of the hand, in the box.
+  final List<Pt> wide = _hull(<Pt>[
+    ...joints,
+    const Pt(0.93 * _w, 0.32 * _h),
+    const Pt(0.95 * _w, 0.55 * _h),
+    const Pt(0.88 * _w, 0.80 * _h),
+    const Pt(0.70 * _w, 0.96 * _h),
   ]);
-  final Uint8List mask = Uint8List(_w * _h);
-  for (int y = 0; y < _h; y++) {
-    for (int x = 0; x < _w; x++) {
-      if (_insideConvex(hull, x + 0.5, y + 0.5)) mask[y * _w + x] = 1;
+
+  // This palm's own colour: the median chroma and brightness of the core.
+  final List<double> cr = <double>[], cg = <double>[], lu = <double>[];
+  double chromaR(int i) =>
+      patch.red[i] / (patch.red[i] + patch.green[i] + patch.blue[i] + 1e-6);
+  double chromaG(int i) =>
+      patch.green[i] / (patch.red[i] + patch.green[i] + patch.blue[i] + 1e-6);
+  double luma(int i) => patch.red[i] + patch.green[i] + patch.blue[i];
+  for (int y = 0; y < _h; y += 2) {
+    for (int x = 0; x < _w; x += 2) {
+      final int i = y * _w + x;
+      if (patch.outside[i] != 0) continue;
+      if (!_insideConvex(core, x + 0.5, y + 0.5)) continue;
+      cr.add(chromaR(i));
+      cg.add(chromaG(i));
+      lu.add(luma(i));
     }
   }
-  return mask;
+  final Uint8List coreMask = Uint8List(_w * _h);
+  for (int y = 0; y < _h; y++) {
+    for (int x = 0; x < _w; x++) {
+      if (_insideConvex(core, x + 0.5, y + 0.5)) coreMask[y * _w + x] = 1;
+    }
+  }
+  final Uint8List mask = Uint8List(_w * _h);
+  if (cr.length < 50) return (coreMask, coreMask);
+  double median(List<double> v) => (v..sort())[v.length ~/ 2];
+  final double mr = median(cr), mg = median(cg), ml = median(lu);
+
+  final Uint8List skin = Uint8List(_w * _h);
+  for (int y = 0; y < _h; y++) {
+    for (int x = 0; x < _w; x++) {
+      final int i = y * _w + x;
+      if (patch.outside[i] != 0) continue;
+      final bool inCore = coreMask[i] != 0;
+      if (!inCore && !_insideConvex(wide, x + 0.5, y + 0.5)) continue;
+      // Inside the knuckles' hull it is palm, as before; beyond it only skin
+      // of this palm's colour counts. Creases are darker, not another hue,
+      // so brightness is allowed a wide range.
+      final bool like =
+          (chromaR(i) - mr).abs() < 0.04 &&
+          (chromaG(i) - mg).abs() < 0.03 &&
+          luma(i) > ml * 0.5 &&
+          luma(i) < ml * 1.6;
+      if (inCore || like) skin[i] = 1;
+    }
+  }
+  // Close small holes (a crease, a ring's glint), then drop stray specks.
+  final Uint8List closed = _erode(_dilate(skin, _w, _h, 3), _w, _h, 3);
+  for (int i = 0; i < mask.length; i++) {
+    mask[i] = closed[i] != 0 && patch.outside[i] == 0 ? 1 : 0;
+  }
+  return (mask, coreMask);
 }
 
 List<Pt> _hull(List<Pt> points) {
@@ -479,7 +598,12 @@ Float32List _gaussian(Float32List src, int w, int h, double sigma) {
 // Evidence: creases that run on. Strong pixels (top 5% of the palm) seed, weak
 // ones (top 15%) extend, and only chains of a real length survive.
 
-Uint8List _evidence(Float32List ridge, double hi, double lo) {
+Uint8List _evidence(
+  Float32List ridge,
+  double hi,
+  double lo, {
+  int minLength = 80,
+}) {
   final Uint8List weak = Uint8List(ridge.length);
   for (int i = 0; i < ridge.length; i++) {
     if (ridge[i] > lo) weak[i] = 1;
@@ -514,7 +638,7 @@ Uint8List _evidence(Float32List ridge, double hi, double lo) {
         }
       }
     }
-    if (strong && members.length >= 80) {
+    if (strong && members.length >= minLength) {
       for (final int i in members) {
         if (weak[i] != 0) keep[i] = 1;
       }
@@ -638,6 +762,42 @@ List<Pt> _route(Float32List score, _Spec spec) {
     j = back[i * m + j];
   }
   return route;
+}
+
+/// The pixels within a line's search corridor.
+Uint8List _corridor(_Spec spec) {
+  final List<Pt> stations = _resample(spec.prior, 4);
+  final int r = (spec.radius * _w).round();
+  final Uint8List out = Uint8List(_w * _h);
+  for (final Pt p in stations) {
+    final int cx = p.x.round(), cy = p.y.round();
+    for (int dy = -r; dy <= r; dy++) {
+      final int y = cy + dy;
+      if (y < 0 || y >= _h) continue;
+      final int half = math.sqrt(r * r - dy * dy).floor();
+      final int x0 = math.max(0, cx - half), x1 = math.min(_w - 1, cx + half);
+      for (int x = x0; x <= x1; x++) {
+        out[y * _w + x] = 1;
+      }
+    }
+  }
+  return out;
+}
+
+/// The most stations in a row that sit on evidence.
+int _longestRun(List<Pt> route, Uint8List fat) {
+  int best = 0, run = 0;
+  for (final Pt p in route) {
+    final int x = p.x.round().clamp(0, _w - 1);
+    final int y = p.y.round().clamp(0, _h - 1);
+    if (fat[y * _w + x] != 0) {
+      run++;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  return best;
 }
 
 void _stamp(Uint8List mask, List<Pt> route, int r) {

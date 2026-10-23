@@ -62,9 +62,9 @@
         "life"
       ],
       "cover": {
-        "life": 0.847457627118644,
-        "heart": 0.775,
-        "head": 0.7948717948717948
+        "life": 0.7833333333333333,
+        "heart": 0.9210526315789473,
+        "head": 0.9230769230769231
       }
     },
     "portrait, right palm": {
@@ -115,18 +115,22 @@
       ],
       "presence": 0.6303685307502747,
       "rightProbability": 0.751035749912262,
-      "outcome": "shapeOnly",
+      "outcome": "read",
       "side": "right",
       "facing": "palm",
       "widthRatio": 0.6628042210218158,
       "fingerRatio": 0.9028968262813338,
       "handType": "earth",
       "borderline": true,
-      "lines": [],
+      "lines": [
+        "head",
+        "heart",
+        "life"
+      ],
       "cover": {
-        "life": 0.7966101694915254,
-        "heart": 0.525,
-        "head": 0.5128205128205128
+        "life": 0.7333333333333333,
+        "heart": 1.0,
+        "head": 1.0
       }
     },
     "webcam, left palm": {
@@ -190,9 +194,9 @@
         "life"
       ],
       "cover": {
-        "life": 0.847457627118644,
-        "heart": 0.775,
-        "head": 0.7948717948717948
+        "life": 0.7833333333333333,
+        "heart": 0.9473684210526315,
+        "head": 1.0
       }
     },
     "webcam, right palm, turned a little": {
@@ -256,9 +260,9 @@
         "life"
       ],
       "cover": {
-        "life": 0.8813559322033898,
-        "heart": 0.7,
-        "head": 0.7948717948717948
+        "life": 0.8333333333333334,
+        "heart": 1.0,
+        "head": 1.0
       }
     }
   }

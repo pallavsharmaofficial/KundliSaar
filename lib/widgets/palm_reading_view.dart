@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import '../engine/jyotish/hastrekha.dart';
 import '../l10n/app_localizations.dart';
 import '../palm/crease_finder.dart';
 import '../palm/palm_scan.dart';
+import '../palm/palm_types.dart' show Pt;
 import 'common.dart';
 
 /// The reading itself, as panels: the hand type, then each line, then each
@@ -135,7 +137,13 @@ class PalmPhotoView extends StatelessWidget {
                   children: <Widget>[
                     Container(width: 14, height: 4, color: _lineColours[k]),
                     const SizedBox(width: 6),
-                    Text(hindi ? _names[k]!.$2 : _names[k]!.$1),
+                    Text(
+                      lines[k]!.faint
+                          ? (hindi
+                                ? '${_names[k]!.$2} (हल्की)'
+                                : '${_names[k]!.$1} (faint)')
+                          : (hindi ? _names[k]!.$2 : _names[k]!.$1),
+                    ),
                   ],
                 ),
             ],
@@ -163,18 +171,23 @@ class _PhotoPainter extends CustomPainter {
     );
     final double k = size.width / image.width;
     lines.forEach((FoundLineKind kind, FoundLine line) {
-      final Path path = Path();
-      for (int i = 0; i < line.image.length; i++) {
-        final Offset o = Offset(
-          line.image[i].x * scale * k,
-          line.image[i].y * scale * k,
-        );
-        if (i == 0) {
-          path.moveTo(o.dx, o.dy);
-        } else {
-          path.lineTo(o.dx, o.dy);
-        }
+      final List<Offset> pts = <Offset>[
+        for (final Pt p in line.image) Offset(p.x * scale * k, p.y * scale * k),
+      ];
+      // A smooth curve through the traced points, as a crease runs, rather
+      // than straight pieces between them.
+      final Path smooth = Path()..moveTo(pts.first.dx, pts.first.dy);
+      for (int i = 0; i < pts.length - 1; i++) {
+        final Offset p0 = pts[i == 0 ? 0 : i - 1];
+        final Offset p1 = pts[i];
+        final Offset p2 = pts[i + 1];
+        final Offset p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+        final Offset c1 = p1 + (p2 - p0) / 6;
+        final Offset c2 = p2 - (p3 - p1) / 6;
+        smooth.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
       }
+      // A faint line is drawn dashed, so it reads as less sure at a glance.
+      final Path path = line.faint ? _dashed(smooth, 9, 6) : smooth;
       final Color colour = _lineColours[kind]!;
       canvas.drawPath(
         path,
@@ -195,6 +208,18 @@ class _PhotoPainter extends CustomPainter {
           ..color = colour,
       );
     });
+  }
+
+  Path _dashed(Path source, double on, double off) {
+    final Path out = Path();
+    for (final ui.PathMetric m in source.computeMetrics()) {
+      double d = 0;
+      while (d < m.length) {
+        out.addPath(m.extractPath(d, math.min(d + on, m.length)), Offset.zero);
+        d += on + off;
+      }
+    }
+    return out;
   }
 
   @override

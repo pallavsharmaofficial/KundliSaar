@@ -258,6 +258,14 @@ PalmScan buildScan({required HandObservation? hand, CreaseResult? creases}) {
         'तस्वीर में हथेली पर इतना बारीक ब्योरा नहीं दिखा कि कोई रेखा खींची जा सके: '
             'हाथ दूर, तस्वीर धुँधली या रोशनी बहुत सपाट हो सकती है।',
       ),
+    for (final FoundLine f in found.values)
+      if (f.faint)
+        Say(
+          'The ${_lineWords[_engineLine(f.kind)]!.english} showed only faintly in this photograph '
+              '(drawn dashed), so what is said about it is less sure.',
+          '${_lineWords[_engineLine(f.kind)]!.hindi} इस तस्वीर में हल्की दिखी (टूटी लकीर से दिखाई गई), '
+              'इसलिए उसके बारे में कही बात कम पक्की है।',
+        ),
     for (final PalmLine l in missing)
       Say(
         'The ${_lineWords[l]!.english} was not clear enough in this photograph to read, '

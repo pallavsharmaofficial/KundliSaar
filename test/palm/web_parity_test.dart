@@ -98,10 +98,14 @@ void _expectSameMeasurements(
   ]) {
     expect(web[k], phone[k], reason: '$reason: $k');
   }
-  final Map<String, double> coverWeb = (web['cover']! as Map<String, Object?>)
-      .cast<String, double>();
-  final Map<String, double> coverPhone =
-      (phone['cover']! as Map<String, Object?>).cast<String, double>();
+  // Read as numbers: JavaScript writes a cover of exactly 1.0 as 1.
+  Map<String, double> covers(Object? m) => <String, double>{
+    for (final MapEntry<String, Object?> e
+        in (m! as Map<String, Object?>).entries)
+      e.key: (e.value! as num).toDouble(),
+  };
+  final Map<String, double> coverWeb = covers(web['cover']);
+  final Map<String, double> coverPhone = covers(phone['cover']);
   expect(
     coverWeb.keys.toSet(),
     coverPhone.keys.toSet(),

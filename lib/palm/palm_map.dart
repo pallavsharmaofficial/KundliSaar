@@ -67,11 +67,14 @@ class PalmMap {
     return Pt(mirrored ? 1 - w : w, v);
   }
 
-  /// The picture sampled into a box [width] by [height], green channel only
-  /// (where skin creases show best). Pixels that fall outside the picture are
+  /// The picture sampled into a box [width] by [height]. Creases are read
+  /// from the green channel, where skin creases show best; red and blue are
+  /// kept to tell skin from background. Pixels that fall outside the picture are
   /// zero and flagged in [outside].
   BoxPatch sample(PalmFrame frame, {required int width, required int height}) {
     final Float32List g = Float32List(width * height);
+    final Float32List r = Float32List(width * height);
+    final Float32List b = Float32List(width * height);
     final Uint8List outside = Uint8List(width * height);
     final Float32List rgb = Float32List(3);
     for (int j = 0; j < height; j++) {
@@ -86,19 +89,33 @@ class PalmMap {
           continue;
         }
         frame.rgbAt(fx, fy, rgb, 0);
+        r[j * width + i] = rgb[0];
         g[j * width + i] = rgb[1];
+        b[j * width + i] = rgb[2];
       }
     }
-    return BoxPatch(width, height, g, outside);
+    return BoxPatch(width, height, g, outside, red: r, blue: b);
   }
 }
 
 class BoxPatch {
-  BoxPatch(this.width, this.height, this.green, this.outside);
+  BoxPatch(
+    this.width,
+    this.height,
+    this.green,
+    this.outside, {
+    Float32List? red,
+    Float32List? blue,
+  }) : red = red ?? green,
+       blue = blue ?? green;
 
   final int width;
   final int height;
   final Float32List green;
+
+  /// The other two channels, for telling skin from what is behind the hand.
+  final Float32List red;
+  final Float32List blue;
 
   /// 1 where the box point fell outside the picture.
   final Uint8List outside;
