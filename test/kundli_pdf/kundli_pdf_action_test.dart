@@ -198,7 +198,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey<String>('kundli-pdf-button')),
         300,
-        scrollable: find.byType(Scrollable).at(1),
+        scrollable: find.byType(Scrollable).first,
       );
       expect(
         find.byKey(const ValueKey<String>('kundli-pdf-button')),

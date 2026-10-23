@@ -50,10 +50,10 @@ void main() {
       }
       expect(countStart, isNotNull);
       expect(taken, isNotNull);
-      // The hand is watched for half a second, then three digits of 650 ms.
-      expect(countStart, inInclusiveRange(480, 640));
-      expect(taken! - countStart!, inInclusiveRange(1900, 2050));
-      expect(taken, greaterThan(2400));
+      // The hand is watched for 400 ms, then three digits of 550 ms.
+      expect(countStart, inInclusiveRange(380, 520));
+      expect(taken! - countStart!, inInclusiveRange(1600, 1750));
+      expect(taken, greaterThan(2000));
     });
 
     test('the steadying ring fills', () {
@@ -69,12 +69,12 @@ void main() {
     test('a hand that goes wrong during the count stops it', () {
       final CaptureFlow f = flow();
       int t = 0;
-      for (; t <= 1200; t += 40) {
+      for (; t <= 720; t += 40) {
         if (t % 120 == 0) f.observe(Guidance.ready, t);
         f.tick(t);
       }
       expect(f.phase, CapturePhase.counting);
-      // The hand moves and stays moved.
+      // The hand moves and stays moved, past the grace.
       for (; t <= 2000; t += 40) {
         if (t % 120 == 0) f.observe(Guidance.holdSteady, t);
         f.tick(t);

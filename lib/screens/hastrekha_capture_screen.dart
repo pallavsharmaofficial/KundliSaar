@@ -358,6 +358,13 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     });
   }
 
+  /// The shutter, for whoever does not want to wait for the count: the frame
+  /// on screen is read just as the counted one would be.
+  void _shootNow() {
+    if (_stage != _Stage.aiming || _scanning || _latest == null) return;
+    unawaited(_capture());
+  }
+
   void _manual() {
     final VoidCallback? custom = widget.onManual;
     if (custom != null) {
@@ -641,6 +648,15 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
           child: _privacyLine(hindi, small: true),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: FilledButton.tonalIcon(
+            key: const ValueKey<String>('shoot-now'),
+            icon: const Icon(Icons.camera_alt_outlined),
+            label: Text(hindi ? 'अभी फ़ोटो लें' : 'Take the photo now'),
+            onPressed: _shootNow,
+          ),
         ),
         TextButton(
           key: const ValueKey<String>('trace-by-hand'),

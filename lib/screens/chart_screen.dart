@@ -183,6 +183,33 @@ class _SimpleTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        Panel(
+          title: hindi ? 'आपकी कुंडली एक नज़र में' : 'Your kundli at a glance',
+          child: Column(
+            children: <Widget>[
+              FactRow(
+                l.lagna,
+                hindi
+                    ? rashiInfo(kundli.lagnaRashi).hindi
+                    : rashiInfo(kundli.lagnaRashi).english,
+                emphasise: true,
+              ),
+              FactRow(
+                l.moonSign,
+                hindi
+                    ? rashiInfo(kundli.moonRashi).hindi
+                    : rashiInfo(kundli.moonRashi).english,
+                emphasise: true,
+              ),
+              FactRow(
+                l.nakshatra,
+                hindi
+                    ? kundli.grahas[Graha.moon]!.nakshatra.hindi
+                    : kundli.grahas[Graha.moon]!.nakshatra.english,
+              ),
+            ],
+          ),
+        ),
         SimpleReading(kundli: kundli, profileId: profile.id, hindi: hindi),
         if (profile.timeIsApproximate) Panel(child: Text(l.timeNotSureHelp)),
         _PdfPanel(profile: profile),

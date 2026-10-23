@@ -82,18 +82,21 @@ const Map<Guidance, GuidanceText> guidanceText = <Guidance, GuidanceText>{
 /// against real phones without hunting.
 class GuideTuning {
   const GuideTuning({
-    this.minFill = 0.50,
-    this.maxFill = 0.95,
-    this.closeFill = 0.88,
-    this.minExtension = 1.45,
-    this.minPalmBrightness = 0.20,
-    this.maxPalmBrightness = 0.90,
-    this.maxClipped = 0.18,
-    this.darkFrame = 0.12,
-    this.minSharpness = 0.025,
-    this.steadyWindowMs = 450,
-    this.steadyMove = 0.10,
-    this.steadyScale = 0.08,
+    // Loosened after real phones: half the frame was more than most people
+    // held their hand to, fingers relaxed a little read as curled, and room
+    // light read as too dark, so the count seldom began.
+    this.minFill = 0.38,
+    this.maxFill = 0.97,
+    this.closeFill = 0.90,
+    this.minExtension = 1.35,
+    this.minPalmBrightness = 0.14,
+    this.maxPalmBrightness = 0.94,
+    this.maxClipped = 0.25,
+    this.darkFrame = 0.10,
+    this.minSharpness = 0.018,
+    this.steadyWindowMs = 400,
+    this.steadyMove = 0.14,
+    this.steadyScale = 0.12,
   });
 
   /// The hand must cover at least this much of the frame along its tightest

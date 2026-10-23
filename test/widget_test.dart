@@ -137,6 +137,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Test person'));
     await tester.pumpAndSettle();
+    // The style switch is in the astrologer's view.
+    await tester.tap(find.text('शास्त्री जी के लिए'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('दक्षिण भारतीय'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

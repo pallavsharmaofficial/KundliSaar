@@ -57,10 +57,12 @@ class CaptureStatus {
 /// test can run it without waiting.
 class CaptureFlow {
   CaptureFlow({
-    this.steadyMs = 500,
+    this.steadyMs = 400,
     this.steps = 3,
-    this.stepMs = 650,
-    this.graceMs = 450,
+    this.stepMs = 550,
+    // A hand held out wobbles; the count now survives most of a second of
+    // looks that miss, which is what kept it from ever reaching one.
+    this.graceMs = 900,
   });
 
   final int steadyMs;
