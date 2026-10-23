@@ -160,7 +160,9 @@ void main() {
         await wrap(const ChartScreen(profileId: 'test'), language: 'en'),
       );
       await advance(tester, frames: 10);
-      // The planets tab, then scroll to the end of it.
+      // The astrologer's view, the planets tab, then scroll to its end.
+      await tester.tap(find.text('For the astrologer'));
+      await advance(tester, frames: 10);
       await tester.tap(find.text('Grahas'));
       await advance(tester, frames: 10);
       await tester.drag(find.byType(ListView).last, const Offset(0, -3000));
@@ -345,6 +347,8 @@ void main() {
     await tester.pumpWidget(
       await wrap(const ChartScreen(profileId: 'test'), language: 'en'),
     );
+    await advance(tester, frames: 10);
+    await tester.tap(find.text('For the astrologer'));
     await advance(tester, frames: 10);
     await tester.tap(find.text('Grahas'));
     await advance(tester, frames: 10);

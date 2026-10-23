@@ -56,6 +56,7 @@ Answer composeStory(
   );
   return Answer(
     title: c.l.t(titleEn, titleHi),
+    short: shortSection(c, topic, stretch),
     sections: <AnswerSection>[
       nowSection(c),
       effectSection(c, topic, compact: compact),
@@ -67,6 +68,99 @@ Answer composeStory(
     basis: storyBasis(c, topic, stretch),
   );
 }
+
+// -----------------------------------------------------------------------------
+// 0. The plain answer
+// -----------------------------------------------------------------------------
+
+/// The answer in three lines and no terms of the shastra: how the time is,
+/// when it eases, and one thing to do. The six parts below explain each line.
+AnswerSection shortSection(AskCtx c, Topic? topic, Stretch s) {
+  final AskLang l = c.l;
+  final TimelineWindow cur = s.current ?? c.window!;
+  final List<String> paras = <String>[];
+  final String until = c.monthYear(cur.end);
+
+  if (topic != null && !topicTouches(c, topic, cur)) {
+    final String name = l.t(topic.nameEn, topic.nameHi);
+    paras.add(
+      l.t(
+        'For $name the present time is quiet: it neither pushes this matter forward nor holds it back. This stretch runs until $until.',
+        '$name के मामले में अभी का समय शांत है: न ज़्यादा आगे बढ़ाता है, न रोकता है। यह दौर $until तक है।',
+      ),
+    );
+  } else {
+    paras.add(switch (blendTone(blendScore(cur))) {
+      Tone.supportive => l.t(
+        'Your time is good right now. Work you put in now tends to move forward easily. This stretch runs until $until.',
+        'अभी आपका समय अच्छा चल रहा है। इस समय की गई मेहनत आसानी से आगे बढ़ती है। यह दौर $until तक है।',
+      ),
+      Tone.mixed => l.t(
+        'Your time is mixed right now: some things come easily, some take a little more effort. This stretch runs until $until.',
+        'अभी आपका समय मिला-जुला है: कुछ काम आसानी से बनते हैं, कुछ में थोड़ी ज़्यादा मेहनत लगती है। यह दौर $until तक है।',
+      ),
+      Tone.demanding => l.t(
+        'Right now the time asks for hard work and patience. Do not worry, it does not stay like this. This stretch runs until $until.',
+        'अभी का समय मेहनत और धैर्य वाला है। घबराइए नहीं, यह हमेशा ऐसा नहीं रहता। यह दौर $until तक है।',
+      ),
+    });
+  }
+
+  switch (s.kind) {
+    case StretchKind.alreadyGood:
+      final DateTime end = s.goodRun.isEmpty ? cur.end : s.goodRun.last.end;
+      paras.add(
+        l.t(
+          'This is itself your good time, until ${c.monthYear(end)}. Make full use of it.',
+          'यही आपका अच्छा समय है, ${c.monthYear(end)} तक। इसका पूरा फ़ायदा उठाइए।',
+        ),
+      );
+    case StretchKind.betterAhead:
+      final TimelineWindow t = s.target!;
+      paras.add(
+        l.t(
+          'A better time begins in ${c.monthYear(t.start)} and runs until ${c.monthYear(t.end)}.',
+          'इससे बेहतर समय ${c.monthYear(t.start)} से शुरू होता है और ${c.monthYear(t.end)} तक चलता है।',
+        ),
+      );
+    case StretchKind.modestAhead:
+      final TimelineWindow t = s.target!;
+      paras.add(
+        l.t(
+          'From ${c.monthYear(t.start)} the time gets somewhat lighter.',
+          '${c.monthYear(t.start)} से समय कुछ हल्का होने लगता है।',
+        ),
+      );
+    case StretchKind.nothingAhead:
+      paras.add(
+        l.t(
+          'The coming years stay much like now, so steady effort is your biggest support.',
+          'आने वाले सालों में समय लगभग ऐसा ही रहता है, इसलिए लगातार मेहनत ही सबसे बड़ा सहारा है।',
+        ),
+      );
+    case StretchKind.outside:
+      break;
+  }
+
+  final List<Remedy> remedies = pickRemedies(c, topic);
+  if (remedies.isNotEmpty) {
+    paras.add(
+      l.t(
+        'One easy thing to do: ${remedies.first.kit.simpleAct.en}',
+        'एक आसान उपाय: ${remedies.first.kit.simpleAct.hi}',
+      ),
+    );
+  }
+
+  return plainSection(l, paras);
+}
+
+/// The plain answer's part, under the same heading in every answer.
+AnswerSection plainSection(AskLang l, List<String> paragraphs) => AnswerSection(
+  key: SectionKey.short,
+  heading: l.t('The answer in short', 'सीधा जवाब'),
+  paragraphs: paragraphs.where((String p) => p.trim().isNotEmpty).toList(),
+);
 
 // -----------------------------------------------------------------------------
 // 1. What is running now

@@ -65,9 +65,11 @@ Answer _answer(
   String titleEn,
   String titleHi,
   List<AnswerSection> sections,
-  List<String> basis,
-) => Answer(
+  List<String> basis, {
+  List<String>? short,
+}) => Answer(
   title: c.l.t(titleEn, titleHi),
+  short: short == null ? null : plainSection(c.l, short),
   sections: <AnswerSection>[...sections, closeSection(c.l)],
   basis: basis,
 );
@@ -137,6 +139,17 @@ Answer lagnaAnswer(AskCtx c) {
         'अयनांश: ${formatDegrees(k.ayanamsaValue)}',
       ),
     ],
+    short: <String>[
+      l.t('Your lagna is $sign.', 'आपका लग्न $sign है।'),
+      l.t(
+        'People with this lagna tend to be ${l.elementNature(info.element)}.',
+        'इस लग्न के लोग अक्सर ${l.elementNature(info.element)} होते हैं।',
+      ),
+      l.t(
+        'Life leans most towards ${l.area(lp.house)}.',
+        'जीवन का झुकाव सबसे ज़्यादा ${l.area(lp.house)} की ओर रहता है।',
+      ),
+    ],
   );
 }
 
@@ -195,6 +208,20 @@ Answer moonAnswer(AskCtx c) {
       ),
       l.t('Nakshatra: $nak', 'नक्षत्र: $nak'),
       l.t('Sun: ${l.sign(sun.rashi)}', 'सूर्य: ${l.sign(sun.rashi)}'),
+    ],
+    short: <String>[
+      l.t(
+        'Your rashi (moon sign) is $sign, and your nakshatra is $nak.',
+        'आपकी राशि $sign है, और नक्षत्र $nak।',
+      ),
+      l.t(
+        'Your mind tends to be ${l.elementMind(info.element)}.',
+        'आपका मन अक्सर ${l.elementMind(info.element)} रहता है।',
+      ),
+      l.t(
+        'This is the rashi to use for the daily rashifal.',
+        'रोज़ का राशिफल इसी राशि से देखिए।',
+      ),
     ],
   );
 }
@@ -539,15 +566,48 @@ Answer sadeSatiAnswer(AskCtx c) {
     ]),
   );
 
-  return _answer(c, 'Sade Sati', 'साढ़े साती', sections, <String>[
-    l.t('Natal moon sign: $moonSign', 'जन्म चंद्र राशि: $moonSign'),
-    l.t(
-      'Saturn now: $saturnSign, ${l.ordinalFem(hm)} sign from the Moon',
-      'शनि अभी: $saturnSign, चंद्र राशि से ${l.ordinalFem(hm)}',
-    ),
-    if (window.isRunning)
-      l.t('Phase ${window.phase} of 3', 'तीन में से चरण ${window.phase}'),
-  ]);
+  return _answer(
+    c,
+    'Sade Sati',
+    'साढ़े साती',
+    sections,
+    <String>[
+      l.t('Natal moon sign: $moonSign', 'जन्म चंद्र राशि: $moonSign'),
+      l.t(
+        'Saturn now: $saturnSign, ${l.ordinalFem(hm)} sign from the Moon',
+        'शनि अभी: $saturnSign, चंद्र राशि से ${l.ordinalFem(hm)}',
+      ),
+      if (window.isRunning)
+        l.t('Phase ${window.phase} of 3', 'तीन में से चरण ${window.phase}'),
+    ],
+    short: <String>[
+      if (window.isRunning) ...<String>[
+        window.end == null
+            ? l.t(
+                'Yes, Sade Sati is running now.',
+                'हाँ, अभी साढ़े साती चल रही है।',
+              )
+            : l.t(
+                'Yes, Sade Sati is running now, until ${c.monthYear(window.end!)}.',
+                'हाँ, अभी साढ़े साती चल रही है, ${c.monthYear(window.end!)} तक।',
+              ),
+        l.t(
+          'It is a time of work and responsibility, not punishment. Steady effort and patience carry you through it.',
+          'यह मेहनत और ज़िम्मेदारी का समय है, सज़ा का नहीं। लगातार मेहनत और धैर्य से यह समय अच्छे से निकलता है।',
+        ),
+      ] else ...<String>[
+        l.t(
+          'No, Sade Sati is not running now.',
+          'नहीं, अभी साढ़े साती नहीं चल रही।',
+        ),
+        if (dhaiya)
+          l.t(
+            'Saturn’s dhaiya is on, though: a stretch that asks for patience. It passes.',
+            'हाँ, शनि की ढैया चल रही है: यह धैर्य माँगने वाला समय है, और बीत जाता है।',
+          ),
+      ],
+    ],
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -662,16 +722,38 @@ Answer mangalAnswer(AskCtx c) {
     ),
   );
 
-  return _answer(c, 'Mangal dosha', 'मंगल दोष', sections, <String>[
-    l.t(
-      'Mars: ${l.sign(mars.rashi)}, house ${mars.house}',
-      'मंगल: ${l.sign(mars.rashi)}, भाव ${mars.house}',
-    ),
-    l.t(
-      'From the Moon: ${l.ordinal(fromMoon)} place',
-      'चंद्र से: ${l.ordinal(fromMoon)} स्थान',
-    ),
-  ]);
+  return _answer(
+    c,
+    'Mangal dosha',
+    'मंगल दोष',
+    sections,
+    <String>[
+      l.t(
+        'Mars: ${l.sign(mars.rashi)}, house ${mars.house}',
+        'मंगल: ${l.sign(mars.rashi)}, भाव ${mars.house}',
+      ),
+      l.t(
+        'From the Moon: ${l.ordinal(fromMoon)} place',
+        'चंद्र से: ${l.ordinal(fromMoon)} स्थान',
+      ),
+    ],
+    short: <String>[
+      if (has) ...<String>[
+        l.t(
+          'Yes, by the traditional rule your chart is manglik.',
+          'हाँ, परंपरागत नियम से आपकी कुंडली मांगलिक है।',
+        ),
+        l.t(
+          'This is very common and is not a verdict on anyone. Before marriage, match the kundli of both; the app’s matching page checks it on both sides.',
+          'यह बहुत आम है और किसी पर फ़ैसला नहीं है। शादी से पहले दोनों की कुंडली मिलाइए; ऐप का मिलान पेज दोनों तरफ़ इसे जाँचता है।',
+        ),
+      ] else
+        l.t(
+          'No, your chart does not have Mangal dosha.',
+          'नहीं, आपकी कुंडली में मंगल दोष नहीं है।',
+        ),
+    ],
+  );
 }
 
 // -----------------------------------------------------------------------------

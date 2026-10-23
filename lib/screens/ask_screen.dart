@@ -263,6 +263,7 @@ class _AskScreenState extends State<AskScreen> {
                       key: i == inOrder.length - 1 ? _newest : null,
                       question: inOrder[i].$1,
                       answer: inOrder[i].$2,
+                      hindi: hindi,
                       onSpeak: () => _speakAnswer(voice, inOrder[i].$2, hindi),
                     ),
                 ],
@@ -363,11 +364,13 @@ class _AnswerCard extends StatelessWidget {
     super.key,
     required this.question,
     required this.answer,
+    required this.hindi,
     required this.onSpeak,
   });
 
   final String question;
   final Answer answer;
+  final bool hindi;
   final VoidCallback onSpeak;
 
   @override
@@ -375,6 +378,59 @@ class _AnswerCard extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context)!;
     final ThemeData theme = Theme.of(context);
     final Color muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    // The plain answer comes first. Without one, the first part stands in for
+    // it, since every part opens with its answer. The rest of the reading,
+    // with the chart factors behind it, folds away under it.
+    final List<AnswerSection> body = answer.sections
+        .where((AnswerSection s) => s.key != SectionKey.close)
+        .toList();
+    final AnswerSection? closing = answer.section(SectionKey.close);
+    final List<AnswerSection> lead = answer.short != null
+        ? <AnswerSection>[answer.short!]
+        : body.take(1).toList();
+    final List<AnswerSection> detail = answer.short != null
+        ? body
+        : body.skip(1).toList();
+
+    final List<Widget> basis = <Widget>[
+      if (answer.basis.isNotEmpty) ...<Widget>[
+        const SizedBox(height: 4),
+        Text(
+          l.askAnswerSource,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 13,
+            color: muted,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: <Widget>[
+            for (final String b in answer.basis)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Text(
+                  b,
+                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 13.5),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+      ],
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
@@ -400,46 +456,20 @@ class _AnswerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                for (final AnswerSection section in answer.sections)
-                  _SectionView(section: section),
-                if (answer.basis.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(
-                    l.askAnswerSource,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 13,
-                      color: muted,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                for (final AnswerSection section in lead)
+                  _SectionView(section: section, plain: true),
+                if (detail.isNotEmpty)
+                  _DetailTile(
+                    hindi: hindi,
                     children: <Widget>[
-                      for (final String basis in answer.basis)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.18,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            basis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: 13.5,
-                            ),
-                          ),
-                        ),
+                      for (final AnswerSection section in detail)
+                        _SectionView(section: section),
+                      ...basis,
                     ],
-                  ),
-                ],
+                  )
+                else
+                  ...basis,
+                if (closing != null) _SectionView(section: closing),
               ],
             ),
           ),
@@ -449,20 +479,73 @@ class _AnswerCard extends StatelessWidget {
   }
 }
 
+/// The full reading, folded away: the dashas, the houses and what the shastra
+/// says are for whoever wants them, the shastri or the curious, and are not
+/// what a first read needs.
+class _DetailTile extends StatelessWidget {
+  const _DetailTile({required this.hindi, required this.children});
+
+  final bool hindi;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+          ),
+        ),
+        child: ExpansionTile(
+          key: const ValueKey<String>('answer-detail'),
+          shape: const Border(),
+          collapsedShape: const Border(),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          leading: const Icon(Icons.menu_book_outlined, size: 20),
+          title: Text(
+            hindi
+                ? 'पूरी जानकारी (शास्त्री जी के लिए)'
+                : 'The full reading (for the astrologer)',
+            style: theme.textTheme.titleSmall,
+          ),
+          subtitle: Text(
+            hindi
+                ? 'दशा, ग्रह और शास्त्र का आधार'
+                : 'Dashas, grahas and the shastra behind it',
+            style: theme.textTheme.bodySmall,
+          ),
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
 /// One headed part of an answer.
 class _SectionView extends StatelessWidget {
-  const _SectionView({required this.section});
+  const _SectionView({required this.section, this.plain = false});
 
   final AnswerSection section;
+
+  /// The plain answer, set a little larger than the detail under it.
+  final bool plain;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool closing = section.key == SectionKey.close;
-    final TextStyle? body = theme.textTheme.bodyMedium?.copyWith(
-      height: 1.5,
-      fontStyle: closing ? FontStyle.italic : null,
-    );
+    final TextStyle? body =
+        (plain ? theme.textTheme.bodyLarge : theme.textTheme.bodyMedium)
+            ?.copyWith(
+              height: 1.5,
+              fontStyle: closing ? FontStyle.italic : null,
+            );
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(

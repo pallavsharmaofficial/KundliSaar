@@ -17,6 +17,7 @@ import '../state/settings_cubit.dart';
 import '../widgets/chart/chart_styles.dart';
 import '../widgets/chart_more.dart';
 import '../widgets/common.dart';
+import '../widgets/simple_reading.dart';
 import '../widgets/upagraha_panel.dart';
 import '../widgets/yoga_cards.dart';
 import 'kundli_pdf_action.dart';
@@ -33,6 +34,10 @@ class ChartScreen extends StatefulWidget {
 class _ChartScreenState extends State<ChartScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 6, vsync: this);
+
+  /// The chart opens as a reading for the person it belongs to. The dashas,
+  /// vargas, degrees and yogas are one tap away, for the shastri.
+  bool _shastri = false;
 
   @override
   void dispose() {
@@ -78,18 +83,53 @@ class _ChartScreenState extends State<ChartScreen>
             ),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: <Widget>[
-            Tab(text: l.tabChart),
-            Tab(text: l.planets),
-            Tab(text: l.divisionalCharts),
-            Tab(text: l.tabDasha),
-            Tab(text: l.yogasAndDoshas),
-            Tab(text: l.moreFeatures),
-          ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(_shastri ? 104 : 56),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<bool>(
+                    key: const ValueKey<String>('chart-mode'),
+                    showSelectedIcon: false,
+                    segments: <ButtonSegment<bool>>[
+                      ButtonSegment<bool>(
+                        value: false,
+                        icon: const Icon(Icons.person_outline, size: 18),
+                        label: Text(hindi ? 'आपके लिए' : 'For you'),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        icon: const Icon(Icons.menu_book_outlined, size: 18),
+                        label: Text(
+                          hindi ? 'शास्त्री जी के लिए' : 'For the astrologer',
+                        ),
+                      ),
+                    ],
+                    selected: <bool>{_shastri},
+                    onSelectionChanged: (Set<bool> v) =>
+                        setState(() => _shastri = v.first),
+                  ),
+                ),
+              ),
+              if (_shastri)
+                TabBar(
+                  controller: _tabs,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  tabs: <Widget>[
+                    Tab(text: l.tabChart),
+                    Tab(text: l.planets),
+                    Tab(text: l.divisionalCharts),
+                    Tab(text: l.tabDasha),
+                    Tab(text: l.yogasAndDoshas),
+                    Tab(text: l.moreFeatures),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -97,21 +137,94 @@ class _ChartScreenState extends State<ChartScreen>
         icon: const Icon(Icons.chat_bubble_outline),
         label: Text(l.tabAsk),
       ),
-      body: TabBarView(
-        controller: _tabs,
+      body: !_shastri
+          ? _SimpleTab(kundli: kundli, profile: profile)
+          : TabBarView(
+              controller: _tabs,
+              children: <Widget>[
+                _ChartTab(kundli: kundli, profile: profile),
+                _GrahaTab(kundli: kundli, hindi: hindi),
+                _VargaTab(kundli: kundli, hindi: hindi),
+                _DashaTab(kundli: kundli, hindi: hindi),
+                _YogaTab(kundli: kundli, hindi: hindi),
+                // The readings used to live only on the home screen, so reading
+                // somebody's chart and wanting the phaladesh meant going back out
+                // and hoping the tile opened the same chart. It did not: the routes
+                // never carried a profile, so they quietly opened the saved default.
+                SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  child: ChartMore(profileId: profile.id),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _SimpleTab extends StatelessWidget {
+  const _SimpleTab({required this.kundli, required this.profile});
+
+  final Kundli kundli;
+  final SavedProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context)!;
+    final AppSettings settings = context.watch<SettingsCubit>().state;
+    final bool hindi = settings.languageCode == 'hi';
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      children: <Widget>[
+        Center(
+          child: KundliChart(
+            kundli: kundli,
+            style: settings.chartStyle,
+            size: 300,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SimpleReading(kundli: kundli, profileId: profile.id, hindi: hindi),
+        if (profile.timeIsApproximate) Panel(child: Text(l.timeNotSureHelp)),
+        _PdfPanel(profile: profile),
+        DisclaimerNote(l.accuracyNote),
+      ],
+    );
+  }
+}
+
+/// The whole kundli as a PDF, offered in both views.
+class _PdfPanel extends StatelessWidget {
+  const _PdfPanel({required this.profile});
+
+  final SavedProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<SettingsCubit>().state;
+    final bool hindi = settings.languageCode == 'hi';
+    return Panel(
+      title: hindi ? 'पूरी कुंडली, PDF में' : 'The full kundli, as a PDF',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _ChartTab(kundli: kundli, profile: profile),
-          _GrahaTab(kundli: kundli, hindi: hindi),
-          _VargaTab(kundli: kundli, hindi: hindi),
-          _DashaTab(kundli: kundli, hindi: hindi),
-          _YogaTab(kundli: kundli, hindi: hindi),
-          // The readings used to live only on the home screen, so reading
-          // somebody's chart and wanting the phaladesh meant going back out
-          // and hoping the tile opened the same chart. It did not: the routes
-          // never carried a profile, so they quietly opened the saved default.
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            child: ChartMore(profileId: profile.id),
+          Text(
+            hindi
+                ? 'जन्म पत्रिका की तरह सजी, विस्तृत हिंदी कुंडली: सारे चार्ट, दशा, फलादेश, योग-दोष, वर्षफल और उपाय, आधार सहित। फ़ाइल पासवर्ड से बंद रहती है और आपके इसी उपकरण पर बनती है।'
+                : 'A detailed Hindi janampatri: every chart, the dashas, the readings, yogas and doshas, the year chart and remedies, with the basis for each. The file is locked with a password and made on this device.',
+          ),
+          const SizedBox(height: 12),
+          Builder(
+            builder: (BuildContext buttonContext) => FilledButton.icon(
+              key: const ValueKey<String>('kundli-pdf-button'),
+              icon: const Icon(Icons.download_outlined),
+              label: Text(hindi ? 'PDF डाउनलोड करें' : 'Download PDF'),
+              onPressed: () => downloadKundliPdf(
+                buttonContext,
+                profile: profile,
+                ayanamsa: settings.ayanamsa,
+                hindi: hindi,
+              ),
+            ),
           ),
         ],
       ),
@@ -222,33 +335,7 @@ class _ChartTab extends StatelessWidget {
           ),
         ),
         if (profile.timeIsApproximate) Panel(child: Text(l.timeNotSureHelp)),
-        Panel(
-          title: hindi ? 'पूरी कुंडली, PDF में' : 'The full kundli, as a PDF',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                hindi
-                    ? 'जन्म पत्रिका की तरह सजी, विस्तृत हिंदी कुंडली: सारे चार्ट, दशा, फलादेश, योग-दोष, वर्षफल और उपाय, आधार सहित। फ़ाइल पासवर्ड से बंद रहती है और आपके इसी उपकरण पर बनती है।'
-                    : 'A detailed Hindi janampatri: every chart, the dashas, the readings, yogas and doshas, the year chart and remedies, with the basis for each. The file is locked with a password and made on this device.',
-              ),
-              const SizedBox(height: 12),
-              Builder(
-                builder: (BuildContext buttonContext) => FilledButton.icon(
-                  key: const ValueKey<String>('kundli-pdf-button'),
-                  icon: const Icon(Icons.download_outlined),
-                  label: Text(hindi ? 'PDF डाउनलोड करें' : 'Download PDF'),
-                  onPressed: () => downloadKundliPdf(
-                    buttonContext,
-                    profile: profile,
-                    ayanamsa: settings.ayanamsa,
-                    hindi: hindi,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        _PdfPanel(profile: profile),
         DisclaimerNote(l.accuracyNote),
       ],
     );

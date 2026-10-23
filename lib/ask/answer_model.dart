@@ -23,6 +23,10 @@ abstract final class SectionKey {
   /// The single part of a refusal or of a "not yet".
   static const String plain = 'plain';
 
+  /// The answer in two or three plain lines, for someone who does not know
+  /// what a dasha is. Shown first; the rest is there for whoever wants it.
+  static const String short = 'short';
+
   /// The yogas answer's own parts.
   static const String leading = 'leading';
   static const String others = 'others';
@@ -60,12 +64,20 @@ class Answer {
     required this.title,
     required this.sections,
     required this.basis,
+    this.short,
     this.isRefusal = false,
     this.isFallback = false,
   });
 
   final String title;
   final List<AnswerSection> sections;
+
+  /// The answer in plain words, without a single term of the shastra. Kept
+  /// apart from [sections] so the full explanation stays exactly as it was.
+  final AnswerSection? short;
+
+  /// Everything a reader sees: [short] first, then [sections].
+  List<AnswerSection> get allSections => <AnswerSection>[?short, ...sections];
 
   /// The chart factors the answer was read from.
   final List<String> basis;
@@ -87,7 +99,7 @@ class Answer {
   String get closing => section(SectionKey.close)?.paragraphs.join(' ') ?? '';
 
   /// The whole answer as plain text, headings included.
-  String get body => sections
+  String get body => allSections
       .map(
         (AnswerSection s) => <String>[
           if (s.heading.isNotEmpty) s.heading,
@@ -101,9 +113,10 @@ class Answer {
   /// (those stay on screen). The closing line is always kept.
   String get spoken => spokenChunks().join(' ');
 
-  /// The gist, for an answer that is spoken without being asked to be: every
-  /// part's heading and its first paragraph, and the closing line. The screen
-  /// carries the rest, and the speaker button reads all of it.
+  /// The gist, for an answer that is spoken without being asked to be: the
+  /// plain answer when there is one, else every part's heading and its first
+  /// paragraph; and the closing line. The screen carries the rest, and the
+  /// speaker button reads all of it.
   String get gist => spokenChunks(brief: true).join(' ');
 
   /// The spoken answer cut into pieces a speech engine will take, each at the
@@ -118,11 +131,17 @@ class Answer {
     }
 
     final List<String> pieces = <String>[sentence(title)];
-    for (final AnswerSection s in sections) {
+    final bool shortOnly = brief && short != null;
+    for (final AnswerSection s in allSections) {
+      if (shortOnly && s.key != SectionKey.short && s.key != SectionKey.close) {
+        continue;
+      }
       if (s.heading.isNotEmpty) pieces.add(sentence(s.heading));
       for (int i = 0; i < s.paragraphs.length; i++) {
         if (s.optional.contains(i)) continue;
-        if (brief && i > 0 && s.key != SectionKey.close) continue;
+        if (brief && !shortOnly && i > 0 && s.key != SectionKey.close) {
+          continue;
+        }
         pieces.add(s.paragraphs[i]);
       }
     }

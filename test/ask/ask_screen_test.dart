@@ -85,7 +85,7 @@ void main() {
 
   for (final String language in <String>['hi', 'en']) {
     testWidgets(
-      'a timing question shows all six parts, start first ($language)',
+      'a timing question shows the plain answer first, the six parts on a tap ($language)',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(380, 820);
         tester.view.devicePixelRatio = 1.0;
@@ -110,9 +110,9 @@ void main() {
           SectionKey.how,
           SectionKey.close,
         ]);
-        for (final AnswerSection s in answer.sections) {
-          expect(find.text(s.heading), findsOneWidget, reason: s.key);
-        }
+        // The plain answer is shown first, the closing line under it.
+        expect(answer.short, isNotNull);
+        expect(find.text(answer.short!.heading), findsOneWidget);
         expect(
           find.text(hindi ? closingHindi : closingEnglish),
           findsOneWidget,
@@ -123,10 +123,22 @@ void main() {
         final Rect asked = tester.getRect(find.text(question).last);
         expect(asked.top, greaterThanOrEqualTo(0));
         expect(asked.top, lessThan(820));
-        final Rect first = tester.getRect(
-          find.text(answer.sections.first.heading),
-        );
+        final Rect first = tester.getRect(find.text(answer.short!.heading));
         expect(first.top, lessThan(820), reason: 'the first part is in view');
+
+        // The six parts are folded under the full reading, and open on a tap.
+        final Finder detail = find.byKey(
+          const ValueKey<String>('answer-detail'),
+        );
+        await tester.ensureVisible(detail);
+        await tester.pump();
+        await tester.tap(
+          find.descendant(of: detail, matching: find.byType(ListTile)),
+        );
+        await advance(tester, frames: 20);
+        for (final AnswerSection s in answer.sections) {
+          expect(find.text(s.heading), findsOneWidget, reason: s.key);
+        }
         expect(tester.takeException(), isNull);
       },
     );

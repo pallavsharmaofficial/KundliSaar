@@ -1199,8 +1199,11 @@ void main() {
             a.gist.endsWith(hindi ? closingHindi : closingEnglish),
             isTrue,
           );
-          for (final AnswerSection s in a.sections) {
-            expect(a.gist, contains(s.heading));
+          // Spoken unasked, it is the plain answer and the closing line.
+          expect(a.short, isNotNull);
+          expect(a.gist, contains(a.short!.heading));
+          for (final String p in a.short!.paragraphs) {
+            expect(a.gist, contains(p));
           }
         }
       },
