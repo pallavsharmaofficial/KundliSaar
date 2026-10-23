@@ -261,8 +261,19 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     final HandTracker? tracker = _tracker;
     if (tracker == null) return;
     final Future<TrackResult?> look = tracker.track(frame, _nowMs);
-    unawaited(look.then(_onLook, onError: _onLookFailed));
+    unawaited(
+      look.then(
+        (TrackResult? r) => _onLook(r, frame),
+        onError: _onLookFailed,
+      ),
+    );
   }
+
+  /// The sharpest well-placed frame seen since the hand became ready, and how
+  /// sharp it was. The count takes this one rather than whichever frame
+  /// happens to be last, which may be the one the hand twitched in.
+  CameraFrame? _best;
+  double _bestSharpness = -1;
 
   /// Looks that fail in a row, before the screen gives up and offers the hand
   /// tracer. One bad frame is forgiven; a runtime that keeps failing is not
@@ -274,7 +285,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
     if (++_lookFailures >= 3) _fail(_Trouble.models);
   }
 
-  void _onLook(TrackResult? look) {
+  void _onLook(TrackResult? look, CameraFrame frame) {
     if (look == null || !mounted || _stage != _Stage.aiming || _scanning) {
       return;
     }
@@ -288,15 +299,28 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
       raw = assess(look.hand, steady: _steady.steady);
     }
     _hand.value = look.hand;
+    if (raw == Guidance.ready &&
+        look.hand!.look.sharpness > _bestSharpness) {
+      _best = frame;
+      _bestSharpness = look.hand!.look.sharpness;
+    }
     final Guidance shown = _smoother.push(raw);
     _flow.observe(shown, _nowMs);
+    if (_flow.phase == CapturePhase.aiming) {
+      _best = null;
+      _bestSharpness = -1;
+    }
     final CaptureStatus s = _flow.status(_nowMs);
     if (s != _status.value) _status.value = s;
   }
 
-  Future<void> _capture() async {
+  Future<void> _capture({bool now = false}) async {
     _scanning = true;
-    final CameraFrame? frame = _latest;
+    // Pressed by hand, the picture is the one on screen; counted, it is the
+    // sharpest good one from the count.
+    final CameraFrame? frame = now ? _latest : (_best ?? _latest);
+    _best = null;
+    _bestSharpness = -1;
     final HandTracker? tracker = _tracker;
     if (frame == null || tracker == null) return _retry(_Trouble.failed);
     unawaited(HapticFeedback.mediumImpact().catchError((Object _) {}));
@@ -362,7 +386,7 @@ class _HastrekhaCaptureScreenState extends State<HastrekhaCaptureScreen>
   /// on screen is read just as the counted one would be.
   void _shootNow() {
     if (_stage != _Stage.aiming || _scanning || _latest == null) return;
-    unawaited(_capture());
+    unawaited(_capture(now: true));
   }
 
   void _manual() {

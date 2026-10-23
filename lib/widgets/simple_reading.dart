@@ -31,13 +31,20 @@ class SimpleReading extends StatelessWidget {
     final AskCtx c = AskCtx(kundli, DateTime.now(), hindi);
     String t(String en, String hi) => hindi ? hi : en;
 
-    List<String> plain(Answer a) => a.short?.paragraphs ?? const <String>[];
+    // A line said once is not said again further down the page: the same
+    // remedy or the same date under every heading reads as going round in
+    // circles.
+    final Set<String> said = <String>{};
+    List<String> plain(Answer a) => <String>[
+      for (final String p in a.short?.paragraphs ?? const <String>[])
+        if (said.add(p)) p,
+    ];
 
+    final List<String> now = plain(composeStory(c, titleEn: '', titleHi: ''));
     final List<String> you = <String>[
       ...plain(lagnaAnswer(c)).take(2),
       ...plain(moonAnswer(c)),
     ];
-    final List<String> now = plain(composeStory(c, titleEn: '', titleHi: ''));
     final List<(IconData, Topic)> topics = <(IconData, Topic)>[
       (Icons.work_outline, careerTopic),
       (Icons.favorite_border, marriageTopic),
@@ -69,6 +76,8 @@ class SimpleReading extends StatelessWidget {
                 _TopicTile(
                   icon: icon,
                   title: t(topic.titleEn, topic.titleHi),
+                  mood: topicMood(c, topic),
+                  hindi: hindi,
                   lines: plain(
                     composeStory(
                       c,
@@ -139,17 +148,33 @@ class _TopicTile extends StatelessWidget {
   const _TopicTile({
     required this.icon,
     required this.title,
+    required this.mood,
+    required this.hindi,
     required this.lines,
   });
 
   final IconData icon;
   final String title;
+  final TopicMood mood;
+  final bool hindi;
   final List<String> lines;
 
   @override
   Widget build(BuildContext context) {
     if (lines.isEmpty) return const SizedBox.shrink();
     final ThemeData theme = Theme.of(context);
+    final (String label, Color colour) = switch (mood) {
+      TopicMood.good => (hindi ? 'अच्छा समय' : 'Good time', Colors.green),
+      TopicMood.mixed => (hindi ? 'मिला-जुला' : 'Mixed', Colors.amber),
+      TopicMood.patience => (
+        hindi ? 'धैर्य रखें' : 'Be patient',
+        Colors.deepOrange,
+      ),
+      TopicMood.quiet => (hindi ? 'शांत' : 'Quiet', Colors.blueGrey),
+    };
+    // The first line restates the label in a sentence; the next one, when
+    // the date of a better time, is what the reader came for.
+    final String peek = lines.length > 1 ? lines[1] : lines.first;
     return ExpansionTile(
       shape: const Border(),
       collapsedShape: const Border(),
@@ -157,9 +182,27 @@ class _TopicTile extends StatelessWidget {
       childrenPadding: const EdgeInsets.only(bottom: 12),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       leading: Icon(icon, color: theme.colorScheme.primary),
-      title: Text(title, style: theme.textTheme.titleMedium),
+      title: Row(
+        children: <Widget>[
+          Flexible(child: Text(title, style: theme.textTheme.titleMedium)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: colour.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
       subtitle: Text(
-        lines.first,
+        peek,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodySmall,

@@ -79,17 +79,35 @@ AnswerSection shortSection(AskCtx c, Topic? topic, Stretch s) {
   final AskLang l = c.l;
   final TimelineWindow cur = s.current ?? c.window!;
   final List<String> paras = <String>[];
-  final String until = c.monthYear(cur.end);
 
-  if (topic != null && !topicTouches(c, topic, cur)) {
+  if (topic != null) {
+    // About one part of life the line is read for that part, and the general
+    // tone of the time is not repeated: it is said once, on its own.
     final String name = l.t(topic.nameEn, topic.nameHi);
+    final Tone tone = blendTone(blendScore(cur));
     paras.add(
-      l.t(
-        'For $name the present time is quiet: it neither pushes this matter forward nor holds it back. This stretch runs until $until.',
-        '$name के मामले में अभी का समय शांत है: न ज़्यादा आगे बढ़ाता है, न रोकता है। यह दौर $until तक है।',
-      ),
+      !topicTouches(c, topic, cur)
+          ? l.t(
+              'The present time does not put much weight on $name; it neither pushes it forward nor holds it back.',
+              'अभी का समय $name पर ज़्यादा ज़ोर नहीं देता; न इसे आगे धकेलता है, न रोकता है।',
+            )
+          : switch (tone) {
+              Tone.supportive => l.t(
+                'For $name the time is good now: the chart stands with it, so this is the time to put in effort.',
+                '$name के लिए अभी समय अच्छा है: कुंडली इसका साथ देती है, इसलिए अभी मेहनत लगाइए।',
+              ),
+              Tone.mixed => l.t(
+                '$name is in focus now, but the support is not full: things move with effort.',
+                '$name पर अभी ध्यान रहता है, पर पूरा सहारा नहीं: मेहनत से बात बनती है।',
+              ),
+              Tone.demanding => l.t(
+                '$name asks for patience now. Do not hurry big decisions here.',
+                '$name में अभी धैर्य चाहिए। इसमें बड़े फ़ैसले जल्दबाज़ी में न लीजिए।',
+              ),
+            },
     );
   } else {
+    final String until = c.monthYear(cur.end);
     paras.add(switch (blendTone(blendScore(cur))) {
       Tone.supportive => l.t(
         'Your time is good right now. Work you put in now tends to move forward easily. This stretch runs until $until.',
@@ -111,16 +129,16 @@ AnswerSection shortSection(AskCtx c, Topic? topic, Stretch s) {
       final DateTime end = s.goodRun.isEmpty ? cur.end : s.goodRun.last.end;
       paras.add(
         l.t(
-          'This is itself your good time, until ${c.monthYear(end)}. Make full use of it.',
-          'यही आपका अच्छा समय है, ${c.monthYear(end)} तक। इसका पूरा फ़ायदा उठाइए।',
+          'This is itself the good time${topic == null ? '' : ' for ${topic.nameEn}'}, until ${c.monthYear(end)}. Make full use of it.',
+          '${topic == null ? 'यही आपका अच्छा समय है' : '${topic.nameHi} के लिए यही अच्छा समय है'}, ${c.monthYear(end)} तक। इसका पूरा फ़ायदा उठाइए।',
         ),
       );
     case StretchKind.betterAhead:
       final TimelineWindow t = s.target!;
       paras.add(
         l.t(
-          'A better time begins in ${c.monthYear(t.start)} and runs until ${c.monthYear(t.end)}.',
-          'इससे बेहतर समय ${c.monthYear(t.start)} से शुरू होता है और ${c.monthYear(t.end)} तक चलता है।',
+          'A better time${topic == null ? '' : ' for ${topic.nameEn}'} begins in ${c.monthYear(t.start)} and runs until ${c.monthYear(t.end)}.',
+          '${topic == null ? 'इससे बेहतर समय' : '${topic.nameHi} के लिए बेहतर समय'} ${c.monthYear(t.start)} से शुरू होता है और ${c.monthYear(t.end)} तक चलता है।',
         ),
       );
     case StretchKind.modestAhead:
@@ -153,6 +171,19 @@ AnswerSection shortSection(AskCtx c, Topic? topic, Stretch s) {
   }
 
   return plainSection(l, paras);
+}
+
+/// How one part of life stands at the moment, for a one-word label.
+enum TopicMood { good, mixed, patience, quiet }
+
+TopicMood topicMood(AskCtx c, Topic topic) {
+  final TimelineWindow? cur = c.window;
+  if (cur == null || !topicTouches(c, topic, cur)) return TopicMood.quiet;
+  return switch (blendTone(blendScore(cur))) {
+    Tone.supportive => TopicMood.good,
+    Tone.mixed => TopicMood.mixed,
+    Tone.demanding => TopicMood.patience,
+  };
 }
 
 /// The plain answer's part, under the same heading in every answer.
