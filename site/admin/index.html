@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<!-- Scripts only from this site and the pinned supabase-js on jsDelivr, so
+     injected markup cannot run code even if escaping were ever missed. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https: wss:; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>स्टाफ़ पैनल · KundliSaar</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- Every screen is a <section data-screen> and admin.js shows one at a time.
+     Data is never written into this file's markup: admin.js builds nodes and
+     sets textContent. -->
+
+<section data-screen="boot" class="center">
+  <p class="muted">लोड हो रहा है… <small>Loading…</small></p>
+</section>
+
+<section data-screen="noconfig" class="center" hidden>
+  <div class="panel narrow">
+    <h1 class="brand">कुंडलीसार</h1>
+    <h2>बैकएंड अभी सेट नहीं हुआ है</h2>
+    <p><small>The backend is not configured yet.</small></p>
+    <p>Supabase का URL और anon key अभी <code>config.js</code> में नहीं हैं। सेटअप के लिए
+      <code>docs/funnel/BACKEND_SETUP.md</code> देखें।</p>
+    <p class="muted"><small>Add the repository variables SUPABASE_URL and SUPABASE_ANON_KEY and redeploy the site.</small></p>
+  </div>
+</section>
+
+<section data-screen="nolib" class="center" hidden>
+  <div class="panel narrow">
+    <h2>लाइब्रेरी लोड नहीं हुई</h2>
+    <p><small>Could not load supabase-js from cdn.jsdelivr.net. Check the internet connection and reload.</small></p>
+  </div>
+</section>
+
+<section data-screen="login" class="center" hidden>
+  <form class="panel narrow" id="login-form" autocomplete="on">
+    <h1 class="brand">कुंडलीसार</h1>
+    <h2>स्टाफ़ लॉगिन <small>Staff sign-in</small></h2>
+    <label>ईमेल <small>Email</small>
+      <input type="email" name="email" required autocomplete="username" inputmode="email"></label>
+    <label>पासवर्ड <small>Password</small>
+      <input type="password" name="password" required autocomplete="current-password"></label>
+    <p class="error" role="alert" hidden></p>
+    <button class="btn primary block" type="submit">लॉगिन करें <small>Sign in</small></button>
+    <p class="center-text"><a href="#" data-go="forgot">पासवर्ड भूल गए? <small>Forgot password?</small></a></p>
+  </form>
+</section>
+
+<section data-screen="forgot" class="center" hidden>
+  <form class="panel narrow" id="forgot-form">
+    <h2>पासवर्ड रीसेट <small>Reset password</small></h2>
+    <p>अपना ईमेल डालें, हम रीसेट लिंक भेजेंगे। <small>We will email you a reset link.</small></p>
+    <label>ईमेल <small>Email</small>
+      <input type="email" name="email" required autocomplete="username" inputmode="email"></label>
+    <p class="error" role="alert" hidden></p>
+    <p class="ok" role="status" hidden></p>
+    <button class="btn primary block" type="submit">लिंक भेजें <small>Send link</small></button>
+    <p class="center-text"><a href="#" data-go="login">← लॉगिन पर वापस <small>Back to sign-in</small></a></p>
+  </form>
+</section>
+
+<section data-screen="setpw" class="center" hidden>
+  <form class="panel narrow" id="setpw-form">
+    <h2>नया पासवर्ड <small>Set a new password</small></h2>
+    <label>नया पासवर्ड (कम से कम 10 अक्षर) <small>New password, 10+ characters</small>
+      <input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+    <label>दोबारा <small>Again</small>
+      <input type="password" name="password2" required minlength="10" autocomplete="new-password"></label>
+    <p class="error" role="alert" hidden></p>
+    <button class="btn primary block" type="submit">सेव करें <small>Save</small></button>
+    <p class="center-text"><a href="#" data-go="app">रद्द करें <small>Cancel</small></a></p>
+  </form>
+</section>
+
+<section data-screen="notstaff" class="center" hidden>
+  <div class="panel narrow">
+    <h2>पहुँच नहीं है <small>No access</small></h2>
+    <p>यह खाता स्टाफ़ में नहीं है या बंद कर दिया गया है। मालिक से संपर्क करें।</p>
+    <p class="muted"><small>This account is not active staff. Ask the owner to add you.</small></p>
+    <button class="btn block" type="button" data-action="signout">लॉगआउट <small>Sign out</small></button>
+  </div>
+</section>
+
+<section data-screen="app" hidden>
+  <header class="topbar">
+    <a class="brand small" href="#/leads">कुंडलीसार <small>स्टाफ़</small></a>
+    <span class="who" id="who"></span>
+  </header>
+  <nav class="tabs" id="tabs">
+    <a href="#/leads" data-tab="leads">लीड्स <small>Leads</small></a>
+    <a href="#/dashboard" data-tab="dashboard" data-min-role="manager">डैशबोर्ड <small>Dashboard</small></a>
+    <a href="#/staff" data-tab="staff" data-min-role="owner">स्टाफ़ <small>Staff</small></a>
+    <a href="#/account" data-tab="account">खाता <small>Account</small></a>
+  </nav>
+  <main id="view" class="view"></main>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

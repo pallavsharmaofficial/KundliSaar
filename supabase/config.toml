@@ -1,0 +1,22 @@
+# Minimal Supabase CLI config: enough for `supabase link`, `supabase db push`
+# and `supabase functions deploy`. The project itself (auth, storage, API
+# settings) is configured in the Supabase dashboard; see
+# docs/funnel/BACKEND_SETUP.md.
+
+project_id = "kundlisaar"
+
+# Called from the landing page with the anon key, which is not a user JWT
+# (and with the newer publishable keys not a JWT at all), so the gateway's
+# JWT check is off. Each function validates its input itself, and the anon
+# key can touch no table directly.
+[functions.submit-lead]
+verify_jwt = false
+
+[functions.track]
+verify_jwt = false
+
+# Called from the admin panel with the signed-in owner's JWT; the gateway
+# rejects anything else before the function runs, and the function then
+# checks the JWT belongs to an active owner.
+[functions.manage-staff]
+verify_jwt = true
