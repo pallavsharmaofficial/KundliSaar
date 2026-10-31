@@ -109,8 +109,10 @@ const COPY = {
   q1: 'क्या आप जानना चाहते हैं —',
   q2: 'आपका अच्छा समय',
   q3: 'कब आएगा?',
-  sub: 'शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से — <b>मुफ़्त, बस 1 मिनट में</b>',
-  steps: ['QR स्कैन करें', 'जन्म विवरण भरें', 'तुरंत जानें अपना अच्छा समय + <span class="nw">पूरी कुंडली PDF</span>'],
+  sub: 'शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से — <b>जवाब मुफ़्त, 1 मिनट में</b>',
+  // The full PDF's password costs ₹199, so the flyer promises only what is
+  // free: the answer. The page says the price before anyone fills the form.
+  steps: ['QR स्कैन करें', 'जन्म विवरण भरें', 'तुरंत जानें अपना अच्छा समय'],
   trust1: 'ग्रहों की स्थिति NASA JPL के सार्वजनिक खगोलीय आँकड़ों पर आधारित गणना से',
   trust2: 'ज्योतिष शास्त्री चेतन शर्मा जी की प्रस्तुति',
   contact: `संपर्क: ${PHONE_PRETTY}`,
@@ -329,7 +331,7 @@ function a4(qrSvg, url, code) {
 .q .l1 { font-size: 30pt; }
 .q .l2 { font-size: 60pt; line-height: 1.04; margin-top: 1mm; }
 .q .l3 { font-size: 48pt; line-height: 1.1; }
-.sub { font-size: 16pt; line-height: 1.35; margin: 3.5mm auto 0; max-width: 165mm; }
+.sub { font-size: 16pt; line-height: 1.35; margin: 3.5mm auto 0; max-width: 182mm; }
 .row { display: flex; align-items: center; gap: 9mm; margin: 7mm 3mm 0; }
 .qrcard { width: 64mm; flex: none; padding: 1.8mm 1.8mm 2.2mm; border-radius: 3mm; }
 .url { font-size: 9pt; padding: 0 1mm; }
@@ -464,7 +466,7 @@ function caption(url) {
   return [
     `क्या आप जानना चाहते हैं — आपका अच्छा समय कब आएगा?`,
     ``,
-    `शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से — मुफ़्त, बस 1 मिनट में।`,
+    `शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से — जवाब मुफ़्त, 1 मिनट में।`,
     `इस लिंक पर टैप करें: ${url}`,
     ``,
     `${COPY.trust2}। ${COPY.contact}`,

@@ -8,7 +8,7 @@
 //   mkdir -p /tmp/pglite && (cd /tmp/pglite && npm i @electric-sql/pglite)
 //   PGLITE_DIR=/tmp/pglite node supabase/tests/rls_test.mjs
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -51,7 +51,10 @@ const SUPABASE_STUB = `
 const PGlite = await loadPGlite();
 const db = new PGlite();
 await db.exec(SUPABASE_STUB);
-await db.exec(readFileSync(join(here, '../migrations/20261031000000_funnel.sql'), 'utf8'));
+// Every migration, in order, as `supabase db push` applies them.
+for (const f of readdirSync(join(here, '../migrations')).filter((n) => n.endsWith('.sql')).sort()) {
+  await db.exec(readFileSync(join(here, '../migrations', f), 'utf8'));
+}
 
 // ---------------------------------------------------------------------------
 // Session helpers: run statements as a role with a given auth.uid().

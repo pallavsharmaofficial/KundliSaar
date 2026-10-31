@@ -138,7 +138,7 @@ test('track: only a well-formed id, code and known event', () => {
   const id = '3f1c2b9e-5d4a-4c7b-9e8f-0a1b2c3d4e5f';
   assert.deepEqual(validateTrack({ leadId: id.toUpperCase(), code: 'KS-482193', event: 'pdf_download' }),
     { leadId: id, code: 'KS-482193', event: 'pdf_download' });
-  for (const e of ['basis_open', 'whatsapp_click', 'call_click']) {
+  for (const e of ['basis_open', 'whatsapp_click', 'call_click', 'upi_click']) {
     assert.ok(validateTrack({ leadId: id, code: 'KS-482193', event: e }));
   }
   assert.equal(validateTrack({ leadId: id, code: 'KS-48219', event: 'pdf_download' }), null);

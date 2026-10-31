@@ -9,4 +9,7 @@ window.KS_CONFIG = {
   baseUrl: "https://pallavsharmaofficial.github.io/KundliSaar",
   contactPhone: "9910144125",
   whatsappPhone: "919910144125",
+  upiId: "pallavsharma353-1@okaxis",
+  upiName: "Pallav Sharma",
+  passwordPrice: 199,
 };

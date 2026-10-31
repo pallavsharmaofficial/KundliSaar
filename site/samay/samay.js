@@ -12,6 +12,9 @@
   var CFG = window.KS_CONFIG || {};
   var PHONE = CFG.contactPhone || '9910144125';
   var WA = CFG.whatsappPhone || '91' + PHONE;
+  var UPI_ID = CFG.upiId || 'pallavsharma353-1@okaxis';
+  var UPI_NAME = CFG.upiName || 'Pallav Sharma';
+  var PRICE = CFG.passwordPrice || 199;
   var backendReady = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
 
   var $ = function (id) { return document.getElementById(id); };
@@ -402,13 +405,22 @@
   function showLocked() {
     $('dl-progress').hidden = true;
     $('r-code').textContent = lead.code;
-    var text = 'नमस्ते, मैंने कुंडलीसार पर अपनी कुंडली डाउनलोड की है। मेरा कुंडली कोड ' + lead.code + ' है। कृपया PDF का पासवर्ड बताइए।';
+    var text = 'नमस्ते, मैंने कुंडलीसार पर अपनी कुंडली डाउनलोड की है। मेरा कुंडली कोड ' + lead.code + ' है। मुझे PDF का पासवर्ड (₹' + PRICE + ') चाहिए। भुगतान किया है तो उसका स्क्रीनशॉट साथ भेज रहा/रही हूँ।';
     $('wa-link').href = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(text);
+    // The code goes in the payment note, so the team matches the payment to
+    // this kundli without asking.
+    // The UPI ID goes in as written: some UPI apps do not decode %40 back
+    // to @. It only ever holds letters, digits, dots, hyphens and one @.
+    $('upi-link').href = 'upi://pay?pa=' + UPI_ID.replace(/[^\w.@-]/g, '') +
+      '&pn=' + encodeURIComponent(UPI_NAME) + '&am=' + PRICE + '&cu=INR' +
+      '&tn=' + encodeURIComponent('Kundli ' + lead.code);
+    $('upi-id').textContent = UPI_ID;
     $('locked').hidden = false;
     $('locked').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   $('wa-link').addEventListener('click', function () { track('whatsapp_click'); });
+  $('upi-link').addEventListener('click', function () { track('upi_click'); });
   $('call-btn').addEventListener('click', function () { track('call_click'); });
   $('call-link').addEventListener('click', function () { track('call_click'); });
 

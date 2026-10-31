@@ -28,6 +28,7 @@
     basis_open: ['"किस आधार पर" खोला', 'Opened the basis'],
     pdf_download: ['PDF डाउनलोड की', 'Downloaded the PDF'],
     whatsapp_click: ['WhatsApp बटन दबाया', 'Tapped WhatsApp'],
+    upi_click: ['₹199 UPI बटन दबाया', 'Tapped UPI pay'],
     call_click: ['कॉल बटन दबाया', 'Tapped call'],
   };
   const KINDS = {
@@ -459,9 +460,12 @@
 
     // Header and the main actions
     const phone = digits(lead.phone);
+    const CFG = window.KS_CONFIG || {};
+    const price = CFG.passwordPrice || 199;
+    const upi = CFG.upiId || 'pallavsharma353-1@okaxis';
     const waText = `नमस्ते ${lead.name || ''} जी, कुंडलीसार की ओर से नमस्कार। आपकी कुंडली (कोड ${lead.code}) ` +
-      'के बारे में बात करनी थी — PDF का पासवर्ड और आपके अच्छे समय की पूरी जानकारी के लिए। ' +
-      'क्या अभी बात करना ठीक रहेगा? धन्यवाद।';
+      `का PDF पासवर्ड ₹${price} में मिलता है। UPI ID ${upi} पर ₹${price} भेजकर स्क्रीनशॉट यहीं भेज दीजिए, ` +
+      'पासवर्ड तुरंत भेज दिया जाएगा। आपके अच्छे समय के बारे में कुछ पूछना हो तो बेझिझक लिखिए। धन्यवाद।';
     const secretBox = h('div');
     const mine = lead.assigned_to === me.user_id;
 
@@ -526,6 +530,13 @@
       }, 'नोट जोड़ें ', h('small', null, 'Add note')),
       h('hr', { style: 'border:0;border-top:1px solid var(--line);margin:16px 0' }),
       h('label', null, 'भुगतान (रुपये) ', h('small', null, 'Payment in rupees'), amount, payNote),
+      // The usual amounts, one tap each: the password, the report, a consultation.
+      h('div', { class: 'quick-amounts', style: 'display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px' },
+        [[199, 'पासवर्ड'], [299, 'रिपोर्ट'], [501, 'परामर्श'], [1100, 'विस्तृत परामर्श']].map(([n, what]) =>
+          h('button', {
+            class: 'btn', type: 'button', style: 'flex:1 1 auto;min-width:0',
+            onclick: () => { amount.value = n; if (!payNote.value) payNote.value = what + ' (UPI)'; },
+          }, `₹${n} `, h('small', null, what)))),
       h('button', {
         class: 'btn block', type: 'button', onclick: (ev) => {
           const n = parseInt(amount.value, 10);

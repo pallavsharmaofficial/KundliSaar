@@ -89,6 +89,9 @@ jobs:
               "baseUrl": os.environ.get("PUBLIC_BASE_URL") or "https://pallavsharmaofficial.github.io/KundliSaar",
               "contactPhone": "9910144125",
               "whatsappPhone": "919910144125",
+              "upiId": "pallavsharma353-1@okaxis",
+              "upiName": "Pallav Sharma",
+              "passwordPrice": 199,
           }
           open("dist/config.js", "w").write("window.KS_CONFIG = " + json.dumps(cfg, indent=2) + ";\n")
           PY

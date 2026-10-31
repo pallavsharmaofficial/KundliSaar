@@ -112,7 +112,10 @@ The IP is the first address in `x-forwarded-for` (else `x-real-ip`); also store
 { "leadId": "uuid", "code": "KS-482193", "event": "pdf_download" }
 ```
 
-`event` ∈ `basis_open`, `pdf_download`, `whatsapp_click`, `call_click`.
+`event` ∈ `basis_open`, `pdf_download`, `whatsapp_click`, `call_click`, `upi_click`.
+
+The PDF password costs **₹199**, paid by UPI (the page's button carries the
+lead code in the payment note) or on the call.
 `leadId` and `code` must match the same lead or nothing is stored. Always
 answer `{ "ok": true }` (204/200), never reveal whether a lead exists.
 

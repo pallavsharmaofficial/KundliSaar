@@ -16,6 +16,9 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` must win over any display rule below (.progress is flex). */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -172,6 +175,7 @@ input[aria-invalid="true"] { border-color: var(--sindoor); }
 .btn.primary:active { transform: translateY(1px); }
 .btn[disabled] { opacity: 0.6; cursor: wait; }
 .btn.whatsapp { background: var(--wa); color: #fff; }
+.btn.upi { background: var(--indigo); color: #fff; }
 .btn.ghost { background: transparent; color: var(--maroon); border: 2px solid var(--maroon); }
 
 .error { color: var(--sindoor); font-weight: 600; margin: 4px 0 12px; }
@@ -264,6 +268,12 @@ summary {
 .code b { font-size: 20px; letter-spacing: 1px; color: var(--indigo); }
 .code small { display: block; color: var(--muted); font-size: 14px; }
 .actions { display: grid; gap: 10px; }
+.price { font-size: 19px; margin: 0 0 8px; }
+.price b { color: var(--sindoor); font-size: 24px; }
+.pay-steps { text-align: left; margin: 0 auto 14px; padding-left: 22px; max-width: 360px; font-size: 16px; }
+.pay-steps li { margin-bottom: 4px; }
+.upi-id { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+.upi-id b { white-space: nowrap; }
 
 .foot { text-align: center; color: var(--muted); font-size: 13.5px; margin-top: 24px; }
 .foot p { margin: 6px 0; }

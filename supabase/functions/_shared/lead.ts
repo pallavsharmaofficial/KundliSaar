@@ -34,7 +34,7 @@ export type ValidationResult =
   | { ok: true; lead: LeadRow }
   | { ok: false; error: string };
 
-export const TRACK_EVENTS = ['basis_open', 'pdf_download', 'whatsapp_click', 'call_click'] as const;
+export const TRACK_EVENTS = ['basis_open', 'pdf_download', 'whatsapp_click', 'call_click', 'upi_click'] as const;
 export type TrackEvent = typeof TRACK_EVENTS[number];
 
 // Larger bodies are refused before parsing: a real submission is a few KB.
