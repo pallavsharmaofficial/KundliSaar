@@ -62,6 +62,37 @@ jobs:
           cp -R build/web/. dist/app/
           touch dist/.nojekyll
 
+      - name: Build the "accha samay" landing page's engine
+        # The app's own Dart engine, compiled to JavaScript, so the landing
+        # page computes the kundli and the PDF without the whole Flutter app.
+        run: |
+          dart compile js -O2 tools/funnel/funnel_main.dart -o dist/samay/funnel.js
+          rm -f dist/samay/funnel.js.deps dist/samay/funnel.js.map
+          mkdir -p dist/samay/fonts
+          cp assets/fonts/Mukta-Regular.ttf assets/fonts/Mukta-SemiBold.ttf \
+             assets/fonts/TiroDevanagariHindi-Regular.ttf assets/fonts/YatraOne-Regular.ttf \
+             dist/samay/fonts/
+          cp assets/data/places.json dist/samay/places.json
+
+      - name: Write the public config
+        # Empty values keep the pages in "not set up yet" mode.
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          cfg = {
+              "supabaseUrl": os.environ.get("SUPABASE_URL", ""),
+              "supabaseAnonKey": os.environ.get("SUPABASE_ANON_KEY", ""),
+              "baseUrl": os.environ.get("PUBLIC_BASE_URL") or "https://pallavsharmaofficial.github.io/KundliSaar",
+              "contactPhone": "9910144125",
+              "whatsappPhone": "919910144125",
+          }
+          open("dist/config.js", "w").write("window.KS_CONFIG = " + json.dumps(cfg, indent=2) + ";\n")
+          PY
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

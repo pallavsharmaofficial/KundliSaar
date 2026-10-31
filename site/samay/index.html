@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>आपका अच्छा समय कब आएगा? · कुंडलीसार</title>
+<meta name="description" content="शास्त्रों के अनुसार जानिए आपका अच्छा समय कब आएगा। अपनी जन्म तिथि, समय और स्थान डालिए — मुफ़्त, बस एक मिनट में।">
+<link rel="icon" type="image/png" href="../favicon.png">
+<meta name="theme-color" content="#6B1D1D">
+<meta property="og:title" content="क्या आप जानना चाहते हैं — आपका अच्छा समय कब आएगा?">
+<meta property="og:description" content="शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से — मुफ़्त, बस 1 मिनट में।">
+<meta property="og:image" content="https://pallavsharmaofficial.github.io/KundliSaar/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="samay.css">
+<script src="../config.js"></script>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="hero">
+    <p class="brand">कुंडलीसार</p>
+    <h1>क्या आप जानना चाहते हैं —<br><span>आपका अच्छा समय कब आएगा?</span></h1>
+    <p class="lead">शास्त्रों के अनुसार, आपकी जन्म तिथि, समय और स्थान से। मुफ़्त, बस एक मिनट में।</p>
+    <ol class="steps">
+      <li><b>नीचे अपना जन्म विवरण भरिए</b><small>तारीख़, समय और जन्म स्थान</small></li>
+      <li><b>तुरंत जानिए</b><small>आपकी राशि, लग्न और आपका अच्छा समय कब</small></li>
+      <li><b>पूरी कुंडली डाउनलोड कीजिए</b><small>विस्तृत जन्म पत्रिका, PDF में</small></li>
+    </ol>
+  </header>
+
+  <section class="card" id="form-card">
+    <h2>अपना जन्म विवरण भरिए</h2>
+    <form id="birth-form" novalidate autocomplete="on">
+      <label class="field">
+        <span>आपका नाम</span>
+        <input name="name" id="name" type="text" maxlength="80" required autocomplete="name" placeholder="जैसे: राम शर्मा">
+      </label>
+
+      <label class="field">
+        <span>मोबाइल नंबर</span>
+        <input name="phone" id="phone" type="tel" inputmode="tel" maxlength="17" required autocomplete="tel-national" placeholder="10 अंकों का नंबर">
+        <small>कुंडली का पासवर्ड और जानकारी इसी नंबर पर दी जाएगी।</small>
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span>जन्म तिथि</span>
+          <input name="date" id="date" type="date" required min="1900-01-01">
+        </label>
+        <label class="field">
+          <span>जन्म का समय</span>
+          <input name="time" id="time" type="time" required>
+        </label>
+      </div>
+      <label class="check small">
+        <input type="checkbox" id="time-approx">
+        <span>मुझे सही समय पक्का नहीं पता (अंदाज़े से भरा है)</span>
+      </label>
+
+      <label class="field place">
+        <span>जन्म स्थान (शहर या गाँव)</span>
+        <input name="place" id="place" type="text" required autocomplete="off" placeholder="अंग्रेज़ी में लिखिए, जैसे: Jaipur" aria-autocomplete="list" aria-controls="place-list">
+        <ul id="place-list" class="suggest" role="listbox" hidden></ul>
+        <small id="place-picked" class="picked" hidden></small>
+        <small id="place-hint">गाँव न मिले तो पास का शहर या तहसील चुनिए।</small>
+      </label>
+
+      <!-- Left empty by people; bots fill it. -->
+      <label class="hp" aria-hidden="true">Website <input name="website" id="website" type="text" tabindex="-1" autocomplete="off"></label>
+
+      <label class="check consent">
+        <input type="checkbox" id="consent" required>
+        <span>मैं सहमत हूँ कि मेरा नाम, मोबाइल नंबर, जन्म विवरण और उनसे बनी कुंडली कुंडलीसार की टीम के पास सुरक्षित रखी जाए, और वे इसी नंबर पर फ़ोन या WhatsApp से मुझसे संपर्क कर सकें। इसके लिए यह पेज मेरे ब्राउज़र की जानकारी और IP पता भी दर्ज करता है। <a href="../privacy.html#samay" target="_blank" rel="noopener">गोपनीयता नीति</a></span>
+      </label>
+
+      <p class="error" id="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn primary" id="submit">मेरा अच्छा समय दिखाइए</button>
+      <p class="fine">आपकी जानकारी किसी और को बेची या दी नहीं जाती।</p>
+    </form>
+  </section>
+
+  <section class="card result" id="result" hidden aria-live="polite">
+    <p class="hello" id="r-hello"></p>
+    <div class="facts">
+      <div><small>आपकी राशि</small><b id="r-rashi"></b></div>
+      <div><small>लग्न</small><b id="r-lagna"></b></div>
+      <div><small>नक्षत्र</small><b id="r-nak"></b></div>
+    </div>
+
+    <h2 class="answer-title">आपका अच्छा समय कब आएगा?</h2>
+    <ul class="answer" id="r-answer"></ul>
+    <p class="approx" id="r-approx" hidden>आपने जन्म का समय अंदाज़े से भरा है, इसलिए तारीख़ें कुछ हफ़्ते आगे-पीछे हो सकती हैं।</p>
+
+    <details id="basis">
+      <summary>यह किस आधार पर निकाला गया है?</summary>
+      <div class="basis">
+        <p>आपके जन्म के समय आसमान में कौन-सा ग्रह किस राशि में, कितने अंश पर था, यह <b>NASA JPL</b> के सार्वजनिक खगोलीय आँकड़ों (DE440) पर आधारित गणना से निकाला गया है। फिर ज्योतिष शास्त्र के नियमों से आपकी कुंडली बनी:</p>
+        <ul>
+          <li>जन्म के समय चंद्रमा जिस नक्षत्र में था (<b id="b-nak"></b>), उसी से विंशोत्तरी दशा गिनी जाती है।</li>
+          <li>अभी <b id="b-maha"></b> की महादशा और <b id="b-antar"></b> की अंतर्दशा चल रही है।</li>
+          <li>आपकी कुंडली में कौन-सा ग्रह किस भाव का स्वामी है और कितना बलवान है, इससे देखा गया कि किस दौर में कुंडली का साथ सबसे ज़्यादा मिलता है।</li>
+        </ul>
+        <table class="grahas">
+          <thead><tr><th>ग्रह</th><th>राशि</th><th>अंश</th><th>भाव</th></tr></thead>
+          <tbody id="b-grahas"></tbody>
+        </table>
+        <p class="who">ज्योतिष शास्त्री <b>चेतन शर्मा जी</b> ने यह गणना आम लोगों तक सरल भाषा में पहुँचाने के लिए बनाई है।</p>
+        <p class="fine">यह शास्त्र के अनुसार बताया गया है, कोई तय या निश्चित बात नहीं। कुंडली रुझान दिखाती है; आगे का रास्ता आपके अपने कर्म और फ़ैसलों से बनता है।</p>
+      </div>
+    </details>
+
+    <div class="download">
+      <h2>अपनी पूरी कुंडली डाउनलोड कीजिए</h2>
+      <p>जन्म पत्रिका की तरह सजी पूरी कुंडली: सारे चार्ट, दशाएँ, फलादेश, योग-दोष, वर्षफल और उपाय।</p>
+      <button type="button" class="btn primary" id="download">पूरी कुंडली PDF डाउनलोड करें</button>
+      <p class="progress" id="dl-progress" hidden><span class="spin" aria-hidden="true"></span> आपकी कुंडली तैयार हो रही है… (10–20 सेकंड)</p>
+      <div class="locked" id="locked" hidden>
+        <p class="lock-title">आपकी कुंडली डाउनलोड हो गई है। यह पासवर्ड से सुरक्षित है।</p>
+        <p class="lock-call">पासवर्ड के लिए <a id="call-link" href="tel:9910144125">99101 44125</a> पर संपर्क करें।</p>
+        <p class="code">आपका कुंडली कोड: <b id="r-code"></b> <small>(बात करते समय यह कोड बताइए)</small></p>
+        <div class="actions">
+          <a class="btn whatsapp" id="wa-link" href="#" target="_blank" rel="noopener">WhatsApp पर पासवर्ड माँगें</a>
+          <a class="btn ghost" id="call-btn" href="tel:9910144125">फ़ोन करें</a>
+        </div>
+      </div>
+      <p class="error" id="dl-error" role="alert" hidden></p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>ग्रहों की स्थिति NASA JPL के सार्वजनिक खगोलीय आँकड़ों पर आधारित गणना से · ज्योतिष शास्त्री चेतन शर्मा जी की प्रस्तुति</p>
+    <p>ज्योतिषीय जानकारी मार्गदर्शन के लिए है; कोई गारंटी नहीं। · <a href="../privacy.html#samay">गोपनीयता</a> · <a href="../terms.html">शर्तें</a> · संपर्क: <a href="tel:9910144125">99101 44125</a></p>
+  </footer>
+</main>
+<script src="samay.js" defer></script>
+</body>
+</html>
