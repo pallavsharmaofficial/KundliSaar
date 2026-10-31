@@ -1,116 +1,57 @@
 # बैकएंड सेटअप — Backend setup for the "आपका अच्छा समय" funnel
 
-यह गाइड उस मालिक के लिए है जो डेवलपर नहीं है। हर कदम एक बार करना है।
-*This guide is for the owner, not a developer. Each step is done once.*
+पूरा सेटअप एक GitHub वर्कफ़्लो करता है। आपको सिर्फ़ तीन काम करने हैं, जिनमें लगभग 10 मिनट लगते हैं
+और कोई पैसा नहीं। *One workflow does the whole setup; you do three things, about ten minutes, free.*
 
-What you get at the end:
+## 1. Supabase पर मुफ़्त अकाउंट और टोकन — Free account and a token
 
-- a free **Supabase** project (database + login + edge functions) in Mumbai,
-- the landing page `…/samay/` saving leads into it,
-- the staff panel at `https://pallavsharmaofficial.github.io/KundliSaar/admin/`,
-- you as the **owner**, able to add callers and managers.
+1. <https://supabase.com> खोलें → **Start your project** → अपने ईमेल या GitHub से साइन अप करें।
+   ईमेल में आया लिंक खोलकर पुष्टि करें। (कार्ड की ज़रूरत नहीं।)
+   *Sign up (no card needed) and confirm your email.*
+2. <https://supabase.com/dashboard/account/tokens> खोलें → **Generate new token** → नाम
+   `kundlisaar-github` → **Generate** → टोकन कॉपी करें (`sbp_…` से शुरू होता है)। यह एक ही बार
+   दिखता है। *Create an access token and copy it; it is shown once.*
 
-Time needed: about 30 minutes.
+यह टोकन आपके Supabase खाते की चाबी है: इसे किसी चैट, WhatsApp या फ़ाइल में न डालें, सिर्फ़ अगले
+कदम में GitHub में। *Treat the token like a password: only into GitHub, nowhere else.*
 
----
+## 2. टोकन GitHub में डालें — Put the token in GitHub
 
-## 1. Supabase प्रोजेक्ट बनाएँ — Create the Supabase project
+GitHub पर repo खोलें → **Settings → Secrets and variables → Actions → New repository secret**:
 
-1. <https://supabase.com> पर जाएँ → **Start your project** → GitHub या ईमेल से साइन अप करें।
-2. **New project** दबाएँ:
-   - **Name:** `kundlisaar`
-   - **Database Password:** **Generate a password** दबाएँ और इसे तुरंत किसी सुरक्षित जगह
-     (password manager) में सेव करें। *This is the DB password; you need it in step 3.*
-   - **Region:** **South Asia (Mumbai)** — `ap-south-1`. भारत के लोगों का डेटा भारत के पास
-     रहता है और पेज तेज़ चलता है। *Keep Indian visitors' data close and fast.*
-   - **Plan:** Free.
-3. **Create new project** दबाएँ और 2–3 मिनट इंतज़ार करें।
+- Name: `SUPABASE_ACCESS_TOKEN`
+- Secret: ऊपर कॉपी किया टोकन
 
-## 2. ये पाँच चीज़ें ढूँढें — Find these five values
+**Add secret** दबाएँ। बस। *That is the only secret; nothing else to copy.*
 
-Supabase dashboard में अपना प्रोजेक्ट खोलें। (Menu names change over time; if one is
-not where described, use the search box at the top of the dashboard.)
+## 3. वर्कफ़्लो चलाएँ — Run the workflow
 
-| क्या / What | कहाँ / Where | कैसा दिखता है / Looks like |
-|---|---|---|
-| **Project ref** | Project Settings → General → *Project ID / Reference ID* | `abcdefghijklmnopqrst` (20 letters) |
-| **Project URL** | Project Settings → Data API (or API) → *Project URL* | `https://abcdefghijklmnopqrst.supabase.co` |
-| **anon key** | Project Settings → API Keys → *anon / public* (legacy tab if shown) | a long text starting `eyJ…` |
-| **DB password** | the one you saved in step 1 (forgot it? Project Settings → Database → *Reset database password*) | |
-| **Access token** | your account (top-right avatar) → **Account preferences → Access Tokens** → *Generate new token*, name it `github-deploy` | starts `sbp_…` |
+repo → **Actions → Supabase setup → Run workflow** → `owner_email` में **वही ईमेल** लिखें जिससे आपने
+Supabase पर साइन अप किया → **Run workflow**।
 
-**anon key सार्वजनिक है** — यह वेबसाइट में दिखती है, और डेटाबेस इस तरह बना है कि इससे कोई
-लीड पढ़ी नहीं जा सकती। *The anon key is public by design.*
+लगभग 5–10 मिनट में यह अपने आप:
 
-**Access token, DB password और "service_role" key कभी किसी को न दें, कहीं पेस्ट न करें**
-(सिर्फ़ नीचे GitHub secrets में)। *Never share these; service_role can read everything.*
+- Supabase प्रोजेक्ट `kundlisaar-funnel` बनाता है (मुफ़्त प्लान, Mumbai);
+- डेटाबेस की टेबल, सुरक्षा नियम (RLS) और फ़ंक्शन लगाता है;
+- तीनों सर्वर फ़ंक्शन (submit-lead, track, manage-staff) deploy करता है;
+- लॉगिन के लिंक एडमिन पेज पर भेजता है और आम लोगों का साइन-अप बंद करता है (स्टाफ़ सिर्फ़ निमंत्रण से);
+- आपके ईमेल पर निमंत्रण भेजता है और आपको **मालिक (owner)** बनाता है;
+- वेबसाइट को प्रोजेक्ट से जोड़कर (`site/config.js`) साइट दोबारा deploy करता है।
 
-## 3. GitHub में secrets और variables डालें — Add them to GitHub
+फिर ईमेल में आया निमंत्रण फ़ोन पर खोलें → पासवर्ड बनाएँ → आप `…/KundliSaar/admin/` पर लॉगिन हैं।
+*Open the invitation email, set a password, and you are signed in to the admin panel.*
 
-GitHub पर repository **KundliSaar** खोलें → **Settings → Secrets and variables → Actions**.
+वर्कफ़्लो दोबारा चलाना सुरक्षित है: वह सिर्फ़ वही करता है जो बाक़ी है। बाद में `owner_email` ख़ाली
+छोड़ें। अपना डोमेन लें तो repo variable `PUBLIC_BASE_URL` में डालकर इसे फिर चलाएँ, ताकि लॉगिन
+लिंक और CORS नए पते पर चलें। *Re-running is safe. After buying a domain, set PUBLIC_BASE_URL
+and run it again.*
 
-**Secrets** टैब → **New repository secret** (तीन बार):
+**अगर निमंत्रण ईमेल न आए / If the invite email does not arrive:** Supabase की मुफ़्त ईमेल सेवा
+सिर्फ़ उसी ईमेल पर भेजती है जो Supabase टीम में है (आपका साइन-अप वाला ईमेल) और घंटे में कुछ ही
+ईमेल। स्पैम फ़ोल्डर देखें, या Supabase dashboard → Authentication → Users → अपने ईमेल पर
+**Send password recovery** दबाएँ।
 
-| Name | Value |
-|---|---|
-| `SUPABASE_ACCESS_TOKEN` | the `sbp_…` access token |
-| `SUPABASE_PROJECT_REF` | the 20-letter project ref |
-| `SUPABASE_DB_PASSWORD` | the database password |
-
-**Variables** टैब → **New repository variable** (चार बार):
-
-| Name | Value |
-|---|---|
-| `SUPABASE_URL` | `https://<ref>.supabase.co` |
-| `SUPABASE_ANON_KEY` | the anon key |
-| `PUBLIC_BASE_URL` | `https://pallavsharmaofficial.github.io/KundliSaar` |
-| `ALLOWED_ORIGINS` | `https://pallavsharmaofficial.github.io` |
-
-`ALLOWED_ORIGINS` में सिर्फ़ डोमेन होता है, कोई `/KundliSaar` या आख़िरी `/` नहीं। कई हों तो
-कॉमा से अलग करें। *Origin only, no path; comma-separate several (e.g. a custom domain later).*
-
-## 4. Deploy चलाएँ — Run the deploy
-
-1. GitHub → **Actions** टैब → बाएँ **Deploy the funnel backend to Supabase** → **Run workflow** → **Run workflow**.
-   यह डेटाबेस की टेबल बनाता है और तीन edge functions (`submit-lead`, `track`,
-   `manage-staff`) डालता है। *Creates the tables and deploys the functions.*
-2. फिर **Deploy website and web app to GitHub Pages** को भी **Run workflow** करें, ताकि
-   वेबसाइट को नया URL और anon key मिल जाए (`config.js`)।
-3. दोनों हरे ✔ हों तो ठीक है। लाल ✘ हो तो उस run को खोलकर आख़िरी लाल step का संदेश पढ़ें —
-   ज़्यादातर secret का नाम या value गलत होती है।
-   *Green is done. If red, open the run; usually a secret is misnamed or mistyped.*
-
-बाद में `supabase/` में कोई भी बदलाव `main` पर आएगा तो यह अपने-आप चलेगा।
-*After this it runs by itself when `supabase/` changes on main.*
-
-## 5. Login की सेटिंग — Auth settings (one time)
-
-Supabase dashboard → **Authentication**:
-
-1. **Sign In / Providers** (or *Settings*) → **Allow new users to sign up** को **बंद** करें।
-   स्टाफ़ आप ही जोड़ेंगे। (बंद न भी हो तो भी कोई अजनबी लीड नहीं देख सकता, पर बंद रखना साफ़ है।)
-   *Turn off public sign-ups; you add staff yourself.*
-2. **URL Configuration**:
-   - **Site URL:** `https://pallavsharmaofficial.github.io/KundliSaar/admin/`
-   - **Redirect URLs:** add the same URL.
-   इससे "पासवर्ड भूल गए" का लिंक सीधे स्टाफ़ पैनल पर खुलता है।
-   *So password-reset links open the staff panel.*
-
-## 6. पहला मालिक बनाएँ — Make yourself the owner
-
-1. **Authentication → Users → Add user → Create new user**: अपना ईमेल और एक मज़बूत पासवर्ड,
-   **Auto Confirm User** पर ✔ लगाएँ → **Create user**.
-2. बाएँ **SQL Editor** → **New query** → यह पेस्ट करें, अपना ईमेल डालकर → **Run**:
-
-   ```sql
-   insert into staff(user_id,name,role) select id,'Owner','owner' from auth.users where email='you@example.com';
-   ```
-
-   "Success. 1 row" आना चाहिए। "0 rows" आए तो ईमेल की स्पेलिंग जाँचें।
-3. `https://pallavsharmaofficial.github.io/KundliSaar/admin/` खोलें और लॉगिन करें।
-   अगर "बैकएंड अभी सेट नहीं हुआ है" दिखे, तो step 4.2 (website deploy) दोबारा चलाएँ।
-
-## 7. स्टाफ़ जोड़ें — Add staff
+## 4. स्टाफ़ जोड़ें — Add staff
 
 स्टाफ़ पैनल → **स्टाफ़ / Staff** टैब → **नया स्टाफ़ जोड़ें**:
 
@@ -132,7 +73,7 @@ Supabase dashboard → **Authentication**:
 कोई स्टाफ़ छोड़ दे तो **बंद करें / Deactivate** — उसकी लॉगिन बंद हो जाती है और उसकी खुली
 लीड्स वापस पूल में आ जाती हैं। *Deactivate leavers; their open leads return to the pool.*
 
-## 8. मुफ़्त प्लान की सीमाएँ — What the free tier means for you
+## 5. मुफ़्त प्लान की सीमाएँ — What the free tier means for you
 
 (Numbers as of late 2026; check <https://supabase.com/pricing> for the current ones.)
 
@@ -149,15 +90,16 @@ Supabase dashboard → **Authentication**:
 Supabase मुफ़्त प्रोजेक्ट को **7 दिन तक कोई गतिविधि न हो** तो *pause* कर देता है। तब फ़ॉर्म
 लीड सेव नहीं करेगा (विज़िटर को गलती दिखेगी) और स्टाफ़ पैनल नहीं खुलेगा। डेटा मिटता नहीं।
 
-- **बचाव / Avoid it:** जब तक फ़्लायर बँट रहे हैं, लीड्स आती रहेंगी और प्रोजेक्ट जागा रहेगा।
-  फ़्लायर बंद हों तो भी हफ़्ते में कम से कम एक बार स्टाफ़ पैनल खोलकर लीड्स देख लें।
+- **बचाव / Avoid it:** यह अपने आप होता है। *Supabase keep-alive* वर्कफ़्लो रोज़ एक बार प्रोजेक्ट को
+  हल्का-सा पिंग करता है, इसलिए शांत हफ़्ते में भी प्रोजेक्ट नहीं रुकना चाहिए।
+  *A daily keep-alive workflow pings the project, so a quiet week should not pause it.*
 - **रुक जाए तो / If it pauses:** Supabase आपको ईमेल करेगा। Dashboard में प्रोजेक्ट खोलें →
   **Restore project** दबाएँ; कुछ मिनट में सब वापस। (बहुत लंबे समय — लगभग 90 दिन — तक रुका
   रहे तो restore का विकल्प चला जा सकता है, इसलिए ईमेल को अनदेखा न करें।)
 - **पक्का हल / For certain:** जब बिक्री शुरू हो जाए, **Pro plan** (लगभग $25/महीना) पर जाएँ —
   pause नहीं होता और रोज़ का backup मिलता है।
 
-## 9. निजी डेटा की ज़िम्मेदारी — Your duties under the DPDP Act
+## 6. निजी डेटा की ज़िम्मेदारी — Your duties under the DPDP Act
 
 यह सिस्टम असली लोगों का नाम, फ़ोन, जन्म-विवरण और IP रखता है।
 
@@ -166,12 +108,13 @@ Supabase मुफ़्त प्रोजेक्ट को **7 दिन त
   (Supabase → Table Editor → `audit_log`)।
 - कोई व्यक्ति अपना डेटा मिटवाना चाहे तो लीड खोलें → **निजी डेटा मिटाएँ** (सिर्फ़ मालिक)। गिनती
   के लिए सिर्फ़ कोड, तारीख़ और फ़्लायर-स्रोत बचते हैं।
-- वेबसाइट की **Privacy** पेज पर बताएँ कि फ़ॉर्म क्या लेता है और क्यों — मौजूदा पेज कहता है कि
-  ऐप कुछ भी इकट्ठा नहीं करता, जो ऐप के लिए सही है पर इस फ़ॉर्म के लिए नहीं।
+- वेबसाइट की Privacy पेज (`privacy.html#samay`) पर फ़ॉर्म क्या लेता है, क्यों, कितने समय तक
+  और कैसे मिटवाएँ, यह लिखा जा चुका है। फ़ॉर्म में कुछ नया जोड़ें तो वहाँ भी जोड़ें।
 
 ## Developer notes
 
-- Schema, RLS and RPCs: `supabase/migrations/20261031000000_funnel.sql` (bootstrap SQL at the bottom).
+- Setup: `supabase/scripts/setup.mjs`, run by `.github/workflows/supabase-setup.yml` (tested by `supabase/tests/setup_test.mjs`).
+- Schema, RLS and RPCs: `supabase/migrations/*.sql` (applied through the Management API's SQL endpoint and recorded in `supabase_migrations.schema_migrations`, so the CLI agrees).
 - Functions: `supabase/functions/{submit-lead,track,manage-staff}`; shared rules in `_shared/`.
 - Tests: see `supabase/tests/README.md`.
 - Contract between landing page, backend and panel: `docs/funnel/CONTRACT.md`.

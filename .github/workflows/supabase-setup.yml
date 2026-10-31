@@ -1,0 +1,113 @@
+name: Supabase setup
+
+# Sets up the funnel's backend from one secret, SUPABASE_ACCESS_TOKEN: creates
+# the Supabase project if there is none (free plan, Mumbai), applies the
+# migrations, deploys the edge functions, invites the owner, writes the
+# project's public URL and anon key into site/config.js and redeploys the
+# site. Safe to run again: it only does what is missing. Until the secret is
+# added the run is skipped and stays green. See docs/funnel/BACKEND_SETUP.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      owner_email:
+        description: "Owner's email (the one you signed up to Supabase with). Leave empty after the first run."
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/supabase-setup.yml']
+
+permissions:
+  contents: write   # to commit site/config.js
+  actions: write    # to start the site deploy afterwards
+
+concurrency:
+  group: supabase-setup
+  cancel-in-progress: false
+
+jobs:
+  check:
+    # Secrets cannot be read in a job-level `if`, so this job looks and says.
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.look.outputs.configured }}
+    steps:
+      - id: look
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SUPABASE_ACCESS_TOKEN is not set yet; nothing to do. See docs/funnel/BACKEND_SETUP.md."
+          fi
+
+  setup:
+    needs: check
+    if: needs.check.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the validation rules
+        run: node --experimental-strip-types --test supabase/tests/lead_test.mjs
+
+      - name: Project, database, settings and owner
+        id: setup
+        env:
+          OWNER_EMAIL: ${{ inputs.owner_email }}
+          SITE_BASE: ${{ vars.PUBLIC_BASE_URL || 'https://pallavsharmaofficial.github.io/KundliSaar' }}
+        run: node supabase/scripts/setup.mjs
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy the edge functions
+        # One at a time, so a CLI that takes a single name still works. The
+        # runner has Docker for bundling; --use-api is tried if that fails.
+        env:
+          REF: ${{ steps.setup.outputs.ref }}
+        run: |
+          for f in submit-lead track manage-staff; do
+            supabase functions deploy "$f" --project-ref "$REF" \
+              || supabase functions deploy "$f" --project-ref "$REF" --use-api
+          done
+
+      - name: Connect the site to the project
+        # The URL and the anon key are public by design (row-level security
+        # protects the data), so they live in the repository like any config.
+        env:
+          URL: ${{ steps.setup.outputs.url }}
+          ANON: ${{ steps.setup.outputs.anon }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const file = 'site/config.js';
+          let s = fs.readFileSync(file, 'utf8');
+          s = s.replace(/supabaseUrl: "[^"]*"/, `supabaseUrl: "${process.env.URL}"`)
+               .replace(/supabaseAnonKey: "[^"]*"/, `supabaseAnonKey: "${process.env.ANON}"`);
+          fs.writeFileSync(file, s);
+          JS
+          if git diff --quiet site/config.js; then
+            echo "site/config.js already points at this project."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/config.js
+            git commit -m "chore: connect the site to the Supabase project"
+            git push
+            # A push made with this token starts no workflow, so ask for the
+            # site deploy directly.
+            gh workflow run deploy-pages.yml --ref main
+            echo "::notice::The site is being redeployed with the backend switched on."
+          fi

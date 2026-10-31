@@ -75,14 +75,18 @@ jobs:
           cp assets/data/places.json dist/samay/places.json
 
       - name: Write the public config
-        # Empty values keep the pages in "not set up yet" mode.
+        # Normally site/config.js, written by the Supabase setup workflow, is
+        # used as it is. Repository variables, when set, take its place.
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
         run: |
           python3 - <<'PY'
-          import json, os
+          import json, os, sys
+          if not os.environ.get("SUPABASE_URL"):
+              print("Using site/config.js as committed.")
+              sys.exit(0)
           cfg = {
               "supabaseUrl": os.environ.get("SUPABASE_URL", ""),
               "supabaseAnonKey": os.environ.get("SUPABASE_ANON_KEY", ""),
