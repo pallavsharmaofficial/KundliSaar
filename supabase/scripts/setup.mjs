@@ -27,7 +27,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
+const TOKEN = (process.env.SUPABASE_ACCESS_TOKEN || '').trim();
 const API = (process.env.SUPABASE_API_BASE || 'https://api.supabase.com').replace(/\/$/, '');
 const NAME = process.env.PROJECT_NAME || 'kundlisaar-funnel';
 const REGION = process.env.PROJECT_REGION || 'ap-south-1';

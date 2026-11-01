@@ -77,6 +77,9 @@ jobs:
         env:
           REF: ${{ steps.setup.outputs.ref }}
         run: |
+          # The CLI checks the token's format strictly; a space or newline
+          # picked up when it was pasted into the secret would fail it.
+          export SUPABASE_ACCESS_TOKEN="$(printf '%s' "$SUPABASE_ACCESS_TOKEN" | tr -d '[:space:]')"
           for f in submit-lead track manage-staff; do
             supabase functions deploy "$f" --project-ref "$REF" \
               || supabase functions deploy "$f" --project-ref "$REF" --use-api
