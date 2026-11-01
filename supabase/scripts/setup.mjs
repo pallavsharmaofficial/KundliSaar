@@ -81,9 +81,11 @@ const lit = (s) => `'${String(s).replace(/'/g, "''")}'`;
 
 async function ensureProject() {
   const projects = (await api('GET', '/v1/projects')) || [];
-  let p = projects.find((x) => x.name === NAME);
+  // A token scoped to one project sees only that project: use it whatever
+  // the owner named it in the dashboard.
+  let p = projects.find((x) => x.name === NAME) || (projects.length === 1 ? projects[0] : undefined);
   if (p) {
-    log(`Project "${NAME}" found: ${p.id} (${p.region}, ${p.status}).`);
+    log(`Project "${p.name}" found: ${p.id} (${p.region}, ${p.status}).`);
     if (p.status === 'INACTIVE' || p.status === 'PAUSED') {
       log('It is paused; restoring it.');
       await api('POST', `/v1/projects/${p.id}/restore`, {});

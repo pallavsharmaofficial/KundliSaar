@@ -155,6 +155,16 @@ ok('an existing owner gets a reset link, not a second invite', () => {
 const staffCount = (await db.query('select count(*)::int as n from public.staff')).rows[0].n;
 ok('still one staff row', () => assert.equal(staffCount, 1));
 
+// A token scoped to one project the owner made and named in the dashboard.
+state.projects[0].name = 'Pallav ka project';
+const scoped = await run({});
+if (scoped.code !== 0) console.log(scoped.out);
+ok('a project-scoped token uses its one project, whatever its name', () => {
+  assert.equal(scoped.code, 0);
+  assert.equal(state.projects.length, 1);
+  assert.match(scoped.out, /Pallav ka project/);
+});
+
 const bad = await run({ OWNER_EMAIL: "x'; drop table staff; --@a.b" });
 ok('a malformed owner email is refused before anything runs', () => assert.notEqual(bad.code, 0));
 
